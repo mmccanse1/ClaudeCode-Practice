@@ -37,7 +37,7 @@ function extractJson<T>(text: string): T {
 
 export async function parseReceiptFromImage(imageUri: string): Promise<string[]> {
   const base64 = await FileSystem.readAsStringAsync(imageUri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64' as any,
   });
 
   const ext = imageUri.split('.').pop()?.toLowerCase();
