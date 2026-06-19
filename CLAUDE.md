@@ -4,11 +4,11 @@
 
 - **OS**: Windows
 - **Root user folder**: `C:\Users\thoma`
-- **Repo location**: `C:\Users\thoma\Desktop\ClaudeCode-Practice`
-- **App folder**: `C:\Users\thoma\Desktop\ClaudeCode-Practice\weekly-meal-planner\app`
+- **Repo location**: `C:\Users\thoma\ClaudeCode_Practice`
+- **App folder**: `C:\Users\thoma\ClaudeCode_Practice\weekly-meal-planner\app`
 
 ## Navigate to app
 
 ```
-cd C:\Users\thoma\Desktop\ClaudeCode-Practice\weekly-meal-planner\app
+cd C:\Users\thoma\ClaudeCode_Practice\weekly-meal-planner\app
 ```
