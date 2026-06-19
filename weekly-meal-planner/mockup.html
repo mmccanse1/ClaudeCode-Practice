@@ -451,16 +451,69 @@
         <div class="phone-notch"></div>
         <div class="phone-screen">
 
-          <!-- Mediterranean coast hero photo -->
-          <div style="position: relative;">
-            <img
-              class="hero-img"
-              src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=510&q=80&fit=crop"
-              alt="Mediterranean coast"
-              onerror="this.style.display='none'; document.getElementById('hero-fallback').style.display='flex';"
-            />
-            <div id="hero-fallback" style="display:none; width:100%; height:200px; background: linear-gradient(160deg,#1a6685,#2e86ab,#a8dadc); align-items:flex-end; padding:16px 14px;">
-            </div>
+          <!-- Mediterranean coast hero — CSS/SVG illustration, no external dependency -->
+          <div style="position: relative; width:100%; height:200px; overflow:hidden;">
+            <svg width="100%" height="200" viewBox="0 0 255 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+              <defs>
+                <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#4ab8e8"/>
+                  <stop offset="100%" stop-color="#b8e4f7"/>
+                </linearGradient>
+                <linearGradient id="seaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#1a7abf"/>
+                  <stop offset="100%" stop-color="#0d5a8a"/>
+                </linearGradient>
+                <linearGradient id="cliffGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#d4b896"/>
+                  <stop offset="100%" stop-color="#b8976e"/>
+                </linearGradient>
+              </defs>
+              <!-- Sky -->
+              <rect width="255" height="200" fill="url(#skyGrad)"/>
+              <!-- Sun -->
+              <circle cx="210" cy="44" r="22" fill="#fff5c0" opacity="0.92"/>
+              <circle cx="210" cy="44" r="28" fill="#ffe97a" opacity="0.25"/>
+              <!-- Cloud 1 -->
+              <ellipse cx="60" cy="35" rx="24" ry="10" fill="white" opacity="0.75"/>
+              <ellipse cx="48" cy="38" rx="14" ry="8" fill="white" opacity="0.75"/>
+              <ellipse cx="74" cy="38" rx="16" ry="7" fill="white" opacity="0.75"/>
+              <!-- Cloud 2 -->
+              <ellipse cx="150" cy="25" rx="18" ry="8" fill="white" opacity="0.6"/>
+              <ellipse cx="140" cy="28" rx="10" ry="6" fill="white" opacity="0.6"/>
+              <ellipse cx="162" cy="28" rx="12" ry="6" fill="white" opacity="0.6"/>
+              <!-- Cliff/headland -->
+              <path d="M0 118 Q50 95 100 112 Q155 125 200 102 Q225 90 255 98 L255 200 L0 200Z" fill="url(#cliffGrad)"/>
+              <!-- Sea -->
+              <path d="M0 132 Q50 128 100 134 Q155 140 200 132 Q225 128 255 132 L255 200 L0 200Z" fill="url(#seaGrad)"/>
+              <!-- Sea shimmer -->
+              <path d="M0 148 Q40 144 80 148 Q120 152 160 148 Q200 144 255 148" stroke="rgba(255,255,255,0.25)" stroke-width="2" fill="none"/>
+              <path d="M0 160 Q40 156 80 160 Q120 164 160 160 Q200 156 255 160" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" fill="none"/>
+              <!-- White buildings (Santorini style) -->
+              <!-- Building cluster 1 -->
+              <rect x="22" y="92" width="28" height="26" rx="3" fill="white"/>
+              <rect x="30" y="80" width="12" height="14" rx="3" fill="#2e86ab"/>
+              <rect x="14" y="100" width="20" height="18" rx="2" fill="#f0ece4"/>
+              <!-- Building cluster 2 -->
+              <rect x="62" y="98" width="22" height="20" rx="3" fill="white"/>
+              <rect x="68" y="88" width="10" height="12" rx="3" fill="#3498db"/>
+              <!-- Building cluster 3 -->
+              <rect x="96" y="94" width="18" height="24" rx="2" fill="white"/>
+              <rect x="100" y="85" width="10" height="11" rx="3" fill="#2e86ab"/>
+              <rect x="88" y="100" width="14" height="18" rx="2" fill="#f5f2ec"/>
+              <!-- Dome (Santorini blue dome) -->
+              <rect x="130" y="96" width="20" height="18" rx="2" fill="white"/>
+              <path d="M128 97 Q140 82 152 97Z" fill="#2e86ab"/>
+              <!-- Olive trees -->
+              <rect x="170" y="106" width="3" height="14" fill="#8B7355"/>
+              <ellipse cx="172" cy="102" rx="9" ry="8" fill="#5a8a3c" opacity="0.9"/>
+              <rect x="185" y="110" width="2" height="10" fill="#8B7355"/>
+              <ellipse cx="186" cy="107" rx="6" ry="5" fill="#4a7a2c" opacity="0.9"/>
+              <!-- Boat on sea -->
+              <path d="M60 145 Q70 138 80 145Z" fill="white" opacity="0.8"/>
+              <rect x="68" y="138" width="1.5" height="10" fill="#ccc" opacity="0.7"/>
+            </svg>
+            <!-- Dark scrim so text is readable -->
+            <div style="position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.52) 100%);"></div>
             <div class="hero-overlay">
               <h2>Weekly Meal Planner</h2>
               <p>Mediterranean diet · Powered by your pantry</p>
@@ -585,9 +638,8 @@
             <!-- Recipe card 1 — Baked Cod -->
             <div class="recipe-card-mini">
               <img class="recipe-photo-img"
-                src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=510&q=80&fit=crop"
-                alt="Baked cod dish"
-                onerror="this.style.background='linear-gradient(135deg,#a8dadc,#2e86ab)'; this.style.height='72px';" />
+                src="https://picsum.photos/seed/codfish/510/72"
+                alt="Baked cod dish" />
               <div class="recipe-body">
                 <div class="recipe-badges"><span class="badge-day">Monday</span><span class="badge-med">Mediterranean</span></div>
                 <div class="recipe-name">Herb-Crusted Baked Cod</div>
@@ -599,9 +651,8 @@
             <!-- Recipe card 2 — Chickpea salad -->
             <div class="recipe-card-mini">
               <img class="recipe-photo-img"
-                src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=510&q=80&fit=crop"
-                alt="Chickpea salad"
-                onerror="this.style.background='linear-gradient(135deg,#f4d03f,#f4a261)'; this.style.height='72px';" />
+                src="https://picsum.photos/seed/chickpeasalad/510/72"
+                alt="Chickpea salad" />
               <div class="recipe-body">
                 <div class="recipe-badges"><span class="badge-day">Tuesday</span><span class="badge-med">Mediterranean</span></div>
                 <div class="recipe-name">Chickpea &amp; Feta Salad</div>
@@ -613,9 +664,8 @@
             <!-- Recipe card 3 — Lentil stew -->
             <div class="recipe-card-mini">
               <img class="recipe-photo-img"
-                src="https://images.unsplash.com/photo-1547592180-85f173990554?w=510&q=80&fit=crop"
-                alt="Lentil stew"
-                onerror="this.style.background='linear-gradient(135deg,#a8e6cf,#3d9970)'; this.style.height='72px';" />
+                src="https://picsum.photos/seed/lentilstew/510/72"
+                alt="Lentil stew" />
               <div class="recipe-body">
                 <div class="recipe-badges"><span class="badge-day">Wednesday</span><span class="badge-med">Mediterranean</span></div>
                 <div class="recipe-name">Red Lentil &amp; Spinach Stew</div>
@@ -640,9 +690,8 @@
             <span>9:41</span><span>●●●</span>
           </div>
           <img class="detail-hero-img"
-            src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=510&q=80&fit=crop"
-            alt="Herb-crusted cod"
-            onerror="this.style.background='linear-gradient(135deg,#a8dadc,#2e86ab)';" />
+            src="https://picsum.photos/seed/herbcod/510/115"
+            alt="Herb-crusted cod" />
 
           <div class="detail-content">
             <div class="detail-badges">
@@ -693,9 +742,8 @@
   </div>
 
   <p class="photo-credit">
-    Photos: <a href="https://unsplash.com" target="_blank">Unsplash</a> (free license) ·
-    Coast photo by <a href="https://unsplash.com/photos/photo-1533105079780" target="_blank">Daniele Levis Pelusi</a> ·
-    Recipe photos pulled live from Unsplash in the real app via search query per dish
+    Mockup: Coast = CSS/SVG illustration · Recipe cards = <a href="https://picsum.photos" target="_blank">picsum.photos</a> (placeholder photos) ·
+    Real app pulls live dish photos from <a href="https://unsplash.com" target="_blank">Unsplash</a> by recipe search query
   </p>
 
 </body>
