@@ -1,0 +1,248 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
+import { saveAndShareRecipeCard } from '../services/cardGenerator';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'RecipeDetail'>;
+
+export default function RecipeDetailScreen({ route }: Props) {
+  const { recipe } = route.params;
+  const [sharing, setSharing] = useState(false);
+
+  async function handleShare() {
+    setSharing(true);
+    try {
+      await saveAndShareRecipeCard(recipe);
+    } catch (e: any) {
+      Alert.alert('Could not save card', e.message);
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {recipe.photoUrl ? (
+          <Image source={{ uri: recipe.photoUrl }} style={styles.hero} />
+        ) : (
+          <View style={styles.heroPlaceholder}>
+            <Text style={styles.heroEmoji}>🫒</Text>
+          </View>
+        )}
+
+        <View style={styles.body}>
+          <View style={styles.badgeRow}>
+            <View style={styles.dayBadge}>
+              <Text style={styles.dayText}>{recipe.day}</Text>
+            </View>
+            <View style={styles.dietBadge}>
+              <Text style={styles.dietText}>Mediterranean Diet</Text>
+            </View>
+          </View>
+
+          <Text style={styles.name}>{recipe.name}</Text>
+          <Text style={styles.description}>{recipe.description}</Text>
+
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>PREP</Text>
+              <Text style={styles.metaValue}>{recipe.prepTime}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>COOK</Text>
+              <Text style={styles.metaValue}>{recipe.cookTime}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.metaItem}>
+              <Text style={styles.metaLabel}>SERVES</Text>
+              <Text style={styles.metaValue}>{recipe.servings}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.sectionTitle}>Ingredients</Text>
+          {recipe.ingredients.map((ing, i) => (
+            <View key={i} style={styles.ingredientRow}>
+              <View style={styles.ingredientDot} />
+              <Text style={styles.ingredientText}>{ing}</Text>
+            </View>
+          ))}
+
+          <Text style={styles.sectionTitle}>Instructions</Text>
+          {recipe.steps.map((step, i) => (
+            <View key={i} style={styles.stepRow}>
+              <View style={styles.stepNum}>
+                <Text style={styles.stepNumText}>{i + 1}</Text>
+              </View>
+              <Text style={styles.stepText}>{step}</Text>
+            </View>
+          ))}
+
+          <View style={styles.nutritionBox}>
+            <Text style={styles.nutritionIcon}>🌿</Text>
+            <Text style={styles.nutritionText}>{recipe.nutritionNotes}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={handleShare}
+            disabled={sharing}
+            activeOpacity={0.85}
+          >
+            {sharing ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.shareBtnText}>Save & Share Recipe Card</Text>
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.sourceNote}>
+            Recipes follow Mayo Clinic Mediterranean diet guidelines
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#f5f0e8' },
+  hero: { width: '100%', height: 280, resizeMode: 'cover' },
+  heroPlaceholder: {
+    width: '100%',
+    height: 280,
+    backgroundColor: '#a8dadc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroEmoji: { fontSize: 80 },
+  body: { padding: 24 },
+  badgeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  dayBadge: {
+    backgroundColor: '#2e86ab',
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 14,
+  },
+  dayText: { color: 'white', fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
+  dietBadge: {
+    backgroundColor: '#e8f8f9',
+    borderRadius: 20,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+  },
+  dietText: { color: '#1d5c63', fontSize: 12, fontWeight: '600' },
+  name: { fontSize: 26, fontWeight: '800', color: '#1a1a1a', marginBottom: 10 },
+  description: {
+    fontSize: 15,
+    color: '#666',
+    fontStyle: 'italic',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 28,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  metaItem: { flex: 1, alignItems: 'center' },
+  metaLabel: { fontSize: 10, color: '#aaa', fontWeight: '700', letterSpacing: 0.8, marginBottom: 4 },
+  metaValue: { fontSize: 16, fontWeight: '700', color: '#2e86ab' },
+  divider: { width: 1, backgroundColor: '#eee', marginHorizontal: 8 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    borderBottomWidth: 2,
+    borderBottomColor: '#a8dadc',
+    paddingBottom: 6,
+    marginBottom: 14,
+    marginTop: 8,
+  },
+  ingredientRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 6,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f4a261',
+  },
+  ingredientDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#f4a261',
+    marginRight: 10,
+  },
+  ingredientText: { fontSize: 14, color: '#333', flex: 1 },
+  stepRow: {
+    flexDirection: 'row',
+    gap: 12,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  stepNum: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#2e86ab',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  stepNumText: { color: 'white', fontWeight: '700', fontSize: 13 },
+  stepText: { flex: 1, fontSize: 14, color: '#333', lineHeight: 22 },
+  nutritionBox: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+    backgroundColor: '#e8f5e9',
+    borderWidth: 1,
+    borderColor: '#a8dadc',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 20,
+    marginBottom: 24,
+  },
+  nutritionIcon: { fontSize: 20 },
+  nutritionText: { flex: 1, fontSize: 13, color: '#1d5c63', lineHeight: 20 },
+  shareBtn: {
+    backgroundColor: '#f4a261',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  shareBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  sourceNote: { textAlign: 'center', fontSize: 11, color: '#aaa', marginBottom: 24 },
+});
