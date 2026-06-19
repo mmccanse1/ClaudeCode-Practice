@@ -68,9 +68,14 @@ Generate exactly 7 Mediterranean diet recipes, one per day (Monday–Sunday). Ea
 Mayo Clinic Mediterranean diet principles to follow:
 - Emphasise vegetables, fruits, whole grains, legumes, nuts
 - Use olive oil as the main fat
-- Include fish or seafood at least twice a week
+- Include fish or seafood at least twice a week (vary the fish — cod, sea bass, tuna, shrimp, sardines, etc.)
 - Limit red meat to a few times per month
 - Moderate dairy (mainly cheese and yoghurt)
+
+STRICT variety rules — follow these exactly:
+- Salmon may appear in AT MOST 1 of the 7 recipes. Prefer other fish varieties.
+- Do NOT use zucchini (courgette) or yellow squash in any recipe. Use other vegetables instead.
+- Vary proteins across the week: no single protein source should appear more than twice.
 
 Return ONLY a valid JSON array of 7 objects with this exact shape:
 [

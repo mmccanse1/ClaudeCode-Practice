@@ -14,55 +14,33 @@
       min-height: 100vh;
     }
 
-    h1 {
-      text-align: center;
-      color: #fff;
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      letter-spacing: -0.3px;
-    }
-
-    .subtitle {
-      text-align: center;
-      color: #aaa;
-      font-size: 14px;
-      margin-bottom: 48px;
-    }
+    h1 { text-align: center; color: #fff; font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { text-align: center; color: #aaa; font-size: 14px; margin-bottom: 48px; }
 
     .screens-row {
       display: flex;
-      gap: 32px;
+      gap: 28px;
       justify-content: center;
       flex-wrap: wrap;
       align-items: flex-start;
     }
 
-    .screen-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-    }
+    .screen-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 
     .screen-label {
       color: #a8dadc;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       letter-spacing: 1px;
       text-transform: uppercase;
     }
 
-    /* Phone shell */
     .phone {
-      width: 260px;
+      width: 255px;
       background: #111;
       border-radius: 42px;
       padding: 14px 10px;
-      box-shadow:
-        0 0 0 2px #333,
-        0 30px 60px rgba(0,0,0,0.6);
-      position: relative;
+      box-shadow: 0 0 0 2px #333, 0 30px 60px rgba(0,0,0,0.6);
     }
 
     .phone-notch {
@@ -83,16 +61,18 @@
       position: relative;
     }
 
-    /* ── Shared components ── */
+    /* ── Shared ── */
     .status-bar {
-      background: inherit;
       display: flex;
       justify-content: space-between;
       padding: 8px 16px 4px;
       font-size: 10px;
       font-weight: 700;
       color: #1a1a1a;
+      background: transparent;
     }
+
+    .status-bar.light { color: white; }
 
     .nav-bar {
       display: flex;
@@ -102,69 +82,72 @@
       background: #f5f0e8;
     }
 
-    .nav-back {
-      color: #2e86ab;
-      font-size: 12px;
-      font-weight: 600;
-      margin-right: 8px;
-    }
-
-    .nav-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #1a1a1a;
-    }
+    .nav-back { color: #2e86ab; font-size: 12px; font-weight: 600; margin-right: 8px; }
+    .nav-title { font-size: 14px; font-weight: 700; color: #1a1a1a; }
 
     .content {
-      padding: 16px 14px;
+      padding: 14px 14px;
       overflow: hidden;
-      height: calc(100% - 56px);
+      height: calc(100% - 52px);
     }
 
     /* ── SCREEN 1: Home ── */
-    .home-screen { background: #f5f0e8; }
-
-    .home-hero {
-      text-align: center;
-      padding: 20px 0 16px;
+    .hero-img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+      position: relative;
     }
 
-    .home-hero .emoji { font-size: 52px; display: block; margin-bottom: 8px; }
+    .hero-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 200px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 16px 14px;
+    }
 
-    .home-hero h2 {
+    .hero-overlay h2 {
       font-size: 18px;
       font-weight: 800;
-      color: #1a1a1a;
-      line-height: 1.2;
-      margin-bottom: 4px;
+      color: white;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      margin-bottom: 2px;
     }
 
-    .home-hero p {
+    .hero-overlay p {
       font-size: 10px;
-      color: #888;
+      color: rgba(255,255,255,0.88);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.4);
     }
+
+    .home-body { padding: 12px 14px; }
 
     .info-card {
       background: white;
       border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 12px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.07);
     }
 
-    .info-card h3 { font-size: 12px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
-    .info-card p { font-size: 10px; color: #666; line-height: 1.5; }
+    .info-card h3 { font-size: 11px; font-weight: 700; color: #1a1a1a; margin-bottom: 3px; }
+    .info-card p { font-size: 9px; color: #666; line-height: 1.5; }
 
     .btn-primary {
       display: block;
       background: #2e86ab;
       color: white;
       text-align: center;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
-      padding: 12px;
-      border-radius: 12px;
-      margin-bottom: 8px;
+      padding: 11px;
+      border-radius: 11px;
+      margin-bottom: 7px;
     }
 
     .btn-secondary {
@@ -172,304 +155,268 @@
       background: white;
       color: #2e86ab;
       text-align: center;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
-      padding: 11px;
-      border-radius: 12px;
+      padding: 10px;
+      border-radius: 11px;
       border: 1.5px solid #2e86ab;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
-    .steps-mini { display: flex; flex-direction: column; gap: 8px; }
+    .steps-mini { display: flex; flex-direction: column; gap: 7px; }
 
-    .step-mini {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .step-mini { display: flex; align-items: center; gap: 9px; }
 
     .step-num-mini {
-      width: 20px;
-      height: 20px;
-      border-radius: 10px;
+      width: 18px; height: 18px;
+      border-radius: 9px;
       background: #2e86ab;
       color: white;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
 
-    .step-text-mini { font-size: 10px; color: #555; }
+    .step-text-mini { font-size: 9px; color: #555; }
 
     /* ── SCREEN 2: Scan Receipt ── */
-    .scan-title { font-size: 16px; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
-    .scan-sub { font-size: 10px; color: #777; margin-bottom: 12px; line-height: 1.4; }
+    .scan-title { font-size: 15px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
+    .scan-sub { font-size: 9px; color: #777; margin-bottom: 10px; line-height: 1.4; }
 
-    .pick-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .pick-row { display: flex; gap: 8px; margin-bottom: 10px; }
 
     .pick-btn {
       flex: 1;
       background: white;
       border: 1.5px solid #a8dadc;
-      border-radius: 12px;
-      padding: 12px 8px;
+      border-radius: 11px;
+      padding: 10px 6px;
       text-align: center;
     }
 
-    .pick-btn .pick-icon { font-size: 22px; display: block; margin-bottom: 4px; }
-    .pick-btn .pick-lbl { font-size: 10px; font-weight: 600; color: #2e86ab; }
+    .pick-btn .pick-icon { font-size: 20px; display: block; margin-bottom: 3px; }
+    .pick-btn .pick-lbl { font-size: 9px; font-weight: 600; color: #2e86ab; }
 
     .receipt-preview {
       width: 100%;
-      height: 90px;
-      background: linear-gradient(135deg, #e8e8e8, #d4d4d4);
-      border-radius: 10px;
+      height: 80px;
+      border-radius: 9px;
       margin-bottom: 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 3px;
+      background: #f0f0f0;
+      border: 1px dashed #ccc;
     }
 
-    .receipt-preview .receipt-emoji { font-size: 24px; }
-    .receipt-preview .receipt-lbl { font-size: 9px; color: #888; }
+    .receipt-preview .receipt-emoji { font-size: 20px; }
+    .receipt-preview .receipt-lbl { font-size: 8px; color: #999; }
 
-    .receipt-lines {
-      padding: 6px 8px;
-      background: white;
-      border-radius: 6px;
-      margin-bottom: 8px;
-    }
+    .section-lbl { font-size: 10px; font-weight: 700; color: #1a1a1a; margin-bottom: 5px; }
 
-    .receipt-line {
-      font-size: 9px;
-      font-family: 'Courier New', monospace;
-      color: #333;
-      padding: 1px 0;
-      border-bottom: 1px dashed #eee;
-    }
-
-    .receipt-line:last-child { border-bottom: none; }
-
-    .section-lbl { font-size: 11px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
-
-    .add-row { display: flex; gap: 6px; margin-bottom: 14px; }
+    .add-row { display: flex; gap: 5px; margin-bottom: 12px; }
 
     .add-input {
       flex: 1;
       background: white;
       border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 7px 10px;
-      font-size: 10px;
+      border-radius: 7px;
+      padding: 6px 8px;
+      font-size: 9px;
       color: #bbb;
     }
 
     .add-btn-mini {
       background: #f4a261;
       color: white;
-      border-radius: 8px;
-      padding: 7px 12px;
-      font-size: 10px;
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 9px;
       font-weight: 700;
     }
+
+    .ingredient-tags { display: flex; flex-wrap: wrap; margin-bottom: 10px; gap: 3px; }
 
     .ingredient-tag {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       background: white;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 9px;
+      border-radius: 5px;
+      padding: 3px 7px;
+      font-size: 8px;
       color: #333;
-      margin: 0 4px 4px 0;
       border-left: 3px solid #f4a261;
     }
 
     /* ── SCREEN 3: Pantry ── */
-    .pantry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .pantry-title { font-size: 16px; font-weight: 800; color: #1a1a1a; }
-    .pantry-clear { font-size: 10px; color: #e05c5c; font-weight: 600; }
-    .pantry-sub { font-size: 10px; color: #777; margin-bottom: 10px; line-height: 1.4; }
+    .pantry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .pantry-title { font-size: 15px; font-weight: 800; color: #1a1a1a; }
+    .pantry-clear { font-size: 9px; color: #e05c5c; font-weight: 600; }
+    .pantry-sub { font-size: 9px; color: #777; margin-bottom: 9px; line-height: 1.4; }
 
     .pantry-item {
       display: flex;
       align-items: center;
       background: white;
       border-radius: 8px;
-      padding: 8px 10px;
-      margin-bottom: 5px;
+      padding: 7px 9px;
+      margin-bottom: 4px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    .pantry-dot { color: #f4a261; font-size: 14px; margin-right: 8px; font-weight: 700; }
-    .pantry-name { flex: 1; font-size: 11px; color: #333; text-transform: capitalize; }
+    .pantry-dot { color: #f4a261; font-size: 13px; margin-right: 7px; font-weight: 700; }
+    .pantry-name { flex: 1; font-size: 10px; color: #333; text-transform: capitalize; }
     .pantry-x { color: #ccc; font-size: 10px; font-weight: 700; }
 
     /* ── SCREEN 4: Meal Plan ── */
-    .plan-title { font-size: 16px; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
-    .plan-sub { font-size: 10px; color: #666; margin-bottom: 12px; }
+    .plan-header { margin-bottom: 10px; }
+    .plan-title { font-size: 15px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
+    .plan-sub { font-size: 9px; color: #666; }
 
     .recipe-card-mini {
       background: white;
-      border-radius: 12px;
+      border-radius: 11px;
       overflow: hidden;
-      margin-bottom: 10px;
+      margin-bottom: 9px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
-    .recipe-photo {
+    .recipe-photo-img {
       width: 100%;
-      height: 70px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
+      height: 72px;
+      object-fit: cover;
+      display: block;
     }
 
-    .recipe-photo.blue { background: linear-gradient(135deg, #a8dadc, #2e86ab); }
-    .recipe-photo.orange { background: linear-gradient(135deg, #f4d03f, #f4a261); }
-    .recipe-photo.green { background: linear-gradient(135deg, #a8e6cf, #3d9970); }
+    .recipe-body { padding: 7px 9px; }
 
-    .recipe-body { padding: 8px 10px; }
-
-    .recipe-badges { display: flex; gap: 5px; margin-bottom: 4px; }
+    .recipe-badges { display: flex; gap: 4px; margin-bottom: 3px; }
 
     .badge-day {
       background: #2e86ab;
       color: white;
-      font-size: 8px;
+      font-size: 7px;
       font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 10px;
+      padding: 2px 6px;
+      border-radius: 8px;
     }
 
     .badge-med {
       background: #e8f8f9;
       color: #1d5c63;
-      font-size: 8px;
+      font-size: 7px;
       font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 10px;
+      padding: 2px 6px;
+      border-radius: 8px;
     }
 
-    .recipe-name { font-size: 12px; font-weight: 700; color: #1a1a1a; margin-bottom: 3px; }
-    .recipe-desc { font-size: 9px; color: #777; line-height: 1.4; margin-bottom: 6px; font-style: italic; }
+    .recipe-name { font-size: 11px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+    .recipe-desc { font-size: 8px; color: #777; line-height: 1.4; margin-bottom: 5px; font-style: italic; }
 
-    .recipe-meta { display: flex; gap: 8px; }
-    .recipe-meta span { font-size: 9px; color: #999; }
+    .recipe-meta { display: flex; gap: 7px; }
+    .recipe-meta span { font-size: 8px; color: #999; }
 
     /* ── SCREEN 5: Recipe Detail ── */
-    .detail-hero {
+    .detail-hero-img {
       width: 100%;
-      height: 110px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      background: linear-gradient(135deg, #a8dadc, #2e86ab);
+      height: 115px;
+      object-fit: cover;
+      display: block;
     }
 
-    .detail-content { padding: 12px 14px; height: calc(100% - 110px); overflow: hidden; }
+    .detail-content {
+      padding: 11px 13px;
+      height: calc(100% - 115px);
+      overflow: hidden;
+      position: relative;
+    }
 
-    .detail-badges { display: flex; gap: 6px; margin-bottom: 6px; }
-
-    .detail-name { font-size: 16px; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
-    .detail-desc { font-size: 10px; color: #777; font-style: italic; line-height: 1.4; margin-bottom: 10px; }
+    .detail-badges { display: flex; gap: 5px; margin-bottom: 5px; }
+    .detail-name { font-size: 15px; font-weight: 800; color: #1a1a1a; margin-bottom: 3px; }
+    .detail-desc { font-size: 9px; color: #777; font-style: italic; line-height: 1.4; margin-bottom: 9px; }
 
     .detail-meta {
       display: flex;
       background: white;
-      border-radius: 10px;
-      padding: 8px;
-      margin-bottom: 10px;
+      border-radius: 9px;
+      padding: 7px;
+      margin-bottom: 9px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      gap: 0;
     }
 
     .detail-meta-item { flex: 1; text-align: center; }
-    .detail-meta-item .dm-label { font-size: 8px; color: #aaa; font-weight: 700; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
-    .detail-meta-item .dm-value { font-size: 11px; font-weight: 700; color: #2e86ab; }
+    .dm-label { font-size: 7px; color: #aaa; font-weight: 700; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
+    .dm-value { font-size: 10px; font-weight: 700; color: #2e86ab; }
     .detail-divider { width: 1px; background: #eee; }
 
-    .detail-section { font-size: 11px; font-weight: 700; color: #1a1a1a; border-bottom: 2px solid #a8dadc; padding-bottom: 3px; margin-bottom: 6px; }
+    .detail-section { font-size: 10px; font-weight: 700; color: #1a1a1a; border-bottom: 2px solid #a8dadc; padding-bottom: 3px; margin-bottom: 5px; }
 
     .detail-ingredient {
       background: white;
       border-left: 3px solid #f4a261;
-      border-radius: 0 6px 6px 0;
-      padding: 4px 8px;
-      font-size: 9px;
+      border-radius: 0 5px 5px 0;
+      padding: 3px 7px;
+      font-size: 8px;
       color: #333;
       margin-bottom: 3px;
     }
 
     .detail-step {
       display: flex;
-      gap: 6px;
+      gap: 5px;
       background: white;
-      border-radius: 8px;
-      padding: 6px 8px;
-      margin-bottom: 4px;
+      border-radius: 7px;
+      padding: 5px 7px;
+      margin-bottom: 3px;
       align-items: flex-start;
     }
 
     .detail-step-num {
-      width: 16px;
-      height: 16px;
-      border-radius: 8px;
+      width: 14px; height: 14px;
+      border-radius: 7px;
       background: #2e86ab;
       color: white;
-      font-size: 8px;
+      font-size: 7px;
       font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
 
-    .detail-step-text { font-size: 9px; color: #444; line-height: 1.4; }
+    .detail-step-text { font-size: 8px; color: #444; line-height: 1.4; }
 
     .share-btn {
       position: absolute;
-      bottom: 14px;
-      left: 14px;
-      right: 14px;
+      bottom: 12px;
+      left: 13px;
+      right: 13px;
       background: #f4a261;
       color: white;
       text-align: center;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      padding: 10px;
-      border-radius: 10px;
+      padding: 9px;
+      border-radius: 9px;
     }
 
-    /* Flow arrows between phones */
+    /* Flow arrows */
     .arrow {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       color: #a8dadc;
-      font-size: 22px;
+      font-size: 20px;
       padding-top: 200px;
       opacity: 0.7;
     }
 
-    .arrow-label {
-      font-size: 9px;
-      color: #666;
-      text-align: center;
-      margin-top: 4px;
-      max-width: 50px;
-      line-height: 1.3;
-    }
+    .arrow-label { font-size: 8px; color: #666; text-align: center; margin-top: 3px; max-width: 44px; line-height: 1.3; }
 
+    /* Legend */
     .legend {
       display: flex;
       justify-content: center;
@@ -478,19 +425,17 @@
       flex-wrap: wrap;
     }
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #aaa;
-      font-size: 12px;
+    .legend-item { display: flex; align-items: center; gap: 7px; color: #aaa; font-size: 12px; }
+    .legend-dot { width: 11px; height: 11px; border-radius: 6px; }
+
+    .photo-credit {
+      text-align: center;
+      color: #555;
+      font-size: 11px;
+      margin-top: 18px;
     }
 
-    .legend-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 6px;
-    }
+    .photo-credit a { color: #a8dadc; }
   </style>
 </head>
 <body>
@@ -504,44 +449,43 @@
       <span class="screen-label">1 · Home</span>
       <div class="phone">
         <div class="phone-notch"></div>
-        <div class="phone-screen home-screen">
-          <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+        <div class="phone-screen">
 
-          <div style="padding: 0 14px;">
-            <div class="home-hero">
-              <span class="emoji">🫒</span>
+          <!-- Mediterranean coast hero photo -->
+          <div style="position: relative;">
+            <img
+              class="hero-img"
+              src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=510&q=80&fit=crop"
+              alt="Mediterranean coast"
+              onerror="this.style.display='none'; document.getElementById('hero-fallback').style.display='flex';"
+            />
+            <div id="hero-fallback" style="display:none; width:100%; height:200px; background: linear-gradient(160deg,#1a6685,#2e86ab,#a8dadc); align-items:flex-end; padding:16px 14px;">
+            </div>
+            <div class="hero-overlay">
               <h2>Weekly Meal Planner</h2>
               <p>Mediterranean diet · Powered by your pantry</p>
             </div>
+            <div class="status-bar light" style="position:absolute; top:0; left:0; right:0;">
+              <span>9:41</span><span>●●●</span>
+            </div>
+          </div>
 
+          <div class="home-body">
             <div class="info-card">
               <h3>Ready to plan your week?</h3>
               <p>Scan your grocery receipt and add pantry items. We'll generate 7 Mediterranean recipes tailored to what you have.</p>
             </div>
-
             <div class="btn-primary">📸  Start New Meal Plan</div>
             <div class="btn-secondary">🗄  Manage Pantry</div>
-
-            <div style="font-size: 11px; font-weight: 700; color: #1a1a1a; margin-bottom: 10px;">How it works</div>
+            <div style="font-size: 10px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">How it works</div>
             <div class="steps-mini">
-              <div class="step-mini">
-                <div class="step-num-mini">1</div>
-                <div class="step-text-mini">Photograph your grocery receipt</div>
-              </div>
-              <div class="step-mini">
-                <div class="step-num-mini">2</div>
-                <div class="step-text-mini">Add items already in your pantry</div>
-              </div>
-              <div class="step-mini">
-                <div class="step-num-mini">3</div>
-                <div class="step-text-mini">Get 7 Mediterranean recipes generated</div>
-              </div>
-              <div class="step-mini">
-                <div class="step-num-mini">4</div>
-                <div class="step-text-mini">Save and share beautiful recipe cards</div>
-              </div>
+              <div class="step-mini"><div class="step-num-mini">1</div><div class="step-text-mini">Photograph your grocery receipt</div></div>
+              <div class="step-mini"><div class="step-num-mini">2</div><div class="step-text-mini">Add items already in your pantry</div></div>
+              <div class="step-mini"><div class="step-num-mini">3</div><div class="step-text-mini">Get 7 Mediterranean recipes generated</div></div>
+              <div class="step-mini"><div class="step-num-mini">4</div><div class="step-text-mini">Save and share beautiful recipe cards</div></div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -555,47 +499,35 @@
         <div class="phone-notch"></div>
         <div class="phone-screen">
           <div class="status-bar"><span>9:41</span><span>●●●</span></div>
-          <div class="nav-bar">
-            <span class="nav-back">‹ Back</span>
-            <span class="nav-title">Scan Receipt</span>
-          </div>
+          <div class="nav-bar"><span class="nav-back">‹ Back</span><span class="nav-title">Scan Receipt</span></div>
           <div class="content">
             <div class="scan-title">Scan Your Receipt</div>
             <div class="scan-sub">Photograph your grocery receipt and we'll extract ingredients automatically.</div>
-
             <div class="pick-row">
-              <div class="pick-btn">
-                <span class="pick-icon">📷</span>
-                <span class="pick-lbl">Camera</span>
-              </div>
-              <div class="pick-btn">
-                <span class="pick-icon">🖼</span>
-                <span class="pick-lbl">Photo Library</span>
-              </div>
+              <div class="pick-btn"><span class="pick-icon">📷</span><span class="pick-lbl">Camera</span></div>
+              <div class="pick-btn"><span class="pick-icon">🖼</span><span class="pick-lbl">Photo Library</span></div>
             </div>
-
             <div class="receipt-preview">
               <span class="receipt-emoji">🧾</span>
               <span class="receipt-lbl">Receipt photo preview</span>
             </div>
-
             <div class="section-lbl">Ingredients from receipt (8)</div>
-            <div style="display: flex; flex-wrap: wrap; margin-bottom: 10px;">
-              <span class="ingredient-tag">salmon ✕</span>
+            <div class="ingredient-tags">
+              <span class="ingredient-tag">cod ✕</span>
               <span class="ingredient-tag">spinach ✕</span>
               <span class="ingredient-tag">tomatoes ✕</span>
               <span class="ingredient-tag">lemon ✕</span>
               <span class="ingredient-tag">chickpeas ✕</span>
               <span class="ingredient-tag">feta ✕</span>
+              <span class="ingredient-tag">lentils ✕</span>
+              <span class="ingredient-tag">shrimp ✕</span>
             </div>
-
             <div class="section-lbl">Add item manually</div>
             <div class="add-row">
               <div class="add-input">e.g. canned chickpeas</div>
               <div class="add-btn-mini">Add</div>
             </div>
-
-            <div class="btn-primary" style="font-size: 11px; padding: 11px;">Generate Week of Recipes →</div>
+            <div class="btn-primary" style="font-size: 10px; padding: 10px;">Generate Week of Recipes →</div>
           </div>
         </div>
       </div>
@@ -610,22 +542,17 @@
         <div class="phone-notch"></div>
         <div class="phone-screen">
           <div class="status-bar"><span>9:41</span><span>●●●</span></div>
-          <div class="nav-bar">
-            <span class="nav-back">‹ Back</span>
-            <span class="nav-title">My Pantry</span>
-          </div>
+          <div class="nav-bar"><span class="nav-back">‹ Back</span><span class="nav-title">My Pantry</span></div>
           <div class="content">
             <div class="pantry-header">
               <div class="pantry-title">My Pantry</div>
               <div class="pantry-clear">Clear all</div>
             </div>
             <div class="pantry-sub">Items here are included in every meal plan and persist between sessions.</div>
-
             <div class="add-row">
               <div class="add-input">e.g. canned tomatoes</div>
               <div class="add-btn-mini">+ Add</div>
             </div>
-
             <div class="pantry-item"><span class="pantry-dot">•</span><span class="pantry-name">canned chickpeas</span><span class="pantry-x">✕</span></div>
             <div class="pantry-item"><span class="pantry-dot">•</span><span class="pantry-name">canned tomatoes</span><span class="pantry-x">✕</span></div>
             <div class="pantry-item"><span class="pantry-dot">•</span><span class="pantry-name">dried oregano</span><span class="pantry-x">✕</span></div>
@@ -648,62 +575,52 @@
         <div class="phone-notch"></div>
         <div class="phone-screen">
           <div class="status-bar"><span>9:41</span><span>●●●</span></div>
-          <div class="nav-bar">
-            <span class="nav-back">‹ Back</span>
-            <span class="nav-title">Meal Plan</span>
-          </div>
+          <div class="nav-bar"><span class="nav-back">‹ Back</span><span class="nav-title">Meal Plan</span></div>
           <div class="content">
-            <div class="plan-title">Your Week of Meals</div>
-            <div class="plan-sub">7 Mediterranean recipes from 14 ingredients. Tap any card for the full recipe.</div>
+            <div class="plan-header">
+              <div class="plan-title">Your Week of Meals</div>
+              <div class="plan-sub">7 Mediterranean recipes · Tap any card for the full recipe.</div>
+            </div>
 
+            <!-- Recipe card 1 — Baked Cod -->
             <div class="recipe-card-mini">
-              <div class="recipe-photo blue">🐟</div>
+              <img class="recipe-photo-img"
+                src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=510&q=80&fit=crop"
+                alt="Baked cod dish"
+                onerror="this.style.background='linear-gradient(135deg,#a8dadc,#2e86ab)'; this.style.height='72px';" />
               <div class="recipe-body">
-                <div class="recipe-badges">
-                  <span class="badge-day">Monday</span>
-                  <span class="badge-med">Mediterranean</span>
-                </div>
-                <div class="recipe-name">Greek Lemon Herb Salmon</div>
-                <div class="recipe-desc">Pan-seared salmon with bright lemon-herb marinade and roasted cherry tomatoes.</div>
-                <div class="recipe-meta">
-                  <span>⏱ Prep: 10 mins</span>
-                  <span>🍳 Cook: 20 mins</span>
-                  <span>👥 4</span>
-                </div>
+                <div class="recipe-badges"><span class="badge-day">Monday</span><span class="badge-med">Mediterranean</span></div>
+                <div class="recipe-name">Herb-Crusted Baked Cod</div>
+                <div class="recipe-desc">Flaky cod baked with lemon, garlic, and fresh herbs over a bed of cherry tomatoes.</div>
+                <div class="recipe-meta"><span>⏱ 10 mins</span><span>🍳 20 mins</span><span>👥 4</span></div>
               </div>
             </div>
 
+            <!-- Recipe card 2 — Chickpea salad -->
             <div class="recipe-card-mini">
-              <div class="recipe-photo orange">🥗</div>
+              <img class="recipe-photo-img"
+                src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=510&q=80&fit=crop"
+                alt="Chickpea salad"
+                onerror="this.style.background='linear-gradient(135deg,#f4d03f,#f4a261)'; this.style.height='72px';" />
               <div class="recipe-body">
-                <div class="recipe-badges">
-                  <span class="badge-day">Tuesday</span>
-                  <span class="badge-med">Mediterranean</span>
-                </div>
+                <div class="recipe-badges"><span class="badge-day">Tuesday</span><span class="badge-med">Mediterranean</span></div>
                 <div class="recipe-name">Chickpea &amp; Feta Salad</div>
                 <div class="recipe-desc">Hearty chickpea salad with crumbled feta, kalamata olives, and lemon dressing.</div>
-                <div class="recipe-meta">
-                  <span>⏱ Prep: 15 mins</span>
-                  <span>🍳 Cook: 0 mins</span>
-                  <span>👥 4</span>
-                </div>
+                <div class="recipe-meta"><span>⏱ 15 mins</span><span>🍳 0 mins</span><span>👥 4</span></div>
               </div>
             </div>
 
+            <!-- Recipe card 3 — Lentil stew -->
             <div class="recipe-card-mini">
-              <div class="recipe-photo green">🫘</div>
+              <img class="recipe-photo-img"
+                src="https://images.unsplash.com/photo-1547592180-85f173990554?w=510&q=80&fit=crop"
+                alt="Lentil stew"
+                onerror="this.style.background='linear-gradient(135deg,#a8e6cf,#3d9970)'; this.style.height='72px';" />
               <div class="recipe-body">
-                <div class="recipe-badges">
-                  <span class="badge-day">Wednesday</span>
-                  <span class="badge-med">Mediterranean</span>
-                </div>
-                <div class="recipe-name">Lentil &amp; Spinach Stew</div>
+                <div class="recipe-badges"><span class="badge-day">Wednesday</span><span class="badge-med">Mediterranean</span></div>
+                <div class="recipe-name">Red Lentil &amp; Spinach Stew</div>
                 <div class="recipe-desc">Warming lentil stew with wilted spinach, cumin, and a squeeze of lemon.</div>
-                <div class="recipe-meta">
-                  <span>⏱ Prep: 10 mins</span>
-                  <span>🍳 Cook: 35 mins</span>
-                  <span>👥 6</span>
-                </div>
+                <div class="recipe-meta"><span>⏱ 10 mins</span><span>🍳 35 mins</span><span>👥 6</span></div>
               </div>
             </div>
           </div>
@@ -719,50 +636,44 @@
       <div class="phone">
         <div class="phone-notch"></div>
         <div class="phone-screen" style="position: relative;">
-          <div class="status-bar" style="position: absolute; top: 0; left: 0; right: 0; z-index: 10; background: transparent; color: white;">
+          <div class="status-bar light" style="position:absolute; top:0; left:0; right:0; z-index:10; background:transparent;">
             <span>9:41</span><span>●●●</span>
           </div>
-          <div class="detail-hero">🐟</div>
+          <img class="detail-hero-img"
+            src="https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=510&q=80&fit=crop"
+            alt="Herb-crusted cod"
+            onerror="this.style.background='linear-gradient(135deg,#a8dadc,#2e86ab)';" />
 
-          <div class="detail-content" style="position: relative;">
+          <div class="detail-content">
             <div class="detail-badges">
               <span class="badge-day">Monday</span>
               <span class="badge-med">Mediterranean Diet</span>
             </div>
-            <div class="detail-name">Greek Lemon Herb Salmon</div>
-            <div class="detail-desc">Pan-seared salmon with a bright lemon-herb marinade, roasted cherry tomatoes, and wilted spinach.</div>
+            <div class="detail-name">Herb-Crusted Baked Cod</div>
+            <div class="detail-desc">Flaky cod baked with lemon, garlic, and fresh herbs over a bed of cherry tomatoes and spinach.</div>
 
             <div class="detail-meta">
-              <div class="detail-meta-item">
-                <span class="dm-label">PREP</span>
-                <span class="dm-value">10 mins</span>
-              </div>
+              <div class="detail-meta-item"><span class="dm-label">PREP</span><span class="dm-value">10 mins</span></div>
               <div class="detail-divider"></div>
-              <div class="detail-meta-item">
-                <span class="dm-label">COOK</span>
-                <span class="dm-value">20 mins</span>
-              </div>
+              <div class="detail-meta-item"><span class="dm-label">COOK</span><span class="dm-value">20 mins</span></div>
               <div class="detail-divider"></div>
-              <div class="detail-meta-item">
-                <span class="dm-label">SERVES</span>
-                <span class="dm-value">4</span>
-              </div>
+              <div class="detail-meta-item"><span class="dm-label">SERVES</span><span class="dm-value">4</span></div>
             </div>
 
             <div class="detail-section">Ingredients</div>
-            <div class="detail-ingredient">4 salmon fillets (6 oz each)</div>
+            <div class="detail-ingredient">4 cod fillets (6 oz each)</div>
             <div class="detail-ingredient">3 tbsp extra-virgin olive oil</div>
             <div class="detail-ingredient">2 lemons, zested and juiced</div>
             <div class="detail-ingredient">1 cup cherry tomatoes</div>
 
-            <div class="detail-section" style="margin-top: 8px;">Instructions</div>
+            <div class="detail-section" style="margin-top: 7px;">Instructions</div>
             <div class="detail-step">
               <div class="detail-step-num">1</div>
-              <div class="detail-step-text">Whisk olive oil, lemon zest, garlic, and oregano into a marinade.</div>
+              <div class="detail-step-text">Preheat oven to 400°F. Whisk olive oil, lemon zest, garlic, and herbs.</div>
             </div>
             <div class="detail-step">
               <div class="detail-step-num">2</div>
-              <div class="detail-step-text">Coat salmon and sear skin-side down for 4 minutes.</div>
+              <div class="detail-step-text">Coat cod fillets, place on tomatoes, bake 18–20 mins until flaky.</div>
             </div>
 
             <div class="share-btn">Save &amp; Share Recipe Card</div>
@@ -773,24 +684,19 @@
 
   </div>
 
+  <!-- Color legend -->
   <div class="legend">
-    <div class="legend-item">
-      <div class="legend-dot" style="background: #2e86ab;"></div>
-      Mediterranean Blue — primary actions
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background: #a8dadc;"></div>
-      Teal — accents &amp; badges
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background: #f4a261;"></div>
-      Terracotta — secondary actions &amp; highlights
-    </div>
-    <div class="legend-item">
-      <div class="legend-dot" style="background: #f5f0e8;"></div>
-      Linen — background
-    </div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2e86ab;"></div>Mediterranean Blue — primary actions</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a8dadc;"></div>Teal — accents &amp; badges</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f4a261;"></div>Terracotta — secondary &amp; highlights</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f5f0e8; border:1px solid #555;"></div>Linen — background</div>
   </div>
+
+  <p class="photo-credit">
+    Photos: <a href="https://unsplash.com" target="_blank">Unsplash</a> (free license) ·
+    Coast photo by <a href="https://unsplash.com/photos/photo-1533105079780" target="_blank">Daniele Levis Pelusi</a> ·
+    Recipe photos pulled live from Unsplash in the real app via search query per dish
+  </p>
 
 </body>
 </html>
