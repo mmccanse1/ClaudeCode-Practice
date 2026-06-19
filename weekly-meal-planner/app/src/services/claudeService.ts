@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Recipe } from '../types';
 
 const GEMINI_MODEL = 'gemini-1.5-flash';
