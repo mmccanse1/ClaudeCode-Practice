@@ -66,7 +66,7 @@ Edit `.env` and add:
 
 | Variable | Where to get it | Required? |
 |---|---|---|
-| `EXPO_PUBLIC_ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) | Yes |
+| `EXPO_PUBLIC_GEMINI_API_KEY` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) — free, no credit card | Yes |
 | `EXPO_PUBLIC_UNSPLASH_ACCESS_KEY` | [unsplash.com/developers](https://unsplash.com/developers) (free) | No — falls back to emoji placeholder |
 
 ### 3. Run the app
