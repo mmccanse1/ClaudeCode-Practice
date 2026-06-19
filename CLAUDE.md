@@ -1,0 +1,14 @@
+# Claude Session Notes
+
+## User Environment
+
+- **OS**: Windows
+- **Root user folder**: `C:\Users\thoma`
+- **Repo location**: `C:\Users\thoma\Desktop\ClaudeCode-Practice`
+- **App folder**: `C:\Users\thoma\Desktop\ClaudeCode-Practice\weekly-meal-planner\app`
+
+## Navigate to app
+
+```
+cd C:\Users\thoma\Desktop\ClaudeCode-Practice\weekly-meal-planner\app
+```
