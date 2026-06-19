@@ -39,18 +39,23 @@ export default function ScanReceiptScreen({ navigation }: Props) {
     }
 
     const result = useCamera
-      ? await ImagePicker.launchCameraAsync({ quality: 0.8 })
-      : await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+      ? await ImagePicker.launchCameraAsync({ quality: 0.8, base64: true })
+      : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, base64: true });
 
     if (result.canceled || !result.assets[0]) return;
 
-    const uri = result.assets[0].uri;
+    const { uri, base64, mimeType } = result.assets[0];
     setReceiptUri(uri);
     setReceiptItems([]);
 
+    if (!base64) {
+      Alert.alert('Could not read receipt', 'Image data unavailable.');
+      return;
+    }
+
     setParsing(true);
     try {
-      const items = await parseReceiptFromImage(uri);
+      const items = await parseReceiptFromImage(base64, mimeType || 'image/jpeg');
       setReceiptItems(items);
     } catch (e: any) {
       Alert.alert('Could not read receipt', e.message);

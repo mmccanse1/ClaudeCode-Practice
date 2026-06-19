@@ -1,4 +1,3 @@
-import * as FileSystem from 'expo-file-system/legacy';
 import { Recipe } from '../types';
 
 const GEMINI_MODEL = 'gemini-1.5-flash';
@@ -35,15 +34,7 @@ function extractJson<T>(text: string): T {
   }
 }
 
-export async function parseReceiptFromImage(imageUri: string): Promise<string[]> {
-  const base64 = await FileSystem.readAsStringAsync(imageUri, {
-    encoding: 'base64' as any,
-  });
-
-  const ext = imageUri.split('.').pop()?.toLowerCase();
-  const mimeType =
-    ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
-
+export async function parseReceiptFromImage(base64: string, mimeType: string = 'image/jpeg'): Promise<string[]> {
   const text = await callGemini([
     { inline_data: { mime_type: mimeType, data: base64 } },
     {
