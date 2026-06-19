@@ -38,9 +38,14 @@ export default function ScanReceiptScreen({ navigation }: Props) {
       return;
     }
 
+    const pickerOptions = {
+      quality: 0.3,
+      base64: true,
+      allowsEditing: false,
+    };
     const result = useCamera
-      ? await ImagePicker.launchCameraAsync({ quality: 0.8, base64: true })
-      : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, base64: true });
+      ? await ImagePicker.launchCameraAsync(pickerOptions)
+      : await ImagePicker.launchImageLibraryAsync(pickerOptions);
 
     if (result.canceled || !result.assets[0]) return;
 
