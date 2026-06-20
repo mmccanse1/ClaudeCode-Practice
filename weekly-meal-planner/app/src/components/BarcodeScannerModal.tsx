@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -32,8 +32,10 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
   const [looking, setLooking] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [manualInput, setManualInput] = useState('');
+  const processingRef = useRef(false);
 
   function reset() {
+    processingRef.current = false;
     setScanned(false);
     setLooking(false);
     setNotFound(false);
@@ -49,7 +51,8 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
   }
 
   async function handleBarcodeScan({ data }: BarcodeScanningResult) {
-    if (scanned || looking) return;
+    if (processingRef.current) return;
+    processingRef.current = true;
     setScanned(true);
     setLooking(true);
     try {
