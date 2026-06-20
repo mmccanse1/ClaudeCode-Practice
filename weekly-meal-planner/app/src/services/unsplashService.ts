@@ -148,5 +148,7 @@ export async function fetchFoodPhoto(query: string): Promise<string | null> {
 }
 
 export async function fetchSceneryPhoto(query: string): Promise<string | null> {
-  return searchUnsplash(query, 'landscape');
+  const url = await searchUnsplash(query, 'landscape');
+  if (url) return url;
+  return fetchWikipediaPhoto('Santorini');
 }
