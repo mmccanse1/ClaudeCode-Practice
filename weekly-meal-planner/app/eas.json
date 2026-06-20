@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "EXPO_PUBLIC_GEMINI_API_KEY": "",
+        "EXPO_PUBLIC_UNSPLASH_ACCESS_KEY": ""
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_GEMINI_API_KEY": "",
+        "EXPO_PUBLIC_UNSPLASH_ACCESS_KEY": ""
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
