@@ -129,9 +129,11 @@ export async function fetchIngredientPhoto(query: string): Promise<string | null
 }
 
 const RECIPE_STOP_WORDS = new Set([
-  'mediterranean', 'with', 'and', 'or', 'the', 'a', 'an', 'in', 'on',
+  'mediterranean', 'with', 'and', 'or', 'the', 'a', 'an', 'in', 'on', 'of',
   'baked', 'grilled', 'roasted', 'steamed', 'fried', 'pan', 'slow',
-  'cooked', 'style', 'inspired', 'classic', 'easy', 'healthy',
+  'cooked', 'seared', 'poached', 'braised', 'sauteed', 'sautéed',
+  'stuffed', 'marinated', 'seasoned', 'spiced', 'crispy', 'creamy',
+  'style', 'inspired', 'classic', 'easy', 'healthy', 'simple', 'homemade',
 ]);
 
 function recipeCandidates(query: string): string[] {
