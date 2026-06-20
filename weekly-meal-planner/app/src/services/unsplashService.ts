@@ -150,8 +150,7 @@ function recipeCandidates(query: string): string[] {
 
   add(lower);
   add(core.join(' '));
-  if (core.length > 0) add(core[0]);
-  if (core.length > 1) add(core.slice(0, 2).join(' '));
+  // No single-word fallbacks — too broad, returns unrelated TheMealDB dishes
 
   return out.filter(Boolean);
 }
@@ -175,8 +174,17 @@ async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
   const mdbPhoto = await fetchMealDBRecipePhoto(query);
   if (mdbPhoto) return mdbPhoto;
+
+  // Try Wikipedia with the full name, then with just the core words
   const wikiPhoto = await fetchWikipediaPhoto(query);
   if (wikiPhoto) return wikiPhoto;
+  const coreWords = query.trim().toLowerCase().split(/\s+/)
+    .filter(w => !RECIPE_STOP_WORDS.has(w)).join(' ');
+  if (coreWords && coreWords !== query.trim().toLowerCase()) {
+    const wikiCore = await fetchWikipediaPhoto(coreWords);
+    if (wikiCore) return wikiCore;
+  }
+
   return searchUnsplash(`${query} food plated meal`, 'squarish');
 }
 
