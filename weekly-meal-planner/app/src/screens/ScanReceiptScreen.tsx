@@ -18,6 +18,7 @@ import { parseReceiptFromImage } from '../services/claudeService';
 import { getPantryItems } from '../services/pantryService';
 import { generateMealPlan } from '../services/claudeService';
 import { fetchFoodPhoto } from '../services/unsplashService';
+import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
@@ -100,6 +101,8 @@ export default function ScanReceiptScreen({ navigation }: Props) {
           photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
         }))
       );
+
+      await saveCurrentMealPlan(withPhotos, allIngredients);
 
       navigation.navigate('MealPlan', {
         recipes: withPhotos,

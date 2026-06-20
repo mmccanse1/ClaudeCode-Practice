@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,21 +9,30 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { fetchSceneryPhoto } from '../services/unsplashService';
+import { getCurrentMealPlan, CurrentPlan } from '../services/currentMealPlanService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
   const [coastPhotoUrl, setCoastPhotoUrl] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(true);
+  const [currentPlan, setCurrentPlan] = useState<CurrentPlan | null>(null);
 
   useEffect(() => {
     fetchSceneryPhoto('mediterranean coast sea greece santorini')
       .then(url => setCoastPhotoUrl(url))
       .finally(() => setPhotoLoading(false));
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      getCurrentMealPlan().then(setCurrentPlan);
+    }, [])
+  );
 
   const HeaderContent = (
     <View style={styles.headerOverlay}>
