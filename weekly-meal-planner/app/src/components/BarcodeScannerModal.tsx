@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -40,8 +40,11 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
     setManualInput('');
   }
 
+  useEffect(() => {
+    if (!visible) reset();
+  }, [visible]);
+
   function handleClose() {
-    reset();
     onClose();
   }
 
