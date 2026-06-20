@@ -1,8 +1,13 @@
 const UNSPLASH_BASE = 'https://api.unsplash.com';
 
-function picsumUrl(seed: string, width: number, height: number): string {
-  const clean = seed.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase().slice(0, 40);
-  return `https://picsum.photos/seed/${clean}/${width}/${height}`;
+function loremFlickrUrl(query: string, width: number, height: number): string {
+  const keywords = query
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 4)
+    .join(',');
+  return `https://loremflickr.com/${width}/${height}/${encodeURIComponent(keywords)}`;
 }
 
 async function searchUnsplash(
@@ -15,7 +20,7 @@ async function searchUnsplash(
   const hasValidKey = accessKey && accessKey !== 'your_unsplash_access_key_here';
 
   if (!hasValidKey) {
-    return picsumUrl(query, fallbackWidth, fallbackHeight);
+    return loremFlickrUrl(query, fallbackWidth, fallbackHeight);
   }
 
   try {
@@ -27,17 +32,17 @@ async function searchUnsplash(
       headers: { Authorization: `Client-ID ${accessKey}` },
     });
 
-    if (!res.ok) return picsumUrl(query, fallbackWidth, fallbackHeight);
+    if (!res.ok) return loremFlickrUrl(query, fallbackWidth, fallbackHeight);
 
     const data = await res.json();
-    return data.results?.[0]?.urls?.regular ?? picsumUrl(query, fallbackWidth, fallbackHeight);
+    return data.results?.[0]?.urls?.regular ?? loremFlickrUrl(query, fallbackWidth, fallbackHeight);
   } catch {
-    return picsumUrl(query, fallbackWidth, fallbackHeight);
+    return loremFlickrUrl(query, fallbackWidth, fallbackHeight);
   }
 }
 
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
-  return searchUnsplash(query + ' mediterranean food dish plated', 'squarish', 800, 800);
+  return searchUnsplash(`${query} food dish`, 'squarish', 800, 800);
 }
 
 export async function fetchSceneryPhoto(query: string): Promise<string | null> {
