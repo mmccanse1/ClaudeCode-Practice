@@ -1,7 +1,7 @@
 import { Recipe } from '../types';
 
-const GEMINI_MODEL = 'gemini-2.0-flash';
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1/models';
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 async function callGemini(parts: object[]): Promise<string> {
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
