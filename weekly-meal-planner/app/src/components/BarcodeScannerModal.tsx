@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  Alert,
   ActivityIndicator,
   TextInput,
   SafeAreaView,
@@ -26,19 +25,19 @@ const TOP_H = Math.round((H - BOX) * 0.35);
 const CORNER = 22;
 const OVERLAY = 'rgba(0,0,0,0.62)';
 
+type Stage = 'scanning' | 'looking' | 'found' | 'notfound';
+
 export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
-  const [looking, setLooking] = useState(false);
-  const [notFound, setNotFound] = useState(false);
+  const [stage, setStage] = useState<Stage>('scanning');
+  const [foundName, setFoundName] = useState('');
   const [manualInput, setManualInput] = useState('');
   const processingRef = useRef(false);
 
   function reset() {
     processingRef.current = false;
-    setScanned(false);
-    setLooking(false);
-    setNotFound(false);
+    setStage('scanning');
+    setFoundName('');
     setManualInput('');
   }
 
@@ -46,47 +45,37 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
     if (!visible) reset();
   }, [visible]);
 
-  function handleClose() {
-    onClose();
-  }
-
   async function handleBarcodeScan({ data }: BarcodeScanningResult) {
     if (processingRef.current) return;
     processingRef.current = true;
-    setScanned(true);
-    setLooking(true);
+    setStage('looking');
     try {
       const name = await lookupBarcode(data);
-      setLooking(false);
       if (name) {
-        Alert.alert('Product found', `"${name}" — add to pantry?`, [
-          { text: 'Cancel', style: 'cancel', onPress: reset },
-          {
-            text: 'Add',
-            onPress: () => {
-              onAdd(name.toLowerCase());
-              handleClose();
-            },
-          },
-        ]);
+        setFoundName(name);
+        setStage('found');
       } else {
-        setNotFound(true);
+        setStage('notfound');
       }
     } catch {
-      setLooking(false);
-      setNotFound(true);
+      setStage('notfound');
     }
+  }
+
+  function handleConfirmAdd() {
+    onAdd(foundName.toLowerCase());
+    onClose();
   }
 
   function handleManualAdd() {
     const trimmed = manualInput.trim();
     if (!trimmed) return;
     onAdd(trimmed.toLowerCase());
-    handleClose();
+    onClose();
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.safe}>
         {!permission?.granted ? (
           <View style={styles.permWrap}>
@@ -94,25 +83,28 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
             <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
               <Text style={styles.permBtnText}>Allow Camera</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleClose} style={{ marginTop: 16 }}>
+            <TouchableOpacity onPress={onClose} style={{ marginTop: 16 }}>
               <Text style={styles.cancelLink}>Cancel</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
-            <CameraView
-              style={StyleSheet.absoluteFill}
-              facing="back"
-              onBarcodeScanned={scanned ? undefined : handleBarcodeScan}
-              barcodeScannerSettings={{
-                barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
-              }}
-            />
+            {/* Camera only active while scanning or looking */}
+            {(stage === 'scanning' || stage === 'looking') && (
+              <CameraView
+                style={StyleSheet.absoluteFill}
+                facing="back"
+                onBarcodeScanned={stage === 'scanning' ? handleBarcodeScan : undefined}
+                barcodeScannerSettings={{
+                  barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39'],
+                }}
+              />
+            )}
 
             {/* Top overlay */}
             <View style={[styles.overlayBlock, { height: TOP_H }]} />
 
-            {/* Middle row: left shade | scan box | right shade */}
+            {/* Middle row */}
             <View style={[styles.middleRow, { height: BOX }]}>
               <View style={styles.overlaySide} />
               <View style={{ width: BOX, height: BOX }}>
@@ -124,16 +116,33 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
               <View style={styles.overlaySide} />
             </View>
 
-            {/* Bottom overlay + UI */}
+            {/* Bottom panel */}
             <View style={styles.bottomOverlay}>
-              {looking ? (
+              {stage === 'looking' && (
                 <View style={styles.statusRow}>
                   <ActivityIndicator color="white" size="small" />
                   <Text style={styles.statusText}>Looking up product…</Text>
                 </View>
-              ) : notFound ? (
-                <View style={styles.notFoundBox}>
-                  <Text style={styles.notFoundTitle}>Product not found</Text>
+              )}
+
+              {stage === 'found' && (
+                <View style={styles.resultBox}>
+                  <Text style={styles.resultLabel}>Product found</Text>
+                  <Text style={styles.resultName} numberOfLines={2}>{foundName}</Text>
+                  <View style={styles.resultBtns}>
+                    <TouchableOpacity style={styles.cancelBtn} onPress={reset}>
+                      <Text style={styles.cancelBtnText}>Scan again</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.addBtn} onPress={handleConfirmAdd}>
+                      <Text style={styles.addBtnText}>Add to Pantry</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {stage === 'notfound' && (
+                <View style={styles.resultBox}>
+                  <Text style={styles.resultLabel}>Product not found</Text>
                   <Text style={styles.notFoundSub}>Enter the name manually:</Text>
                   <TextInput
                     style={styles.manualInput}
@@ -145,26 +154,28 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
                     returnKeyType="done"
                     onSubmitEditing={handleManualAdd}
                   />
-                  <View style={styles.notFoundBtns}>
-                    <TouchableOpacity style={styles.tryAgainBtn} onPress={reset}>
-                      <Text style={styles.tryAgainText}>Try again</Text>
+                  <View style={styles.resultBtns}>
+                    <TouchableOpacity style={styles.cancelBtn} onPress={reset}>
+                      <Text style={styles.cancelBtnText}>Scan again</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={[styles.addManualBtn, !manualInput.trim() && { opacity: 0.45 }]}
+                      style={[styles.addBtn, !manualInput.trim() && { opacity: 0.45 }]}
                       onPress={handleManualAdd}
                       disabled={!manualInput.trim()}
                     >
-                      <Text style={styles.addManualBtnText}>Add</Text>
+                      <Text style={styles.addBtnText}>Add</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
-              ) : (
+              )}
+
+              {stage === 'scanning' && (
                 <Text style={styles.instruction}>Point at a barcode</Text>
               )}
             </View>
 
             {/* Close button */}
-            <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
               <Text style={styles.closeBtnText}>✕</Text>
             </TouchableOpacity>
           </>
@@ -207,9 +218,28 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   statusText: { color: 'white', fontSize: 14, fontWeight: '600' },
 
-  notFoundBox: { width: '100%', alignItems: 'center' },
-  notFoundTitle: { color: 'white', fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  notFoundSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 12 },
+  resultBox: { width: '100%', alignItems: 'center' },
+  resultLabel: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  resultName: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  notFoundSub: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 13,
+    marginBottom: 12,
+  },
   manualInput: {
     width: '100%',
     backgroundColor: 'white',
@@ -220,24 +250,24 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 12,
   },
-  notFoundBtns: { flexDirection: 'row', gap: 10, width: '100%' },
-  tryAgainBtn: {
+  resultBtns: { flexDirection: 'row', gap: 10, width: '100%' },
+  cancelBtn: {
     flex: 1,
     borderRadius: 10,
-    paddingVertical: 12,
+    paddingVertical: 13,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: 'rgba(255,255,255,0.4)',
   },
-  tryAgainText: { color: 'white', fontWeight: '600', fontSize: 14 },
-  addManualBtn: {
+  cancelBtnText: { color: 'white', fontWeight: '600', fontSize: 14 },
+  addBtn: {
     flex: 1,
     backgroundColor: '#2e86ab',
     borderRadius: 10,
-    paddingVertical: 12,
+    paddingVertical: 13,
     alignItems: 'center',
   },
-  addManualBtnText: { color: 'white', fontWeight: '700', fontSize: 14 },
+  addBtnText: { color: 'white', fontWeight: '700', fontSize: 14 },
 
   closeBtn: {
     position: 'absolute',
