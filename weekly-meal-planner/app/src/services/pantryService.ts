@@ -38,3 +38,20 @@ export async function removePantryItem(item: string): Promise<string[]> {
 export async function clearPantry(): Promise<void> {
   await AsyncStorage.removeItem(PANTRY_KEY);
 }
+
+export async function lookupBarcode(barcode: string): Promise<string | null> {
+  try {
+    const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(barcode)}.json`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.status !== 1) return null;
+    const name =
+      data.product?.product_name_en ||
+      data.product?.product_name ||
+      data.product?.generic_name;
+    return name ? String(name).trim() : null;
+  } catch {
+    return null;
+  }
+}

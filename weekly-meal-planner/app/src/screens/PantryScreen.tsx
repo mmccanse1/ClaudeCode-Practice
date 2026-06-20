@@ -15,6 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { getPantryItems, addPantryItem, clearPantry } from '../services/pantryService';
+import BarcodeScannerModal from '../components/BarcodeScannerModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Pantry'>;
 
@@ -26,6 +27,7 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 export default function PantryScreen({ navigation }: Props) {
   const [items, setItems] = useState<string[]>([]);
   const [newItem, setNewItem] = useState('');
+  const [scannerVisible, setScannerVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -39,6 +41,11 @@ export default function PantryScreen({ navigation }: Props) {
     const updated = await addPantryItem(trimmed);
     setItems(updated);
     setNewItem('');
+  }
+
+  async function handleScanAdd(itemName: string) {
+    const updated = await addPantryItem(itemName);
+    setItems(updated);
   }
 
   function handleClear() {
@@ -87,7 +94,20 @@ export default function PantryScreen({ navigation }: Props) {
           <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
             <Text style={styles.addBtnText}>+ Add</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.scanBtn} onPress={() => setScannerVisible(true)}>
+            <View style={styles.barcodeIcon}>
+              {[2, 1, 3, 1, 2, 1, 3, 1, 2].map((w, i) => (
+                <View key={i} style={[styles.bar, { width: w }]} />
+              ))}
+            </View>
+          </TouchableOpacity>
         </View>
+
+        <BarcodeScannerModal
+          visible={scannerVisible}
+          onClose={() => setScannerVisible(false)}
+          onAdd={handleScanAdd}
+        />
 
         <TouchableOpacity
           style={styles.openBtn}
@@ -142,6 +162,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addBtnText: { color: 'white', fontWeight: '700', fontSize: 15 },
+
+  scanBtn: {
+    width: 44,
+    height: 44,
+    backgroundColor: '#1d5c63',
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  barcodeIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 18,
+    gap: 2,
+  },
+  bar: {
+    height: '100%',
+    backgroundColor: 'white',
+  },
 
   openBtn: {
     backgroundColor: '#7B4A1E',
