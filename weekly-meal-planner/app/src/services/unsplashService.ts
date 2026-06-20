@@ -39,6 +39,10 @@ async function searchUnsplash(
   }
 }
 
+export async function fetchIngredientPhoto(query: string): Promise<string | null> {
+  return searchUnsplash(`${query} ingredient`, 'squarish', 200, 200, 'food ingredient');
+}
+
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
   return searchUnsplash(
     `${query} food plated meal`,
