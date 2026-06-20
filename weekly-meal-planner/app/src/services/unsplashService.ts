@@ -44,14 +44,51 @@ async function fetchOpenFoodFactsPhoto(query: string): Promise<string | null> {
   }
 }
 
-async function fetchMealDBPhoto(query: string): Promise<string | null> {
-  const candidates = [
-    query.trim(),
-    query.trim().split(' ').pop() ?? '',
-    query.trim().split(' ').slice(-2).join(' '),
-  ].filter((v, i, a) => v && a.indexOf(v) === i);
+const MODIFIER_WORDS = new Set([
+  'canned', 'frozen', 'fresh', 'dried', 'organic', 'raw', 'cooked',
+  'sliced', 'diced', 'chopped', 'minced', 'ground', 'whole', 'baby',
+  'large', 'small', 'medium', 'extra', 'boneless', 'skinless',
+  'unsalted', 'salted', 'plain', 'original', 'lean', 'shredded',
+  'grated', 'crushed', 'peeled', 'seeded', 'low', 'reduced', 'fat',
+]);
 
-  for (const term of candidates) {
+function toSingular(word: string): string {
+  if (word.endsWith('ies')) return word.slice(0, -3) + 'y';
+  if (word.endsWith('ves')) return word.slice(0, -3) + 'f';
+  if (word.endsWith('es') && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith('s') && word.length > 3) return word.slice(0, -1);
+  return word;
+}
+
+function mealDBCandidates(query: string): string[] {
+  const lower = query.trim().toLowerCase();
+  const words = lower.split(/\s+/);
+  const core = words.filter(w => !MODIFIER_WORDS.has(w));
+  const coreStr = core.join(' ');
+  const lastWord = core[core.length - 1] ?? '';
+  const firstWord = core[0] ?? '';
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const add = (s: string) => {
+    const t = s.trim();
+    if (t && !seen.has(t)) { seen.add(t); out.push(t); }
+  };
+
+  add(lower);                          // original: "canned tomatoes"
+  add(coreStr);                        // stripped: "tomatoes"
+  add(toSingular(coreStr));            // singular: "tomato"
+  add(firstWord);                      // first core word: "chicken"
+  add(toSingular(firstWord));          // singular first: "chicken"
+  add(lastWord);                       // last core word: "thighs"
+  add(toSingular(lastWord));           // singular last: "thigh"
+  if (core.length > 1) add(core.slice(0, 2).join(' ')); // first two: "chicken thigh"
+
+  return out;
+}
+
+async function fetchMealDBPhoto(query: string): Promise<string | null> {
+  for (const term of mealDBCandidates(query)) {
     const url = `https://www.themealdb.com/images/ingredients/${encodeURIComponent(term)}-Small.png`;
     try {
       const res = await fetch(url);
