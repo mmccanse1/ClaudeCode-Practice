@@ -103,6 +103,7 @@ export default function PantryShelvesScreen({}: Props) {
                       <Image
                         source={{ uri: photos[item] }}
                         style={[styles.tileImg, { width: IMG_SIZE, height: IMG_SIZE }]}
+                        onError={() => setPhotos(prev => { const n = { ...prev }; delete n[item]; return n; })}
                       />
                     ) : (
                       <View style={[styles.tilePlaceholder, { width: IMG_SIZE, height: IMG_SIZE }]}>

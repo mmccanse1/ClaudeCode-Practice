@@ -1,23 +1,12 @@
 const UNSPLASH_BASE = 'https://api.unsplash.com';
 
-function sourceUnsplashUrl(query: string, width: number, height: number, extraTerms = ''): string {
-  const q = encodeURIComponent(`${query}${extraTerms ? ' ' + extraTerms : ''}`);
-  return `https://source.unsplash.com/${width}x${height}/?${q}`;
-}
-
 async function searchUnsplash(
   query: string,
-  orientation: 'landscape' | 'squarish' = 'landscape',
-  fallbackWidth = 800,
-  fallbackHeight = 600,
-  fallbackExtra = ''
+  orientation: 'landscape' | 'squarish' = 'landscape'
 ): Promise<string | null> {
   const accessKey = process.env.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY;
   const hasValidKey = accessKey && accessKey !== 'your_unsplash_access_key_here';
-
-  if (!hasValidKey) {
-    return sourceUnsplashUrl(query, fallbackWidth, fallbackHeight, fallbackExtra);
-  }
+  if (!hasValidKey) return null;
 
   try {
     const url = `${UNSPLASH_BASE}/search/photos?query=${encodeURIComponent(
@@ -27,21 +16,20 @@ async function searchUnsplash(
     const res = await fetch(url, {
       headers: { Authorization: `Client-ID ${accessKey}` },
     });
-
-    if (!res.ok) return sourceUnsplashUrl(query, fallbackWidth, fallbackHeight, fallbackExtra);
+    if (!res.ok) return null;
 
     const data = await res.json();
-    const results = data.results ?? [];
-    const url0 = results[0]?.urls?.regular;
-    return url0 ?? sourceUnsplashUrl(query, fallbackWidth, fallbackHeight, fallbackExtra);
+    return (data.results ?? [])[0]?.urls?.regular ?? null;
   } catch {
-    return sourceUnsplashUrl(query, fallbackWidth, fallbackHeight, fallbackExtra);
+    return null;
   }
 }
 
 async function fetchOpenFoodFactsPhoto(query: string): Promise<string | null> {
   try {
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=5&fields=image_front_url,image_url`;
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(
+      query
+    )}&json=1&page_size=5&fields=image_front_url,image_url`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
@@ -56,9 +44,30 @@ async function fetchOpenFoodFactsPhoto(query: string): Promise<string | null> {
   }
 }
 
+async function fetchMealDBPhoto(query: string): Promise<string | null> {
+  const candidates = [
+    query.trim(),
+    query.trim().split(' ').pop() ?? '',
+    query.trim().split(' ').slice(-2).join(' '),
+  ].filter((v, i, a) => v && a.indexOf(v) === i);
+
+  for (const term of candidates) {
+    const url = `https://www.themealdb.com/images/ingredients/${encodeURIComponent(term)}-Small.png`;
+    try {
+      const res = await fetch(url);
+      if (res.ok && (res.headers.get('content-type') ?? '').startsWith('image')) return url;
+    } catch {
+      // try next candidate
+    }
+  }
+  return null;
+}
+
 async function fetchWikipediaPhoto(query: string): Promise<string | null> {
   try {
-    const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(query)}&prop=pageimages&format=json&pithumbsize=300&redirects=1&origin=*`;
+    const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(
+      query
+    )}&prop=pageimages&format=json&pithumbsize=300&redirects=1&origin=*`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
@@ -73,23 +82,19 @@ async function fetchWikipediaPhoto(query: string): Promise<string | null> {
 }
 
 export async function fetchIngredientPhoto(query: string): Promise<string | null> {
-  const productPhoto = await fetchOpenFoodFactsPhoto(query);
-  if (productPhoto) return productPhoto;
-  const wikiPhoto = await fetchWikipediaPhoto(query);
-  if (wikiPhoto) return wikiPhoto;
-  return searchUnsplash(`${query} ingredient food`, 'squarish', 200, 200, 'food ingredient');
+  const off = await fetchOpenFoodFactsPhoto(query);
+  if (off) return off;
+  const mdb = await fetchMealDBPhoto(query);
+  if (mdb) return mdb;
+  const wiki = await fetchWikipediaPhoto(query);
+  if (wiki) return wiki;
+  return searchUnsplash(`${query} food ingredient`, 'squarish');
 }
 
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
-  return searchUnsplash(
-    `${query} food plated meal`,
-    'squarish',
-    800,
-    800,
-    'food meal cooking recipe'
-  );
+  return searchUnsplash(`${query} food plated meal`, 'squarish');
 }
 
 export async function fetchSceneryPhoto(query: string): Promise<string | null> {
-  return searchUnsplash(query, 'landscape', 1200, 600);
+  return searchUnsplash(query, 'landscape');
 }
