@@ -39,8 +39,27 @@ async function searchUnsplash(
   }
 }
 
+async function fetchOpenFoodFactsPhoto(query: string): Promise<string | null> {
+  try {
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&json=1&page_size=5&fields=image_front_url,image_url`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const products: any[] = data.products ?? [];
+    for (const p of products) {
+      const img = p.image_front_url ?? p.image_url;
+      if (img) return img;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchIngredientPhoto(query: string): Promise<string | null> {
-  return searchUnsplash(`${query} ingredient`, 'squarish', 200, 200, 'food ingredient');
+  const productPhoto = await fetchOpenFoodFactsPhoto(query);
+  if (productPhoto) return productPhoto;
+  return searchUnsplash(`${query} ingredient food`, 'squarish', 200, 200, 'food ingredient');
 }
 
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
