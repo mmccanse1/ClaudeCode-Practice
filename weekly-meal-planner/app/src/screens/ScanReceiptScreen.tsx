@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -30,19 +30,6 @@ export default function ScanReceiptScreen({ navigation }: Props) {
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    setPantryChecked(prev => {
-      const next = { ...prev };
-      receiptItems.forEach(item => {
-        if (!(item in next)) next[item] = true;
-      });
-      Object.keys(next).forEach(k => {
-        if (!receiptItems.includes(k)) delete next[k];
-      });
-      return next;
-    });
-  }, [receiptItems]);
-
   function toggleAll(checked: boolean) {
     const next: Record<string, boolean> = {};
     receiptItems.forEach(item => { next[item] = checked; });
@@ -73,6 +60,7 @@ export default function ScanReceiptScreen({ navigation }: Props) {
     const { uri, base64, mimeType } = result.assets[0];
     setReceiptUri(uri);
     setReceiptItems([]);
+    setPantryChecked({});
 
     if (!base64) {
       Alert.alert('Could not read receipt', 'Image data unavailable.');
@@ -82,7 +70,10 @@ export default function ScanReceiptScreen({ navigation }: Props) {
     setParsing(true);
     try {
       const items = await parseReceiptFromImage(base64, mimeType || 'image/jpeg');
+      const initialChecked: Record<string, boolean> = {};
+      items.forEach(i => { initialChecked[i] = true; });
       setReceiptItems(items);
+      setPantryChecked(initialChecked);
     } catch (e: any) {
       Alert.alert('Could not read receipt', e.message);
     } finally {
@@ -94,12 +85,14 @@ export default function ScanReceiptScreen({ navigation }: Props) {
     const trimmed = newItem.trim().toLowerCase();
     if (trimmed && !receiptItems.includes(trimmed)) {
       setReceiptItems(prev => [...prev, trimmed]);
+      setPantryChecked(prev => ({ ...prev, [trimmed]: true }));
     }
     setNewItem('');
   }
 
   function removeItem(item: string) {
     setReceiptItems(prev => prev.filter(i => i !== item));
+    setPantryChecked(prev => { const n = { ...prev }; delete n[item]; return n; });
   }
 
   async function handleGenerate() {
