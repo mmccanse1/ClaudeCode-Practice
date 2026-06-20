@@ -79,6 +79,14 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.secondaryBtnText}>🗄  Manage Pantry</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.savedBtn}
+            onPress={() => navigation.navigate('SavedRecipes')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.savedBtnText}>🔖  Saved Recipes</Text>
+          </TouchableOpacity>
+
           <View style={styles.howItWorks}>
             <Text style={styles.howTitle}>How it works</Text>
             {[
@@ -179,11 +187,21 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 12,
     borderWidth: 1.5,
     borderColor: '#2e86ab',
   },
   secondaryBtnText: { color: '#2e86ab', fontSize: 17, fontWeight: '700' },
+  savedBtn: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 32,
+    borderWidth: 1.5,
+    borderColor: '#f4a261',
+  },
+  savedBtnText: { color: '#f4a261', fontSize: 17, fontWeight: '700' },
 
   howItWorks: { marginBottom: 24 },
   howTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 16 },

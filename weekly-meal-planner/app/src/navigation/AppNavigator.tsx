@@ -7,6 +7,7 @@ import ScanReceiptScreen from '../screens/ScanReceiptScreen';
 import PantryScreen from '../screens/PantryScreen';
 import MealPlanScreen from '../screens/MealPlanScreen';
 import RecipeDetailScreen from '../screens/RecipeDetailScreen';
+import SavedRecipesScreen from '../screens/SavedRecipesScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -50,6 +51,11 @@ export default function AppNavigator() {
             title: route.params.recipe.name,
             headerBackTitle: 'Back',
           })}
+        />
+        <Stack.Screen
+          name="SavedRecipes"
+          component={SavedRecipesScreen}
+          options={{ title: 'Saved Recipes' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
