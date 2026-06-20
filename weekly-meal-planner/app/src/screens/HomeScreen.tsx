@@ -80,6 +80,26 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.primaryBtnText}>📸  Start New Meal Plan</Text>
           </TouchableOpacity>
 
+          {currentPlan && (
+            <TouchableOpacity
+              style={styles.currentPlanBtn}
+              onPress={() =>
+                navigation.navigate('MealPlan', {
+                  recipes: currentPlan.recipes,
+                  ingredients: currentPlan.ingredients,
+                })
+              }
+              activeOpacity={0.85}
+            >
+              <Text style={styles.currentPlanTitle}>📋  Current Meal Plan</Text>
+              <Text style={styles.currentPlanDays}>
+                {currentPlan.daysRemaining === 1
+                  ? 'Expires today'
+                  : `${currentPlan.daysRemaining} days remaining`}
+              </Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={styles.secondaryBtn}
             onPress={() => navigation.navigate('Pantry')}
@@ -93,7 +113,7 @@ export default function HomeScreen({ navigation }: Props) {
             onPress={() => navigation.navigate('SavedRecipes')}
             activeOpacity={0.85}
           >
-            <Text style={styles.savedBtnText}>🔖  Saved Recipes</Text>
+            <Text style={styles.savedBtnText}>🔖  Saved Recipes & Menus</Text>
           </TouchableOpacity>
 
           <View style={styles.howItWorks}>
@@ -190,6 +210,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   primaryBtnText: { color: 'white', fontSize: 17, fontWeight: '700' },
+
+  currentPlanBtn: {
+    backgroundColor: '#1d5c63',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  currentPlanTitle: { color: 'white', fontSize: 17, fontWeight: '700', marginBottom: 2 },
+  currentPlanDays: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '500' },
 
   secondaryBtn: {
     backgroundColor: 'white',
