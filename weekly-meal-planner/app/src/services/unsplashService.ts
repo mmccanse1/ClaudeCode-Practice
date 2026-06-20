@@ -56,9 +56,27 @@ async function fetchOpenFoodFactsPhoto(query: string): Promise<string | null> {
   }
 }
 
+async function fetchWikipediaPhoto(query: string): Promise<string | null> {
+  try {
+    const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(query)}&prop=pageimages&format=json&pithumbsize=300&redirects=1&origin=*`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const pages = Object.values(data.query?.pages ?? {}) as any[];
+    for (const page of pages) {
+      if ((page as any).thumbnail?.source) return (page as any).thumbnail.source;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchIngredientPhoto(query: string): Promise<string | null> {
   const productPhoto = await fetchOpenFoodFactsPhoto(query);
   if (productPhoto) return productPhoto;
+  const wikiPhoto = await fetchWikipediaPhoto(query);
+  if (wikiPhoto) return wikiPhoto;
   return searchUnsplash(`${query} ingredient food`, 'squarish', 200, 200, 'food ingredient');
 }
 
