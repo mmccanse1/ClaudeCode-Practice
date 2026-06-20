@@ -123,9 +123,7 @@ export async function fetchIngredientPhoto(query: string): Promise<string | null
   if (off) return off;
   const mdb = await fetchMealDBPhoto(query);
   if (mdb) return mdb;
-  const wiki = await fetchWikipediaPhoto(query);
-  if (wiki) return wiki;
-  return searchUnsplash(`${query} food ingredient`, 'squarish');
+  return fetchWikipediaPhoto(query);
 }
 
 async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
