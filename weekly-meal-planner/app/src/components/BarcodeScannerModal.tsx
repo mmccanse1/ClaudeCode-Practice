@@ -16,7 +16,7 @@ import { lookupBarcode } from '../services/pantryService';
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onAdd: (itemName: string) => void;
+  onAdd: (itemName: string, photoUrl?: string) => void;
 }
 
 const { width: W, height: H } = Dimensions.get('window');
@@ -30,14 +30,14 @@ type Stage = 'scanning' | 'looking' | 'found' | 'notfound';
 export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [stage, setStage] = useState<Stage>('scanning');
-  const [foundName, setFoundName] = useState('');
+  const [foundItem, setFoundItem] = useState<{ name: string; photoUrl: string | null } | null>(null);
   const [manualInput, setManualInput] = useState('');
   const processingRef = useRef(false);
 
   function reset() {
     processingRef.current = false;
     setStage('scanning');
-    setFoundName('');
+    setFoundItem(null);
     setManualInput('');
   }
 
@@ -50,9 +50,9 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
     processingRef.current = true;
     setStage('looking');
     try {
-      const name = await lookupBarcode(data);
-      if (name) {
-        setFoundName(name);
+      const result = await lookupBarcode(data);
+      if (result) {
+        setFoundItem(result);
         setStage('found');
       } else {
         setStage('notfound');
@@ -63,7 +63,8 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
   }
 
   function handleConfirmAdd() {
-    onAdd(foundName.toLowerCase());
+    if (!foundItem) return;
+    onAdd(foundItem.name.toLowerCase(), foundItem.photoUrl ?? undefined);
     onClose();
   }
 
@@ -128,7 +129,7 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
               {stage === 'found' && (
                 <View style={styles.resultBox}>
                   <Text style={styles.resultLabel}>Product found</Text>
-                  <Text style={styles.resultName} numberOfLines={2}>{foundName}</Text>
+                  <Text style={styles.resultName} numberOfLines={2}>{foundItem?.name ?? ''}</Text>
                   <View style={styles.resultBtns}>
                     <TouchableOpacity style={styles.cancelBtn} onPress={reset}>
                       <Text style={styles.cancelBtnText}>Scan again</Text>

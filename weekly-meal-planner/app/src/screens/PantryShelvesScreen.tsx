@@ -15,7 +15,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import { getPantryItems, removePantryItem } from '../services/pantryService';
+import { getPantryItems, removePantryItem, getPantryPhotoCache, removePantryPhoto } from '../services/pantryService';
 import { fetchIngredientPhoto } from '../services/unsplashService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PantryShelf'>;
@@ -35,8 +35,9 @@ export default function PantryShelvesScreen({}: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      getPantryItems().then(i => {
+      Promise.all([getPantryItems(), getPantryPhotoCache()]).then(([i, cache]) => {
         setItems(i);
+        setPhotos(cache);
         setLoading(false);
       });
     }, [])
@@ -60,7 +61,9 @@ export default function PantryShelvesScreen({}: Props) {
         style: 'destructive',
         onPress: async () => {
           const updated = await removePantryItem(item);
+          await removePantryPhoto(item);
           setItems(updated);
+          setPhotos(prev => { const n = { ...prev }; delete n[item]; return n; });
         },
       },
     ]);

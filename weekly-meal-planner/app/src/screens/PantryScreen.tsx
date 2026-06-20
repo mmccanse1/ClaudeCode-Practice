@@ -14,7 +14,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import { getPantryItems, addPantryItem, clearPantry } from '../services/pantryService';
+import { getPantryItems, addPantryItem, clearPantry, setPantryPhoto } from '../services/pantryService';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Pantry'>;
@@ -43,9 +43,10 @@ export default function PantryScreen({ navigation }: Props) {
     setNewItem('');
   }
 
-  async function handleScanAdd(itemName: string) {
+  async function handleScanAdd(itemName: string, photoUrl?: string) {
     const updated = await addPantryItem(itemName);
     setItems(updated);
+    if (photoUrl) await setPantryPhoto(itemName, photoUrl);
   }
 
   function handleClear() {

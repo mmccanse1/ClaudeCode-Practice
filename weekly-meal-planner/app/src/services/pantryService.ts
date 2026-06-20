@@ -35,11 +35,33 @@ export async function removePantryItem(item: string): Promise<string[]> {
   return updated;
 }
 
-export async function clearPantry(): Promise<void> {
-  await AsyncStorage.removeItem(PANTRY_KEY);
+const PHOTO_CACHE_KEY = '@meal_planner/pantry_photos_v1';
+
+export async function getPantryPhotoCache(): Promise<Record<string, string>> {
+  const json = await AsyncStorage.getItem(PHOTO_CACHE_KEY);
+  return json ? JSON.parse(json) : {};
 }
 
-export async function lookupBarcode(barcode: string): Promise<string | null> {
+export async function setPantryPhoto(name: string, photoUrl: string): Promise<void> {
+  const cache = await getPantryPhotoCache();
+  cache[name.trim().toLowerCase()] = photoUrl;
+  await AsyncStorage.setItem(PHOTO_CACHE_KEY, JSON.stringify(cache));
+}
+
+export async function removePantryPhoto(name: string): Promise<void> {
+  const cache = await getPantryPhotoCache();
+  delete cache[name.trim().toLowerCase()];
+  await AsyncStorage.setItem(PHOTO_CACHE_KEY, JSON.stringify(cache));
+}
+
+export async function clearPantry(): Promise<void> {
+  await AsyncStorage.removeItem(PANTRY_KEY);
+  await AsyncStorage.removeItem(PHOTO_CACHE_KEY);
+}
+
+export async function lookupBarcode(
+  barcode: string
+): Promise<{ name: string; photoUrl: string | null } | null> {
   try {
     const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(barcode)}.json`;
     const res = await fetch(url);
@@ -50,7 +72,10 @@ export async function lookupBarcode(barcode: string): Promise<string | null> {
       data.product?.product_name_en ||
       data.product?.product_name ||
       data.product?.generic_name;
-    return name ? String(name).trim() : null;
+    if (!name) return null;
+    const photoUrl =
+      data.product?.image_front_url ?? data.product?.image_url ?? null;
+    return { name: String(name).trim(), photoUrl };
   } catch {
     return null;
   }
