@@ -128,22 +128,53 @@ export async function fetchIngredientPhoto(query: string): Promise<string | null
   return searchUnsplash(`${query} food ingredient`, 'squarish');
 }
 
+const RECIPE_STOP_WORDS = new Set([
+  'mediterranean', 'with', 'and', 'or', 'the', 'a', 'an', 'in', 'on',
+  'baked', 'grilled', 'roasted', 'steamed', 'fried', 'pan', 'slow',
+  'cooked', 'style', 'inspired', 'classic', 'easy', 'healthy',
+]);
+
+function recipeCandidates(query: string): string[] {
+  const lower = query.trim().toLowerCase();
+  const words = lower.split(/\s+/);
+  const core = words.filter(w => !RECIPE_STOP_WORDS.has(w));
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const add = (s: string) => {
+    const t = s.trim();
+    if (t && !seen.has(t)) { seen.add(t); out.push(t); }
+  };
+
+  add(lower);
+  add(core.join(' '));
+  if (core.length > 0) add(core[0]);
+  if (core.length > 1) add(core.slice(0, 2).join(' '));
+
+  return out.filter(Boolean);
+}
+
 async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
-  try {
-    const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const meals: any[] = data.meals ?? [];
-    return meals[0]?.strMealThumb ?? null;
-  } catch {
-    return null;
+  for (const term of recipeCandidates(query)) {
+    try {
+      const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(term)}`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const meals: any[] = data.meals ?? [];
+      if (meals[0]?.strMealThumb) return meals[0].strMealThumb;
+    } catch {
+      // try next candidate
+    }
   }
+  return null;
 }
 
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
   const mdbPhoto = await fetchMealDBRecipePhoto(query);
   if (mdbPhoto) return mdbPhoto;
+  const wikiPhoto = await fetchWikipediaPhoto(query);
+  if (wikiPhoto) return wikiPhoto;
   return searchUnsplash(`${query} food plated meal`, 'squarish');
 }
 
