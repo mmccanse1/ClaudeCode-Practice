@@ -91,7 +91,22 @@ export async function fetchIngredientPhoto(query: string): Promise<string | null
   return searchUnsplash(`${query} food ingredient`, 'squarish');
 }
 
+async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
+  try {
+    const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const meals: any[] = data.meals ?? [];
+    return meals[0]?.strMealThumb ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
+  const mdbPhoto = await fetchMealDBRecipePhoto(query);
+  if (mdbPhoto) return mdbPhoto;
   return searchUnsplash(`${query} food plated meal`, 'squarish');
 }
 
