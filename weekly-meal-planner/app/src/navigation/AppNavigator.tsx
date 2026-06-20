@@ -5,6 +5,7 @@ import { RootStackParamList } from '../types';
 import HomeScreen from '../screens/HomeScreen';
 import ScanReceiptScreen from '../screens/ScanReceiptScreen';
 import PantryScreen from '../screens/PantryScreen';
+import PantryShelvesScreen from '../screens/PantryShelvesScreen';
 import MealPlanScreen from '../screens/MealPlanScreen';
 import RecipeDetailScreen from '../screens/RecipeDetailScreen';
 import SavedRecipesScreen from '../screens/SavedRecipesScreen';
@@ -38,6 +39,11 @@ export default function AppNavigator() {
           name="Pantry"
           component={PantryScreen}
           options={{ title: 'My Pantry' }}
+        />
+        <Stack.Screen
+          name="PantryShelf"
+          component={PantryShelvesScreen}
+          options={{ title: 'My Pantry', headerBackTitle: 'Back' }}
         />
         <Stack.Screen
           name="MealPlan"
