@@ -174,17 +174,6 @@ async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
   const mdbPhoto = await fetchMealDBRecipePhoto(query);
   if (mdbPhoto) return mdbPhoto;
-
-  // Try Wikipedia with the full name, then with just the core words
-  const wikiPhoto = await fetchWikipediaPhoto(query);
-  if (wikiPhoto) return wikiPhoto;
-  const coreWords = query.trim().toLowerCase().split(/\s+/)
-    .filter(w => !RECIPE_STOP_WORDS.has(w)).join(' ');
-  if (coreWords && coreWords !== query.trim().toLowerCase()) {
-    const wikiCore = await fetchWikipediaPhoto(coreWords);
-    if (wikiCore) return wikiCore;
-  }
-
   return searchUnsplash(`${query} food plated meal`, 'squarish');
 }
 
