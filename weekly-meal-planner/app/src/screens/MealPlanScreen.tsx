@@ -10,16 +10,40 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
+import { RootStackParamList, Recipe } from '../types';
 import RecipeCard from '../components/RecipeCard';
 import { saveMenu } from '../services/savedMenusService';
+import { regenerateRecipe } from '../services/claudeService';
+import { fetchFoodPhoto } from '../services/unsplashService';
+import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 
 export default function MealPlanScreen({ navigation, route }: Props) {
-  const { recipes, ingredients } = route.params;
+  const { ingredients } = route.params;
+  const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
   const [saving, setSaving] = useState(false);
   const [menuSaved, setMenuSaved] = useState(false);
+  const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
+
+  async function handleRefreshRecipe(index: number) {
+    const dayToReplace = recipes[index].day;
+    setRefreshingDay(dayToReplace);
+    try {
+      const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace);
+      const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
+      const updated = recipes.map((r, i) =>
+        i === index ? { ...newRecipe, photoUrl } : r
+      );
+      setRecipes(updated);
+      setMenuSaved(false);
+      await saveCurrentMealPlan(updated, ingredients);
+    } catch (e: any) {
+      Alert.alert('Could not refresh recipe', e.message);
+    } finally {
+      setRefreshingDay(null);
+    }
+  }
 
   async function handleSaveMenu() {
     setSaving(true);
@@ -62,10 +86,12 @@ export default function MealPlanScreen({ navigation, route }: Props) {
             </TouchableOpacity>
           </View>
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <RecipeCard
             recipe={item}
             onPress={() => navigation.navigate('RecipeDetail', { recipe: item })}
+            onRefresh={() => handleRefreshRecipe(index)}
+            refreshing={refreshingDay === item.day}
           />
         )}
         contentContainerStyle={styles.list}

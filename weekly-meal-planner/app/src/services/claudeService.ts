@@ -48,6 +48,64 @@ export async function parseReceiptFromImage(base64: string, mimeType: string = '
   return extractJson<string[]>(text);
 }
 
+export async function regenerateRecipe(
+  ingredients: string[],
+  existingRecipes: Recipe[],
+  dayToReplace: string
+): Promise<Recipe> {
+  const otherRecipes = existingRecipes
+    .filter(r => r.day !== dayToReplace)
+    .map(r => `${r.day}: ${r.name}`)
+    .join(', ');
+
+  const salmonAlreadyUsed = existingRecipes
+    .filter(r => r.day !== dayToReplace)
+    .some(r => r.name.toLowerCase().includes('salmon') ||
+               r.ingredients?.some(i => i.toLowerCase().includes('salmon')));
+
+  const text = await callGemini([
+    {
+      text: `You are a Mediterranean diet nutritionist following Mayo Clinic guidelines.
+
+Available ingredients: ${ingredients.join(', ')}
+You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs).
+
+Generate exactly 1 new Mediterranean diet recipe for ${dayToReplace}.
+
+The rest of the weekly menu is already set — do NOT duplicate any of these:
+${otherRecipes}
+
+Mayo Clinic Mediterranean diet principles:
+- Emphasise vegetables, fruits, whole grains, legumes, nuts
+- Use olive oil as the main fat
+- Include fish or seafood when possible (vary the fish)
+- Limit red meat
+- Moderate dairy
+
+STRICT rules:
+- ${salmonAlreadyUsed ? 'Do NOT use salmon — it already appears elsewhere in the week.' : 'Salmon may appear only if it has not been used elsewhere this week.'}
+- Do NOT use zucchini (courgette) or yellow squash.
+- Must be different from all the recipes listed above.
+
+Return ONLY a valid JSON object (not an array) with this exact shape:
+{
+  "name": "string",
+  "description": "string (1-2 sentences)",
+  "day": "${dayToReplace}",
+  "prepTime": "string e.g. 15 mins",
+  "cookTime": "string e.g. 25 mins",
+  "servings": 4,
+  "ingredients": ["quantity + ingredient"],
+  "steps": ["Full sentence step."],
+  "nutritionNotes": "string (1 sentence Mediterranean benefit)",
+  "searchQuery": "concise food photo search term"
+}`,
+    },
+  ]);
+
+  return extractJson<Recipe>(text);
+}
+
 export async function generateMealPlan(ingredients: string[]): Promise<Recipe[]> {
   const text = await callGemini([
     {
