@@ -24,6 +24,7 @@ import {
   PantrySection,
 } from '../services/pantryService';
 import { fetchIngredientPhoto } from '../services/unsplashService';
+import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PantryShelf'>;
 
@@ -130,11 +131,22 @@ export default function PantryShelvesScreen({}: Props) {
 
   const totalItems = allItems.length;
 
+  function showUpgradeAlert(sectionLabel: string) {
+    Alert.alert(
+      `${sectionLabel} — Planner Plan`,
+      `Unlock organized ${sectionLabel} storage and all premium pantry sections for $2.99/month.\n\nUpgrade coming soon!`,
+      [{ text: 'OK' }]
+    );
+  }
+
+  // Free users can only see Dry Goods; Refrigerated and Spices are locked
+  const PREMIUM_SECTIONS: PantrySection[] = ['refrigerated', 'spices'];
+
   return (
     <SafeAreaView style={styles.safe}>
       {loading ? (
         <ActivityIndicator color="#2e86ab" size="large" style={styles.spinner} />
-      ) : totalItems === 0 ? (
+      ) : totalItems === 0 && pantry.dry_goods.length === 0 ? (
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyTitle}>Your pantry is empty</Text>
           <Text style={styles.emptyText}>
@@ -149,6 +161,42 @@ export default function PantryShelvesScreen({}: Props) {
           {SECTION_ORDER.map(section => {
             const items = pantry[section];
             const cfg = SECTION_CONFIG[section];
+            const locked = !IS_PREMIUM && PREMIUM_SECTIONS.includes(section);
+
+            if (locked) {
+              return (
+                <TouchableOpacity
+                  key={section}
+                  style={[styles.section, styles.lockedSection]}
+                  onPress={() => showUpgradeAlert(cfg.label)}
+                  activeOpacity={0.85}
+                >
+                  <View style={[styles.sectionHeader, { backgroundColor: cfg.bg, borderLeftColor: '#ccc' }]}>
+                    <Text style={[styles.sectionEmoji, styles.lockedEmoji]}>{cfg.emoji}</Text>
+                    <View style={styles.sectionHeaderText}>
+                      <View style={styles.lockedLabelRow}>
+                        <Text style={[styles.sectionLabel, styles.lockedLabel]}>{cfg.label}</Text>
+                        <Text style={styles.lockIcon}>🔒</Text>
+                      </View>
+                      <Text style={styles.sectionCount}>
+                        {items.length > 0
+                          ? `${items.length} ${items.length === 1 ? 'item' : 'items'} waiting to be organized`
+                          : 'Unlock with Planner plan'}
+                      </Text>
+                    </View>
+                    <View style={styles.upgradeBadge}>
+                      <Text style={styles.upgradeBadgeText}>$2.99/mo</Text>
+                    </View>
+                  </View>
+                  <View style={styles.lockedBody}>
+                    <Text style={styles.lockedBodyText}>
+                      Tap to unlock organized {cfg.label.toLowerCase()} storage
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }
+
             return (
               <View key={section} style={styles.section}>
                 <View style={[styles.sectionHeader, { backgroundColor: cfg.bg, borderLeftColor: cfg.color }]}>
@@ -259,4 +307,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   removeBtnText: { color: 'white', fontSize: 8, fontWeight: '800' },
+
+  lockedSection: { opacity: 0.9 },
+  lockedEmoji: { opacity: 0.4 },
+  lockedLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  lockedLabel: { color: '#aaa' },
+  lockIcon: { fontSize: 13 },
+  upgradeBadge: {
+    backgroundColor: '#f4a261',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  upgradeBadgeText: { color: 'white', fontSize: 11, fontWeight: '800' },
+  lockedBody: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  lockedBodyText: { fontSize: 13, color: '#bbb', fontStyle: 'italic' },
 });

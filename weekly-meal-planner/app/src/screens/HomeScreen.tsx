@@ -17,10 +17,9 @@ import { RootStackParamList, DietType } from '../types';
 import { fetchSceneryPhoto } from '../services/unsplashService';
 import { getAllCurrentPlans, CurrentPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES, DietConfig } from '../constants/dietTypes';
+import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
-
-const IS_PREMIUM = false;
 
 export default function HomeScreen({ navigation }: Props) {
   const [coastPhotoUrl, setCoastPhotoUrl] = useState<string | null>(null);
