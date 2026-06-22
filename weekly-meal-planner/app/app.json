@@ -32,6 +32,9 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
+    "extra": {
+      "privacyPolicyUrl": "https://mmccanse1.github.io/ClaudeCode-Practice/privacy-policy.html"
+    },
     "plugins": [
       [
         "expo-camera",

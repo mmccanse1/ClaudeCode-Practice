@@ -7,6 +7,7 @@ import {
   ScrollView,
   ImageBackground,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -136,6 +137,22 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.source}>
             Recipes follow Mayo Clinic Mediterranean diet guidelines
           </Text>
+
+          <View style={styles.legalFooter}>
+            <Text
+              style={styles.legalLink}
+              onPress={() => Linking.openURL('https://mmccanse1.github.io/ClaudeCode-Practice/privacy-policy.html')}
+            >
+              Privacy Policy
+            </Text>
+            <Text style={styles.legalSep}> · </Text>
+            <Text
+              style={styles.legalLink}
+              onPress={() => Linking.openURL('https://mmccanse1.github.io/ClaudeCode-Practice/terms-of-service.html')}
+            >
+              Terms of Service
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -258,4 +275,13 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, fontSize: 14, color: '#444', lineHeight: 20 },
 
   source: { textAlign: 'center', fontSize: 11, color: '#aaa', marginBottom: 8 },
+
+  legalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  legalLink: { fontSize: 11, color: '#aaa' },
+  legalSep: { fontSize: 11, color: '#aaa' },
 });
