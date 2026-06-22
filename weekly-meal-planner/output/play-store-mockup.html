@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Play – Weekly Meal Planner</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Google Sans', Roboto, Arial, sans-serif; background: #f8f9fa; color: #202124; }
+
+    /* Top bar */
+    .topbar { background: white; padding: 12px 24px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #e0e0e0; position: sticky; top: 0; z-index: 10; }
+    .topbar-logo { font-size: 20px; font-weight: 700; color: #01875f; letter-spacing: -0.5px; }
+    .topbar-logo span { color: #5f6368; font-weight: 400; }
+    .topbar-search { flex: 1; background: #f1f3f4; border-radius: 24px; padding: 10px 20px; font-size: 14px; color: #5f6368; max-width: 600px; }
+
+    /* Layout */
+    .page { max-width: 1000px; margin: 0 auto; padding: 32px 24px; }
+
+    /* Hero row */
+    .hero { display: flex; gap: 28px; margin-bottom: 28px; align-items: flex-start; }
+    .app-icon { width: 96px; height: 96px; border-radius: 22px; background: #f5f0e8; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 52px; flex-shrink: 0; }
+    .hero-info { flex: 1; }
+    .app-name { font-size: 26px; font-weight: 700; color: #202124; margin-bottom: 4px; }
+    .developer { font-size: 14px; color: #01875f; font-weight: 500; margin-bottom: 10px; }
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .badge { background: #e8f5e9; color: #1b5e20; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px; }
+    .badge.blue { background: #e3f2fd; color: #0d47a1; }
+    .badge.grey { background: #f1f3f4; color: #5f6368; }
+    .install-btn { background: #01875f; color: white; border: none; border-radius: 24px; padding: 12px 36px; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+    /* Stats row */
+    .stats { display: flex; gap: 0; border-top: 1px solid #e0e0e0; border-bottom: 1px solid #e0e0e0; padding: 16px 0; margin-bottom: 28px; }
+    .stat { flex: 1; text-align: center; border-right: 1px solid #e0e0e0; padding: 0 12px; }
+    .stat:last-child { border-right: none; }
+    .stat-value { font-size: 18px; font-weight: 700; color: #202124; display: flex; align-items: center; justify-content: center; gap: 4px; }
+    .stat-value .star { color: #f4a261; font-size: 16px; }
+    .stat-label { font-size: 11px; color: #5f6368; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    /* Screenshots */
+    .section-title { font-size: 16px; font-weight: 600; color: #202124; margin-bottom: 14px; }
+    .screenshots { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 32px; }
+    .screenshot { width: 148px; height: 262px; border-radius: 10px; flex-shrink: 0; border: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #aaa; text-align: center; padding: 8px; }
+    .ss1 { background: linear-gradient(160deg, #f5f0e8 0%, #e8dfd0 100%); }
+    .ss2 { background: linear-gradient(160deg, #e8f4f8 0%, #d0eaf5 100%); }
+    .ss3 { background: linear-gradient(160deg, #f0f8f0 0%, #d5edd5 100%); }
+    .ss4 { background: linear-gradient(160deg, #fdf5ec 0%, #f5e0c8 100%); }
+    .ss-label { font-size: 10px; color: #888; font-style: italic; }
+
+    /* Description */
+    .description-box { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e0e0e0; }
+    .short-desc { font-size: 15px; color: #202124; font-weight: 500; margin-bottom: 16px; line-height: 1.5; }
+    .long-desc { font-size: 14px; color: #3c4043; line-height: 1.7; white-space: pre-line; }
+    .long-desc strong { color: #202124; }
+    .read-more { color: #01875f; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; display: inline-block; }
+
+    /* Info table */
+    .info-box { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e0e0e0; }
+    .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f3f4; font-size: 14px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-key { color: #5f6368; }
+    .info-val { color: #202124; font-weight: 500; text-align: right; }
+
+    /* Ratings */
+    .ratings-box { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e0e0e0; }
+    .big-rating { font-size: 56px; font-weight: 700; color: #202124; line-height: 1; }
+    .stars-row { color: #f4a261; font-size: 22px; letter-spacing: 2px; margin: 6px 0 4px; }
+    .rating-count { font-size: 13px; color: #5f6368; }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: 12px; color: #5f6368; }
+    .bar-track { flex: 1; background: #e0e0e0; border-radius: 4px; height: 6px; }
+    .bar-fill { background: #01875f; height: 6px; border-radius: 4px; }
+
+    /* Tags */
+    .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+    .tag { border: 1px solid #dadce0; border-radius: 20px; padding: 6px 14px; font-size: 13px; color: #3c4043; cursor: pointer; }
+    .tag:hover { background: #f1f3f4; }
+
+    /* Footer */
+    .footer { font-size: 12px; color: #5f6368; text-align: center; padding: 24px 0; border-top: 1px solid #e0e0e0; margin-top: 16px; }
+    .footer a { color: #01875f; text-decoration: none; margin: 0 8px; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Google Play <span>Store</span></div>
+  <div class="topbar-search">Search for apps & games</div>
+</div>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="app-icon">🫒</div>
+    <div class="hero-info">
+      <div class="app-name">Weekly Meal Planner</div>
+      <div class="developer">mmccanse · Personal Development</div>
+      <div class="badges">
+        <span class="badge">🥗 Food & Drink</span>
+        <span class="badge blue">🔒 No ads</span>
+        <span class="badge grey">In-app purchases available</span>
+      </div>
+      <button class="install-btn">Install</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value">4.8 <span class="star">★</span></div>
+      <div class="stat-label">156 reviews</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">10K+</div>
+      <div class="stat-label">Downloads</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">E</div>
+      <div class="stat-label">Everyone</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">22 MB</div>
+      <div class="stat-label">Size</div>
+    </div>
+  </div>
+
+  <!-- Screenshots placeholder -->
+  <div class="section-title">Screenshots</div>
+  <div class="screenshots">
+    <div class="screenshot ss1"><span class="ss-label">Home Screen<br/>Mediterranean coast hero</span></div>
+    <div class="screenshot ss2"><span class="ss-label">Scan Receipt<br/>Camera / photo import</span></div>
+    <div class="screenshot ss3"><span class="ss-label">Meal Plan<br/>7-day recipe list</span></div>
+    <div class="screenshot ss4"><span class="ss-label">Recipe Detail<br/>Full card with steps</span></div>
+    <div class="screenshot ss1"><span class="ss-label">Pantry Shelves<br/>Visual ingredient view</span></div>
+    <div class="screenshot ss2"><span class="ss-label">Saved Recipes<br/>Bookmarked meals</span></div>
+  </div>
+
+  <!-- Description -->
+  <div class="description-box">
+    <div class="short-desc">Scan your groceries. Get a week of dinners. No missing ingredients, no extra trips.</div>
+    <div class="long-desc">
+Tired of staring at your pantry wondering what to make for dinner? Or buying groceries and still ending up lost at 6pm?
+
+Weekly Meal Planner scans your grocery receipt and builds a full week of personalized recipes from what you already have — no extra store runs, no realizing halfway through a recipe that you're missing something.
+
+<strong>How it works:</strong>
+→ Photograph your grocery receipt or scan items directly with your camera
+→ We extract your ingredients automatically
+→ Get 7 complete recipes built around what's in your pantry right now
+
+<strong>Features:</strong>
+• Receipt scanning powered by AI — pulls every item in seconds
+• Barcode scanner to add pantry staples one product at a time
+• 7 personalized daily recipes, Monday through Sunday
+• Save individual recipes or full weekly menus to revisit anytime
+• Beautifully formatted recipe cards you can share with family
+• Mediterranean diet guidelines backed by the Mayo Clinic
+• Your current meal plan stays accessible for 7 days
+
+Built for the person standing in front of their cupboards — not for people who already know what they're cooking.
+    </div>
+    <span class="read-more">▾ See more</span>
+
+    <div class="tags">
+      <div class="tag">meal planning</div>
+      <div class="tag">recipe generator</div>
+      <div class="tag">pantry tracker</div>
+      <div class="tag">Mediterranean diet</div>
+      <div class="tag">grocery scanner</div>
+      <div class="tag">weekly meals</div>
+    </div>
+  </div>
+
+  <!-- App Info -->
+  <div class="info-box">
+    <div class="section-title">App info</div>
+    <div class="info-row"><span class="info-key">Version</span><span class="info-val">1.0.0</span></div>
+    <div class="info-row"><span class="info-key">Updated</span><span class="info-val">June 22, 2026</span></div>
+    <div class="info-row"><span class="info-key">Requires Android</span><span class="info-val">7.0 and up</span></div>
+    <div class="info-row"><span class="info-key">Developer</span><span class="info-val">mmccanse</span></div>
+    <div class="info-row"><span class="info-key">Category</span><span class="info-val">Food & Drink</span></div>
+    <div class="info-row"><span class="info-key">Content rating</span><span class="info-val">Everyone</span></div>
+    <div class="info-row"><span class="info-key">In-app purchases</span><span class="info-val">$0.99 – $7.99 per item</span></div>
+    <div class="info-row"><span class="info-key">Permissions</span><span class="info-val">Camera, Storage</span></div>
+    <div class="info-row"><span class="info-key">Package</span><span class="info-val">com.mmccanse.weeklymealplanner</span></div>
+  </div>
+
+  <!-- Ratings -->
+  <div class="ratings-box">
+    <div class="section-title">Ratings &amp; reviews</div>
+    <div style="display:flex; gap: 32px; align-items: flex-start;">
+      <div>
+        <div class="big-rating">4.8</div>
+        <div class="stars-row">★★★★★</div>
+        <div class="rating-count">156 ratings</div>
+      </div>
+      <div style="flex:1; padding-top: 4px;">
+        <div class="bar-row"><span>5</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span>82%</span></div>
+        <div class="bar-row"><span>4</span><div class="bar-track"><div class="bar-fill" style="width:12%"></div></div><span>12%</span></div>
+        <div class="bar-row"><span>3</span><div class="bar-track"><div class="bar-fill" style="width:4%"></div></div><span>4%</span></div>
+        <div class="bar-row"><span>2</span><div class="bar-track"><div class="bar-fill" style="width:1%"></div></div><span>1%</span></div>
+        <div class="bar-row"><span>1</span><div class="bar-track"><div class="bar-fill" style="width:1%"></div></div><span>1%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">Flag as inappropriate</a>
+    <br/><br/>© 2026 mmccanse · com.mmccanse.weeklymealplanner
+  </div>
+
+</div>
+</body>
+</html>
