@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Recipe } from '../types';
+import { RootStackParamList, Recipe, DietType } from '../types';
+import { DIET_TYPES } from '../constants/dietTypes';
 import RecipeCard from '../components/RecipeCard';
 import { saveMenu } from '../services/savedMenusService';
 import { regenerateRecipe } from '../services/claudeService';
@@ -21,6 +22,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 
 export default function MealPlanScreen({ navigation, route }: Props) {
   const { ingredients } = route.params;
+  const dietType: DietType = route.params.dietType ?? 'mediterranean';
+  const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
   const [saving, setSaving] = useState(false);
   const [menuSaved, setMenuSaved] = useState(false);
@@ -30,14 +33,14 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     const dayToReplace = recipes[index].day;
     setRefreshingDay(dayToReplace);
     try {
-      const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace);
+      const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace, dietType);
       const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
       const updated = recipes.map((r, i) =>
         i === index ? { ...newRecipe, photoUrl } : r
       );
       setRecipes(updated);
       setMenuSaved(false);
-      await saveCurrentMealPlan(updated, ingredients);
+      await saveCurrentMealPlan(updated, ingredients, dietType);
     } catch (e: any) {
       Alert.alert('Could not refresh recipe', e.message);
     } finally {
@@ -67,7 +70,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
           <View style={styles.header}>
             <Text style={styles.title}>Your Week of Meals</Text>
             <Text style={styles.subtitle}>
-              7 Mediterranean recipes built from {ingredients.length} ingredients.
+              {dietConfig.emoji}  7 {dietConfig.label} recipes built from {ingredients.length} ingredients.
               Tap any recipe for the full card.
             </Text>
             <TouchableOpacity
