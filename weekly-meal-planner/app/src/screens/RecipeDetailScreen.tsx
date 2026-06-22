@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,19 +13,47 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { saveAndShareRecipeCard } from '../services/cardGenerator';
+import { saveRecipe, unsaveRecipe, isRecipeSaved } from '../services/savedRecipesService';
+import { DIET_TYPES } from '../constants/dietTypes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RecipeDetail'>;
 
 export default function RecipeDetailScreen({ route }: Props) {
-  const { recipe } = route.params;
+  const { recipe, dietType = 'mediterranean' } = route.params;
+  const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [sharing, setSharing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    isRecipeSaved(recipe).then(setSaved);
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      if (saved) {
+        await unsaveRecipe(recipe);
+        setSaved(false);
+        Alert.alert('Removed', `${recipe.name} removed from Saved Recipes.`);
+      } else {
+        await saveRecipe(recipe);
+        setSaved(true);
+        Alert.alert('Saved!', `${recipe.name} added to your Saved Recipes folder.`);
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleShare() {
     setSharing(true);
     try {
-      await saveAndShareRecipeCard(recipe);
+      await saveAndShareRecipeCard(recipe, dietType);
     } catch (e: any) {
-      Alert.alert('Could not save card', e.message);
+      Alert.alert('Could not share card', e.message);
     } finally {
       setSharing(false);
     }
@@ -48,7 +76,7 @@ export default function RecipeDetailScreen({ route }: Props) {
               <Text style={styles.dayText}>{recipe.day}</Text>
             </View>
             <View style={styles.dietBadge}>
-              <Text style={styles.dietText}>Mediterranean Diet</Text>
+              <Text style={styles.dietText}>{dietConfig.emoji} {dietConfig.label} Diet</Text>
             </View>
           </View>
 
@@ -96,6 +124,21 @@ export default function RecipeDetailScreen({ route }: Props) {
           </View>
 
           <TouchableOpacity
+            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.85}
+          >
+            {saving ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.saveBtnText}>
+                {saved ? '🔖  Saved to Recipes' : '🔖  Save Recipe'}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={styles.shareBtn}
             onPress={handleShare}
             disabled={sharing}
@@ -104,12 +147,14 @@ export default function RecipeDetailScreen({ route }: Props) {
             {sharing ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.shareBtnText}>Save & Share Recipe Card</Text>
+              <Text style={styles.shareBtnText}>Share Recipe Card</Text>
             )}
           </TouchableOpacity>
 
           <Text style={styles.sourceNote}>
-            Recipes follow Mayo Clinic Mediterranean diet guidelines
+            {dietType === 'mediterranean'
+              ? 'Recipes follow Mayo Clinic Mediterranean diet guidelines'
+              : `Recipes follow ${dietConfig.label} diet guidelines`}
           </Text>
         </View>
       </ScrollView>
@@ -236,6 +281,17 @@ const styles = StyleSheet.create({
   },
   nutritionIcon: { fontSize: 20 },
   nutritionText: { flex: 1, fontSize: 13, color: '#1d5c63', lineHeight: 20 },
+  saveBtn: {
+    backgroundColor: '#2e86ab',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  saveBtnSaved: {
+    backgroundColor: '#1d5c63',
+  },
+  saveBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
   shareBtn: {
     backgroundColor: '#f4a261',
     borderRadius: 14,

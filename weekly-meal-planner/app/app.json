@@ -7,14 +7,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#f5f0e8"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yourname.weeklymealplanner",
+      "bundleIdentifier": "com.mmccanse.weeklymealplanner",
       "infoPlist": {
-        "NSCameraUsageDescription": "Used to photograph your grocery receipts so we can extract ingredients.",
+        "NSCameraUsageDescription": "Used to photograph grocery receipts and scan product barcodes for your pantry.",
         "NSPhotoLibraryUsageDescription": "Used to select a photo of your grocery receipt from your library."
       }
     },
@@ -23,7 +24,7 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#f5f0e8"
       },
-      "package": "com.yourname.weeklymealplanner",
+      "package": "com.mmccanse.weeklymealplanner",
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE"
@@ -32,11 +33,14 @@
     "web": {
       "favicon": "./assets/icon.png"
     },
+    "extra": {
+      "privacyPolicyUrl": "https://mmccanse1.github.io/ClaudeCode-Practice/privacy-policy.html"
+    },
     "plugins": [
       [
         "expo-camera",
         {
-          "cameraPermission": "Used to photograph your grocery receipts."
+          "cameraPermission": "Used to photograph grocery receipts and scan product barcodes for your pantry."
         }
       ],
       [

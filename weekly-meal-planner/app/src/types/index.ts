@@ -20,10 +20,14 @@ export interface MealPlan {
   pantryItems: string[];
 }
 
+export type DietType = 'mediterranean' | 'keto' | 'paleo' | 'vegetarian' | 'vegan';
+
 export type RootStackParamList = {
   Home: undefined;
-  ScanReceipt: undefined;
+  ScanReceipt: { dietType: DietType };
   Pantry: undefined;
-  MealPlan: { recipes: Recipe[]; ingredients: string[] };
-  RecipeDetail: { recipe: Recipe };
+  PantryShelf: undefined;
+  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType };
+  RecipeDetail: { recipe: Recipe; dietType?: DietType };
+  SavedRecipes: undefined;
 };

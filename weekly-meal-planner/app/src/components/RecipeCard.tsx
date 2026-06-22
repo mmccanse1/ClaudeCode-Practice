@@ -5,15 +5,19 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { Recipe } from '../types';
 
 interface Props {
   recipe: Recipe;
   onPress: () => void;
+  onRefresh?: () => void;
+  refreshing?: boolean;
+  dietLabel?: string;
 }
 
-export default function RecipeCard({ recipe, onPress }: Props) {
+export default function RecipeCard({ recipe, onPress, onRefresh, refreshing, dietLabel = 'Mediterranean' }: Props) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       {recipe.photoUrl ? (
@@ -29,7 +33,7 @@ export default function RecipeCard({ recipe, onPress }: Props) {
             <Text style={styles.dayText}>{recipe.day}</Text>
           </View>
           <View style={styles.dietBadge}>
-            <Text style={styles.dietText}>Mediterranean</Text>
+            <Text style={styles.dietText}>{dietLabel}</Text>
           </View>
         </View>
         <Text style={styles.name}>{recipe.name}</Text>
@@ -41,6 +45,26 @@ export default function RecipeCard({ recipe, onPress }: Props) {
           <Text style={styles.meta}>🍳 Cook: {recipe.cookTime}</Text>
           <Text style={styles.meta}>👥 {recipe.servings} servings</Text>
         </View>
+        {onRefresh && (
+          <View style={styles.refreshRow}>
+            <TouchableOpacity
+              style={styles.refreshBtn}
+              onPress={onRefresh}
+              disabled={refreshing}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              {refreshing ? (
+                <ActivityIndicator size="small" color="#2e86ab" />
+              ) : (
+                <Text style={styles.refreshIcon}>↺</Text>
+              )}
+              <Text style={styles.refreshLabel}>
+                {refreshing ? 'Generating…' : 'New recipe'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -126,5 +150,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     fontWeight: '500',
+  },
+  refreshRow: {
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    marginTop: 12,
+    paddingTop: 10,
+    alignItems: 'flex-end',
+  },
+  refreshBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  refreshIcon: {
+    fontSize: 18,
+    color: '#2e86ab',
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  refreshLabel: {
+    fontSize: 12,
+    color: '#2e86ab',
+    fontWeight: '600',
   },
 });
