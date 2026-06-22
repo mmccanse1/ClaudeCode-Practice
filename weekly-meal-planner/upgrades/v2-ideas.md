@@ -128,3 +128,11 @@ A promo code or access code system that unlocks the full premium tier for free �
 - Useful for gifting, beta testers, influencer partnerships, or just family
 
 **To explore:** How codes are generated, how many, expiry dates, single-use vs. multi-use.
+
+**Subscription promotions to consider:**
+- First month free (trial period to convert free users)
+- Discounted annual plan (e.g. $19.99/year vs $2.99/month — saves the user ~$16)
+- Launch week promo — limited time reduced rate to drive early adoption
+- Referral program — existing subscriber shares a link, both parties get a free month
+- Seasonal promotions — New Year "fresh start" discount, back-to-school meal planning push
+- Bundle pricing if additional diet types are added as separate tiers later
