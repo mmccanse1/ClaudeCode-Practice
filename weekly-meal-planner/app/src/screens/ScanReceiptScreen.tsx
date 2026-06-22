@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -140,21 +141,23 @@ export default function ScanReceiptScreen({ navigation }: Props) {
         </Text>
 
         <View style={styles.pickRow}>
+          {Platform.OS !== 'web' && (
+            <TouchableOpacity
+              style={styles.pickBtn}
+              onPress={() => pickReceipt(true)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.pickIcon}>📷</Text>
+              <Text style={styles.pickLabel}>Camera</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={styles.pickBtn}
-            onPress={() => pickReceipt(true)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.pickIcon}>📷</Text>
-            <Text style={styles.pickLabel}>Camera</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.pickBtn}
+            style={[styles.pickBtn, Platform.OS === 'web' && { flex: 1 }]}
             onPress={() => pickReceipt(false)}
             activeOpacity={0.85}
           >
             <Text style={styles.pickIcon}>🖼</Text>
-            <Text style={styles.pickLabel}>Photo Library</Text>
+            <Text style={styles.pickLabel}>{Platform.OS === 'web' ? 'Upload Receipt Photo' : 'Photo Library'}</Text>
           </TouchableOpacity>
         </View>
 

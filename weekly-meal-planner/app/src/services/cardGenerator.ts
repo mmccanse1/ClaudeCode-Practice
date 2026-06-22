@@ -1,6 +1,12 @@
-import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
+import { Platform } from 'react-native';
 import { Recipe } from '../types';
+
+let FileSystem: any;
+let Sharing: any;
+if (Platform.OS !== 'web') {
+  FileSystem = require('expo-file-system/legacy');
+  Sharing = require('expo-sharing');
+}
 
 function buildRecipeCardHtml(recipe: Recipe): string {
   const photoHtml = recipe.photoUrl
@@ -237,15 +243,26 @@ function buildRecipeCardHtml(recipe: Recipe): string {
 export async function saveAndShareRecipeCard(recipe: Recipe): Promise<string> {
   const html = buildRecipeCardHtml(recipe);
   const filename = `${recipe.day}_${recipe.name.replace(/\s+/g, '_').toLowerCase()}.html`;
-  const path = `${FileSystem.documentDirectory}meal_plans/${filename}`;
 
+  if (Platform.OS === 'web') {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    return filename;
+  }
+
+  const path = `${FileSystem.documentDirectory}meal_plans/${filename}`;
   await FileSystem.makeDirectoryAsync(
     `${FileSystem.documentDirectory}meal_plans/`,
     { intermediates: true }
   );
-  await FileSystem.writeAsStringAsync(path, html, {
-    encoding: 'utf8' as any,
-  });
+  await FileSystem.writeAsStringAsync(path, html, { encoding: 'utf8' as any });
 
   const canShare = await Sharing.isAvailableAsync();
   if (canShare) {

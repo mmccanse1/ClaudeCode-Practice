@@ -10,6 +10,7 @@ import {
   Image,
   Alert,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -95,20 +96,24 @@ export default function PantryScreen({ navigation }: Props) {
           <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
             <Text style={styles.addBtnText}>+ Add</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.scanBtn} onPress={() => setScannerVisible(true)}>
-            <View style={styles.barcodeIcon}>
-              {[2, 1, 3, 1, 2, 1, 3, 1, 2].map((w, i) => (
-                <View key={i} style={[styles.bar, { width: w }]} />
-              ))}
-            </View>
-          </TouchableOpacity>
+          {Platform.OS !== 'web' && (
+            <TouchableOpacity style={styles.scanBtn} onPress={() => setScannerVisible(true)}>
+              <View style={styles.barcodeIcon}>
+                {[2, 1, 3, 1, 2, 1, 3, 1, 2].map((w, i) => (
+                  <View key={i} style={[styles.bar, { width: w }]} />
+                ))}
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <BarcodeScannerModal
-          visible={scannerVisible}
-          onClose={() => setScannerVisible(false)}
-          onAdd={handleScanAdd}
-        />
+        {Platform.OS !== 'web' && (
+          <BarcodeScannerModal
+            visible={scannerVisible}
+            onClose={() => setScannerVisible(false)}
+            onAdd={handleScanAdd}
+          />
+        )}
 
         <TouchableOpacity
           style={styles.openBtn}
