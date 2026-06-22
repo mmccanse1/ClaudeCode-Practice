@@ -7,7 +7,9 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
+  Image,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -17,6 +19,10 @@ import BarcodeScannerModal from '../components/BarcodeScannerModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Pantry'>;
 
+const PANTRY_BG_URL =
+  'https://i.pinimg.com/736x/b0/9c/60/b09c60768a8fcfd18b77345234355d4f--kitchen-pantry-design-kitchen-pantry-cabinets.jpg';
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 export default function PantryScreen({ navigation }: Props) {
   const [items, setItems] = useState<string[]>([]);
@@ -113,6 +119,12 @@ export default function PantryScreen({ navigation }: Props) {
             {'🚪  Open Pantry' + (items.length > 0 ? `  (${items.length} items)` : '')}
           </Text>
         </TouchableOpacity>
+
+        <Image
+          source={{ uri: PANTRY_BG_URL }}
+          style={styles.pantryImage}
+          resizeMode="cover"
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -184,4 +196,10 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   openBtnText: { color: 'white', fontWeight: '700', fontSize: 14 },
+
+  pantryImage: {
+    width: SCREEN_W,
+    height: SCREEN_H * 0.62,
+    marginLeft: -20,
+  },
 });
