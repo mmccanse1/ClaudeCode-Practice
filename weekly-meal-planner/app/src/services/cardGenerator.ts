@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Recipe } from '../types';
 
@@ -244,7 +244,7 @@ export async function saveAndShareRecipeCard(recipe: Recipe): Promise<string> {
     { intermediates: true }
   );
   await FileSystem.writeAsStringAsync(path, html, {
-    encoding: FileSystem.EncodingType.UTF8,
+    encoding: 'utf8' as any,
   });
 
   const canShare = await Sharing.isAvailableAsync();

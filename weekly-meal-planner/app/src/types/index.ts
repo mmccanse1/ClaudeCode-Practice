@@ -24,6 +24,8 @@ export type RootStackParamList = {
   Home: undefined;
   ScanReceipt: undefined;
   Pantry: undefined;
+  PantryShelf: undefined;
   MealPlan: { recipes: Recipe[]; ingredients: string[] };
   RecipeDetail: { recipe: Recipe };
+  SavedRecipes: undefined;
 };

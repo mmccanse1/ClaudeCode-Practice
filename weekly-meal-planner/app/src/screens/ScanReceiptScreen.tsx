@@ -15,18 +15,26 @@ import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { parseReceiptFromImage } from '../services/claudeService';
-import { getPantryItems } from '../services/pantryService';
+import { getPantryItems, addPantryItems } from '../services/pantryService';
 import { generateMealPlan } from '../services/claudeService';
 import { fetchFoodPhoto } from '../services/unsplashService';
+import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
 export default function ScanReceiptScreen({ navigation }: Props) {
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
   const [receiptItems, setReceiptItems] = useState<string[]>([]);
+  const [pantryChecked, setPantryChecked] = useState<Record<string, boolean>>({});
   const [newItem, setNewItem] = useState('');
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
+
+  function toggleAll(checked: boolean) {
+    const next: Record<string, boolean> = {};
+    receiptItems.forEach(item => { next[item] = checked; });
+    setPantryChecked(next);
+  }
 
   async function pickReceipt(useCamera: boolean) {
     const { status } = useCamera
@@ -38,20 +46,34 @@ export default function ScanReceiptScreen({ navigation }: Props) {
       return;
     }
 
+    const pickerOptions = {
+      quality: 0.3,
+      base64: true,
+      allowsEditing: false,
+    };
     const result = useCamera
-      ? await ImagePicker.launchCameraAsync({ quality: 0.8 })
-      : await ImagePicker.launchImageLibraryAsync({ quality: 0.8 });
+      ? await ImagePicker.launchCameraAsync(pickerOptions)
+      : await ImagePicker.launchImageLibraryAsync(pickerOptions);
 
     if (result.canceled || !result.assets[0]) return;
 
-    const uri = result.assets[0].uri;
+    const { uri, base64, mimeType } = result.assets[0];
     setReceiptUri(uri);
     setReceiptItems([]);
+    setPantryChecked({});
+
+    if (!base64) {
+      Alert.alert('Could not read receipt', 'Image data unavailable.');
+      return;
+    }
 
     setParsing(true);
     try {
-      const items = await parseReceiptFromImage(uri);
+      const items = await parseReceiptFromImage(base64, mimeType || 'image/jpeg');
+      const initialChecked: Record<string, boolean> = {};
+      items.forEach(i => { initialChecked[i] = true; });
       setReceiptItems(items);
+      setPantryChecked(initialChecked);
     } catch (e: any) {
       Alert.alert('Could not read receipt', e.message);
     } finally {
@@ -63,12 +85,14 @@ export default function ScanReceiptScreen({ navigation }: Props) {
     const trimmed = newItem.trim().toLowerCase();
     if (trimmed && !receiptItems.includes(trimmed)) {
       setReceiptItems(prev => [...prev, trimmed]);
+      setPantryChecked(prev => ({ ...prev, [trimmed]: true }));
     }
     setNewItem('');
   }
 
   function removeItem(item: string) {
     setReceiptItems(prev => prev.filter(i => i !== item));
+    setPantryChecked(prev => { const n = { ...prev }; delete n[item]; return n; });
   }
 
   async function handleGenerate() {
@@ -79,6 +103,9 @@ export default function ScanReceiptScreen({ navigation }: Props) {
 
     setGenerating(true);
     try {
+      const toSave = receiptItems.filter(i => pantryChecked[i]);
+      if (toSave.length > 0) await addPantryItems(toSave);
+
       const pantryItems = await getPantryItems();
       const allIngredients = Array.from(new Set([...receiptItems, ...pantryItems]));
       const recipes = await generateMealPlan(allIngredients);
@@ -90,6 +117,8 @@ export default function ScanReceiptScreen({ navigation }: Props) {
           photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
         }))
       );
+
+      await saveCurrentMealPlan(withPhotos, allIngredients);
 
       navigation.navigate('MealPlan', {
         recipes: withPhotos,
@@ -141,19 +170,52 @@ export default function ScanReceiptScreen({ navigation }: Props) {
         )}
 
         {receiptItems.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Ingredients from receipt ({receiptItems.length})
-            </Text>
-            {receiptItems.map(item => (
-              <View key={item} style={styles.itemRow}>
-                <Text style={styles.itemText}>• {item}</Text>
-                <TouchableOpacity onPress={() => removeItem(item)}>
-                  <Text style={styles.removeBtn}>✕</Text>
-                </TouchableOpacity>
+          <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                Ingredients from receipt ({receiptItems.length})
+              </Text>
+              {receiptItems.map(item => (
+                <View key={item} style={styles.itemRow}>
+                  <Text style={styles.itemText}>• {item}</Text>
+                  <TouchableOpacity onPress={() => removeItem(item)}>
+                    <Text style={styles.removeBtn}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.section}>
+              <View style={styles.pantryHeader}>
+                <Text style={styles.sectionTitle}>Save to Pantry?</Text>
+                <View style={styles.toggleRow}>
+                  <TouchableOpacity onPress={() => toggleAll(true)}>
+                    <Text style={styles.toggleLink}>All</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.toggleSep}>/</Text>
+                  <TouchableOpacity onPress={() => toggleAll(false)}>
+                    <Text style={styles.toggleLink}>None</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            ))}
-          </View>
+              <Text style={styles.pantryHint}>
+                Checked items will be added to your pantry for future meal plans.
+              </Text>
+              {receiptItems.map(item => (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.checkRow}
+                  onPress={() => setPantryChecked(prev => ({ ...prev, [item]: !prev[item] }))}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.checkbox, pantryChecked[item] && styles.checkboxChecked]}>
+                    {pantryChecked[item] && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                  <Text style={styles.checkLabel}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
         )}
 
         <View style={styles.section}>
@@ -266,4 +328,36 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.5 },
   generateBtnText: { color: 'white', fontSize: 17, fontWeight: '700' },
   generatingNote: { textAlign: 'center', fontSize: 13, color: '#888', fontStyle: 'italic' },
+
+  pantryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  toggleLink: { fontSize: 13, color: '#2e86ab', fontWeight: '600' },
+  toggleSep: { fontSize: 13, color: '#bbb' },
+  pantryHint: { fontSize: 12, color: '#888', fontStyle: 'italic', marginBottom: 10 },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 6,
+    gap: 12,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+  },
+  checkboxChecked: {
+    backgroundColor: '#2e86ab',
+    borderColor: '#2e86ab',
+  },
+  checkmark: { color: 'white', fontSize: 13, fontWeight: '800' },
+  checkLabel: { flex: 1, fontSize: 14, color: '#333', textTransform: 'capitalize' },
 });
