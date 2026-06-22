@@ -115,3 +115,16 @@ If auto-categorization puts an item in the wrong section, let the user long-pres
 
 **Current free tier:** flat grid of all pantry items.
 **Possible v2 free improvement:** give free users a nicer single-shelf visual (wood plank background from Unsplash) while keeping the 3-section organization as the premium differentiator.
+
+---
+
+## 🎟️ Promo / Access Codes for Friends & Family
+
+**The concept:**
+A promo code or access code system that unlocks the full premium tier for free — so you can give family members or close friends the full experience without them paying.
+
+- Could be a simple hardcoded list of codes that map to IS_PREMIUM = true
+- Or tied to the future subscription backend (redeem code → bypass payment, set account as premium)
+- Useful for gifting, beta testers, influencer partnerships, or just family
+
+**To explore:** How codes are generated, how many, expiry dates, single-use vs. multi-use.
