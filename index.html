@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Meal Planner — Legal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Georgia, serif;
+      background: #f5f0e8;
+      color: #2c2c2c;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 48px 56px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+    }
+    .logo {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+      font-family: Georgia, serif;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #888;
+      font-family: Arial, sans-serif;
+      margin-bottom: 40px;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #e8e0d5;
+      margin: 0 0 36px;
+    }
+    .doc-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .doc-list a {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #f5f0e8;
+      border: 1.5px solid #d9d0c3;
+      border-radius: 10px;
+      padding: 18px 22px;
+      text-decoration: none;
+      color: #2c2c2c;
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .doc-list a:hover {
+      background: #eae3d5;
+      border-color: #2e86ab;
+      color: #2e86ab;
+    }
+    .doc-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .doc-label {
+      flex: 1;
+      text-align: left;
+    }
+    .doc-label span {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      color: #999;
+      margin-top: 2px;
+    }
+    .arrow {
+      font-size: 16px;
+      color: #bbb;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #bbb;
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🫒</div>
+    <h1>Weekly Meal Planner</h1>
+    <p class="subtitle">Legal Documents</p>
+    <hr class="divider" />
+    <ul class="doc-list">
+      <li>
+        <a href="privacy-policy.html">
+          <span class="doc-icon">🔒</span>
+          <span class="doc-label">
+            Privacy Policy
+            <span>How your data is handled</span>
+          </span>
+          <span class="arrow">›</span>
+        </a>
+      </li>
+      <li>
+        <a href="terms-of-service.html">
+          <span class="doc-icon">📋</span>
+          <span class="doc-label">
+            Terms of Service
+            <span>Rules for using the app</span>
+          </span>
+          <span class="arrow">›</span>
+        </a>
+      </li>
+    </ul>
+    <div class="footer">
+      © 2026 Weekly Meal Planner · com.mmccanse.weeklymealplanner
+    </div>
+  </div>
+</body>
+</html>
