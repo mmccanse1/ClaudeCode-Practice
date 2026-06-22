@@ -51,7 +51,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   async function handleSaveMenu() {
     setSaving(true);
     try {
-      await saveMenu(recipes, ingredients);
+      await saveMenu(recipes, ingredients, dietType);
       setMenuSaved(true);
       Alert.alert('Menu Saved!', 'This meal plan has been saved to your Menus folder.');
     } catch (e: any) {
@@ -92,9 +92,10 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         renderItem={({ item, index }) => (
           <RecipeCard
             recipe={item}
-            onPress={() => navigation.navigate('RecipeDetail', { recipe: item })}
+            onPress={() => navigation.navigate('RecipeDetail', { recipe: item, dietType })}
             onRefresh={() => handleRefreshRecipe(index)}
             refreshing={refreshingDay === item.day}
+            dietLabel={dietConfig.label}
           />
         )}
         contentContainerStyle={styles.list}

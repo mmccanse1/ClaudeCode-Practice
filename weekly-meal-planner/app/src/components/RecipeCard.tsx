@@ -14,9 +14,10 @@ interface Props {
   onPress: () => void;
   onRefresh?: () => void;
   refreshing?: boolean;
+  dietLabel?: string;
 }
 
-export default function RecipeCard({ recipe, onPress, onRefresh, refreshing }: Props) {
+export default function RecipeCard({ recipe, onPress, onRefresh, refreshing, dietLabel = 'Mediterranean' }: Props) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       {recipe.photoUrl ? (
@@ -32,7 +33,7 @@ export default function RecipeCard({ recipe, onPress, onRefresh, refreshing }: P
             <Text style={styles.dayText}>{recipe.day}</Text>
           </View>
           <View style={styles.dietBadge}>
-            <Text style={styles.dietText}>Mediterranean</Text>
+            <Text style={styles.dietText}>{dietLabel}</Text>
           </View>
         </View>
         <Text style={styles.name}>{recipe.name}</Text>

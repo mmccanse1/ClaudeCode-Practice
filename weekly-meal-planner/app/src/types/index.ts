@@ -28,6 +28,6 @@ export type RootStackParamList = {
   Pantry: undefined;
   PantryShelf: undefined;
   MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType };
-  RecipeDetail: { recipe: Recipe };
+  RecipeDetail: { recipe: Recipe; dietType?: DietType };
   SavedRecipes: undefined;
 };

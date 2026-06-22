@@ -14,11 +14,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { saveAndShareRecipeCard } from '../services/cardGenerator';
 import { saveRecipe, unsaveRecipe, isRecipeSaved } from '../services/savedRecipesService';
+import { DIET_TYPES } from '../constants/dietTypes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RecipeDetail'>;
 
 export default function RecipeDetailScreen({ route }: Props) {
-  const { recipe } = route.params;
+  const { recipe, dietType = 'mediterranean' } = route.params;
+  const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [sharing, setSharing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -49,7 +51,7 @@ export default function RecipeDetailScreen({ route }: Props) {
   async function handleShare() {
     setSharing(true);
     try {
-      await saveAndShareRecipeCard(recipe);
+      await saveAndShareRecipeCard(recipe, dietType);
     } catch (e: any) {
       Alert.alert('Could not share card', e.message);
     } finally {
@@ -74,7 +76,7 @@ export default function RecipeDetailScreen({ route }: Props) {
               <Text style={styles.dayText}>{recipe.day}</Text>
             </View>
             <View style={styles.dietBadge}>
-              <Text style={styles.dietText}>Mediterranean Diet</Text>
+              <Text style={styles.dietText}>{dietConfig.emoji} {dietConfig.label} Diet</Text>
             </View>
           </View>
 
@@ -150,7 +152,9 @@ export default function RecipeDetailScreen({ route }: Props) {
           </TouchableOpacity>
 
           <Text style={styles.sourceNote}>
-            Recipes follow Mayo Clinic Mediterranean diet guidelines
+            {dietType === 'mediterranean'
+              ? 'Recipes follow Mayo Clinic Mediterranean diet guidelines'
+              : `Recipes follow ${dietConfig.label} diet guidelines`}
           </Text>
         </View>
       </ScrollView>
