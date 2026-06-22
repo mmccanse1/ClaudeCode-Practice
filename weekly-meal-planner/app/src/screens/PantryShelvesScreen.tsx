@@ -131,72 +131,31 @@ export default function PantryShelvesScreen({}: Props) {
 
   const totalItems = allItems.length;
 
-  function showUpgradeAlert(sectionLabel: string) {
+  function showUpgradeAlert() {
     Alert.alert(
-      `${sectionLabel} — Planner Plan`,
-      `Unlock organized ${sectionLabel} storage and all premium pantry sections for $2.99/month.\n\nUpgrade coming soon!`,
+      'Organized Pantry Sections — Planner Plan',
+      'Upgrade to Planner ($2.99/month) to see your pantry automatically sorted into Refrigerated, Spices & Seasonings, and Dry Goods sections.\n\nAll your items are still here and usable — this is just about organization.\n\nUpgrade coming soon!',
       [{ text: 'OK' }]
     );
   }
-
-  // Free users can only see Dry Goods; Refrigerated and Spices are locked
-  const PREMIUM_SECTIONS: PantrySection[] = ['refrigerated', 'spices'];
 
   return (
     <SafeAreaView style={styles.safe}>
       {loading ? (
         <ActivityIndicator color="#2e86ab" size="large" style={styles.spinner} />
-      ) : totalItems === 0 && pantry.dry_goods.length === 0 ? (
+      ) : totalItems === 0 ? (
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyTitle}>Your pantry is empty</Text>
           <Text style={styles.emptyText}>
             Add ingredients on the My Pantry page — items will be automatically sorted into sections.
           </Text>
         </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+      ) : IS_PREMIUM ? (
+        /* ── Premium view: 3 labeled sections ── */
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {SECTION_ORDER.map(section => {
             const items = pantry[section];
             const cfg = SECTION_CONFIG[section];
-            const locked = !IS_PREMIUM && PREMIUM_SECTIONS.includes(section);
-
-            if (locked) {
-              return (
-                <TouchableOpacity
-                  key={section}
-                  style={[styles.section, styles.lockedSection]}
-                  onPress={() => showUpgradeAlert(cfg.label)}
-                  activeOpacity={0.85}
-                >
-                  <View style={[styles.sectionHeader, { backgroundColor: cfg.bg, borderLeftColor: '#ccc' }]}>
-                    <Text style={[styles.sectionEmoji, styles.lockedEmoji]}>{cfg.emoji}</Text>
-                    <View style={styles.sectionHeaderText}>
-                      <View style={styles.lockedLabelRow}>
-                        <Text style={[styles.sectionLabel, styles.lockedLabel]}>{cfg.label}</Text>
-                        <Text style={styles.lockIcon}>🔒</Text>
-                      </View>
-                      <Text style={styles.sectionCount}>
-                        {items.length > 0
-                          ? `${items.length} ${items.length === 1 ? 'item' : 'items'} waiting to be organized`
-                          : 'Unlock with Planner plan'}
-                      </Text>
-                    </View>
-                    <View style={styles.upgradeBadge}>
-                      <Text style={styles.upgradeBadgeText}>$2.99/mo</Text>
-                    </View>
-                  </View>
-                  <View style={styles.lockedBody}>
-                    <Text style={styles.lockedBodyText}>
-                      Tap to unlock organized {cfg.label.toLowerCase()} storage
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            }
-
             return (
               <View key={section} style={styles.section}>
                 <View style={[styles.sectionHeader, { backgroundColor: cfg.bg, borderLeftColor: cfg.color }]}>
@@ -208,19 +167,41 @@ export default function PantryShelvesScreen({}: Props) {
                     </Text>
                   </View>
                 </View>
-
                 {items.length === 0 ? (
                   <View style={styles.emptySectionRow}>
                     <Text style={styles.emptySectionText}>Nothing here yet</Text>
                   </View>
                 ) : (
-                  <View style={styles.gridWrap}>
-                    {renderGrid(items)}
-                  </View>
+                  <View style={styles.gridWrap}>{renderGrid(items)}</View>
                 )}
               </View>
             );
           })}
+        </ScrollView>
+      ) : (
+        /* ── Free view: flat grid of all items + upgrade nudge ── */
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <TouchableOpacity style={styles.upgradeNudge} onPress={showUpgradeAlert} activeOpacity={0.85}>
+            <Text style={styles.upgradeNudgeText}>
+              📂  Upgrade to organize your pantry into sections
+            </Text>
+            <View style={styles.upgradeBadge}>
+              <Text style={styles.upgradeBadgeText}>$2.99/mo</Text>
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.section}>
+            <View style={[styles.sectionHeader, { backgroundColor: '#f5f0e8', borderLeftColor: '#2e86ab' }]}>
+              <Text style={styles.sectionEmoji}>🗄</Text>
+              <View style={styles.sectionHeaderText}>
+                <Text style={[styles.sectionLabel, { color: '#2e86ab' }]}>My Pantry</Text>
+                <Text style={styles.sectionCount}>
+                  {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.gridWrap}>{renderGrid(allItems)}</View>
+          </View>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -308,11 +289,18 @@ const styles = StyleSheet.create({
   },
   removeBtnText: { color: 'white', fontSize: 8, fontWeight: '800' },
 
-  lockedSection: { opacity: 0.9 },
-  lockedEmoji: { opacity: 0.4 },
-  lockedLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  lockedLabel: { color: '#aaa' },
-  lockIcon: { fontSize: 13 },
+  upgradeNudge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#f4a261',
+    gap: 10,
+  },
+  upgradeNudgeText: { flex: 1, fontSize: 13, color: '#555' },
   upgradeBadge: {
     backgroundColor: '#f4a261',
     borderRadius: 8,
@@ -320,9 +308,4 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   upgradeBadgeText: { color: 'white', fontSize: 11, fontWeight: '800' },
-  lockedBody: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  lockedBodyText: { fontSize: 13, color: '#bbb', fontStyle: 'italic' },
 });
