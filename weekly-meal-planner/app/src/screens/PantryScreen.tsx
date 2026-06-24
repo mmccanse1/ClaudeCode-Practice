@@ -19,8 +19,7 @@ import BarcodeScannerModal from '../components/BarcodeScannerModal';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Pantry'>;
 
-const PANTRY_BG_URL =
-  'https://i.pinimg.com/736x/b0/9c/60/b09c60768a8fcfd18b77345234355d4f--kitchen-pantry-design-kitchen-pantry-cabinets.jpg';
+const PANTRY_BG = require('../../assets/pantry-bg.png');
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -121,7 +120,7 @@ export default function PantryScreen({ navigation }: Props) {
         </TouchableOpacity>
 
         <Image
-          source={{ uri: PANTRY_BG_URL }}
+          source={PANTRY_BG}
           style={styles.pantryImage}
           resizeMode="cover"
         />

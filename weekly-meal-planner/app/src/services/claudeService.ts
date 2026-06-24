@@ -37,6 +37,26 @@ function extractJson<T>(text: string): T {
   }
 }
 
+function validateRecipe(obj: unknown, context: string): Recipe {
+  const r = obj as Record<string, unknown>;
+  const required: (keyof Recipe)[] = [
+    'name', 'description', 'day', 'prepTime', 'cookTime',
+    'servings', 'ingredients', 'steps', 'nutritionNotes', 'searchQuery',
+  ];
+  for (const field of required) {
+    if (r[field] === undefined || r[field] === null) {
+      throw new Error(`Gemini returned a recipe missing required field "${field}" (${context})`);
+    }
+  }
+  if (!Array.isArray(r.ingredients) || r.ingredients.length === 0) {
+    throw new Error(`Gemini returned a recipe with empty ingredients (${context})`);
+  }
+  if (!Array.isArray(r.steps) || r.steps.length === 0) {
+    throw new Error(`Gemini returned a recipe with empty steps (${context})`);
+  }
+  return obj as Recipe;
+}
+
 const RECIPE_SHAPE = `[
   {
     "name": "string",
@@ -195,7 +215,8 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
     },
   ]);
 
-  return extractJson<Recipe>(text);
+  const recipe = extractJson<Recipe>(text);
+  return validateRecipe(recipe, dayToReplace);
 }
 
 export async function generateMealPlan(
@@ -219,5 +240,9 @@ ${RECIPE_SHAPE}`,
     },
   ]);
 
-  return extractJson<Recipe[]>(text);
+  const recipes = extractJson<Recipe[]>(text);
+  if (!Array.isArray(recipes)) {
+    throw new Error('Gemini did not return a JSON array for the meal plan');
+  }
+  return recipes.map((r, i) => validateRecipe(r, `recipe ${i + 1}`));
 }

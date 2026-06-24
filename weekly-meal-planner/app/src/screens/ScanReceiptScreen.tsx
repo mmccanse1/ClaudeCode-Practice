@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
-  ActivityIndicator,
   TextInput,
   Image,
 } from 'react-native';
@@ -34,9 +33,12 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
 
+  const receiptItemsRef = useRef<string[]>([]);
+  receiptItemsRef.current = receiptItems;
+
   function toggleAll(checked: boolean) {
     const next: Record<string, boolean> = {};
-    receiptItems.forEach(item => { next[item] = checked; });
+    receiptItemsRef.current.forEach(item => { next[item] = checked; });
     setPantryChecked(next);
   }
 
@@ -100,6 +102,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   }
 
   async function handleGenerate() {
+    if (generating) return;
     if (receiptItems.length === 0) {
       Alert.alert('No ingredients', 'Please scan a receipt or add items manually.');
       return;
@@ -275,13 +278,9 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
           disabled={generating || receiptItems.length === 0}
           activeOpacity={0.85}
         >
-          {generating ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.generateBtnText}>
-              Generate {dietConfig.label} Plan →
-            </Text>
-          )}
+          <Text style={styles.generateBtnText}>
+            {generating ? 'Creating your plan…' : `Generate ${dietConfig.label} Plan →`}
+          </Text>
         </TouchableOpacity>
 
         {generating && (
