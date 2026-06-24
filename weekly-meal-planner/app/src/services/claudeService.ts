@@ -1,5 +1,8 @@
 import { Recipe, DietType } from '../types';
 
+export const RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR';
+export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
+
 const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -9,15 +12,20 @@ async function callGemini(parts: object[]): Promise<string> {
 
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts }] }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts }] }),
+    });
+  } catch {
+    throw new Error('No internet connection. Please check your connection and try again.');
+  }
 
   if (!response.ok) {
     if (response.status === 429) {
-      throw new Error('Rate limit reached. Please wait 60 seconds and try again.');
+      throw new Error(RATE_LIMIT_ERROR);
     }
     const err = await response.text();
     throw new Error(`Gemini API error ${response.status}: ${err}`);
@@ -33,7 +41,7 @@ function extractJson<T>(text: string): T {
   } catch {
     const match = text.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
     if (match) return JSON.parse(match[0]);
-    throw new Error('Could not parse JSON from Gemini response');
+    throw new Error(AI_PARSE_ERROR);
   }
 }
 

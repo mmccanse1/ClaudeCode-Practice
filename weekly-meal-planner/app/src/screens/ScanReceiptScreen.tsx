@@ -1,20 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  ScrollView,
+  FlatList,
   Alert,
   ActivityIndicator,
   TextInput,
   Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import { parseReceiptFromImage, generateMealPlan } from '../services/claudeService';
+import {
+  parseReceiptFromImage,
+  generateMealPlan,
+  RATE_LIMIT_ERROR,
+  AI_PARSE_ERROR,
+} from '../services/claudeService';
 import { getPantryItems, addPantryItems } from '../services/pantryService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan } from '../services/currentMealPlanService';
@@ -27,17 +33,63 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
 
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
-  const [receiptItems, setReceiptItems] = useState<string[]>([]);
-  const [pantryChecked, setPantryChecked] = useState<Record<string, boolean>>({});
+  const [items, setItems] = useState<string[]>([]);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [newItem, setNewItem] = useState('');
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
+  const [retryCountdown, setRetryCountdown] = useState(0);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  function toggleAll(checked: boolean) {
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      // reset state each time user navigates back to this screen
+      setReceiptUri(null);
+      setItems([]);
+      setChecked({});
+      setNewItem('');
+      setGlutenFree(false);
+      setRetryCountdown(0);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    }, [])
+  );
+
+  function startRetryCountdown(seconds: number) {
+    setRetryCountdown(seconds);
+    countdownRef.current = setInterval(() => {
+      setRetryCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownRef.current!);
+          countdownRef.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }
+
+  function mergeItems(newItems: string[]) {
+    const deduped = [...new Set(newItems.map(i => i.trim().toLowerCase()))];
+    setItems(prev => {
+      const merged = [...new Set([...prev, ...deduped])];
+      const nextChecked: Record<string, boolean> = { ...checked };
+      deduped.forEach(i => { if (!(i in nextChecked)) nextChecked[i] = true; });
+      setChecked(nextChecked);
+      return merged;
+    });
+  }
+
+  function toggleAll(value: boolean) {
     const next: Record<string, boolean> = {};
-    receiptItems.forEach(item => { next[item] = checked; });
-    setPantryChecked(next);
+    items.forEach(item => { next[item] = value; });
+    setChecked(next);
   }
 
   async function pickReceipt(useCamera: boolean) {
@@ -50,11 +102,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       return;
     }
 
-    const pickerOptions = {
-      quality: 0.3,
-      base64: true,
-      allowsEditing: false,
-    };
+    const pickerOptions = { quality: 0.3 as const, base64: true, allowsEditing: false };
     const result = useCamera
       ? await ImagePicker.launchCameraAsync(pickerOptions)
       : await ImagePicker.launchImageLibraryAsync(pickerOptions);
@@ -63,8 +111,6 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
     const { uri, base64, mimeType } = result.assets[0];
     setReceiptUri(uri);
-    setReceiptItems([]);
-    setPantryChecked({});
 
     if (!base64) {
       Alert.alert('Could not read receipt', 'Image data unavailable.');
@@ -73,13 +119,14 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
     setParsing(true);
     try {
-      const items = await parseReceiptFromImage(base64, mimeType || 'image/jpeg');
-      const initialChecked: Record<string, boolean> = {};
-      items.forEach(i => { initialChecked[i] = true; });
-      setReceiptItems(items);
-      setPantryChecked(initialChecked);
+      const parsed = await parseReceiptFromImage(base64, mimeType || 'image/jpeg');
+      mergeItems(parsed);
     } catch (e: any) {
-      Alert.alert('Could not read receipt', e.message);
+      if (e.message.startsWith('No internet')) {
+        Alert.alert('No Connection', e.message);
+      } else {
+        Alert.alert('Could not read receipt', 'The receipt scan failed. Try again or add items manually.');
+      }
     } finally {
       setParsing(false);
     }
@@ -87,31 +134,39 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
   function addManualItem() {
     const trimmed = newItem.trim().toLowerCase();
-    if (trimmed && !receiptItems.includes(trimmed)) {
-      setReceiptItems(prev => [...prev, trimmed]);
-      setPantryChecked(prev => ({ ...prev, [trimmed]: true }));
+    if (trimmed && !items.includes(trimmed)) {
+      setItems(prev => [...prev, trimmed]);
+      setChecked(prev => ({ ...prev, [trimmed]: true }));
     }
     setNewItem('');
   }
 
   function removeItem(item: string) {
-    setReceiptItems(prev => prev.filter(i => i !== item));
-    setPantryChecked(prev => { const n = { ...prev }; delete n[item]; return n; });
+    setItems(prev => prev.filter(i => i !== item));
+    setChecked(prev => { const n = { ...prev }; delete n[item]; return n; });
+  }
+
+  function handleStartOver() {
+    setReceiptUri(null);
+    setItems([]);
+    setChecked({});
+    setNewItem('');
   }
 
   async function handleGenerate() {
-    if (receiptItems.length === 0) {
-      Alert.alert('No ingredients', 'Please scan a receipt or add items manually.');
+    const checkedItems = items.filter(i => checked[i]);
+    if (checkedItems.length === 0) {
+      Alert.alert('No ingredients selected', 'Check at least one ingredient to generate a meal plan.');
       return;
     }
 
     setGenerating(true);
     try {
-      const toSave = receiptItems.filter(i => pantryChecked[i]);
+      const toSave = checkedItems;
       if (toSave.length > 0) await addPantryItems(toSave);
 
       const pantryItems = await getPantryItems();
-      const allIngredients = Array.from(new Set([...receiptItems, ...pantryItems]));
+      const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
       const recipes = await generateMealPlan(allIngredients, dietType, glutenFree);
 
       const withPhotos = await Promise.all(
@@ -127,78 +182,82 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         recipes: withPhotos,
         ingredients: allIngredients,
         dietType,
+        glutenFree,
       });
     } catch (e: any) {
-      Alert.alert('Generation failed', e.message);
+      if (e.message === RATE_LIMIT_ERROR) {
+        startRetryCountdown(60);
+        Alert.alert(
+          'Too Many Requests',
+          'The AI service is busy. We\'ll retry automatically in 60 seconds, or you can try again manually.'
+        );
+      } else if (e.message === AI_PARSE_ERROR) {
+        Alert.alert(
+          'Unexpected Response',
+          'The AI returned something unexpected. Please tap "Generate" again to retry.'
+        );
+      } else if (e.message.startsWith('No internet')) {
+        Alert.alert('No Connection', e.message);
+      } else {
+        Alert.alert('Generation failed', 'Something went wrong. Please try again.');
+      }
     } finally {
       setGenerating(false);
     }
   }
 
+  const checkedCount = items.filter(i => checked[i]).length;
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-
-        {/* Diet type badge */}
-        <View style={[styles.dietBadge, { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color }]}>
-          <Text style={styles.dietBadgeEmoji}>{dietConfig.emoji}</Text>
-          <Text style={[styles.dietBadgeLabel, { color: dietConfig.color }]}>{dietConfig.label} Plan</Text>
-        </View>
-
-        <Text style={styles.title}>Scan Your Receipt</Text>
-        <Text style={styles.subtitle}>
-          Photograph your grocery receipt and we'll extract the ingredients automatically.
-        </Text>
-
-        <View style={styles.pickRow}>
-          <TouchableOpacity
-            style={styles.pickBtn}
-            onPress={() => pickReceipt(true)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.pickIcon}>📷</Text>
-            <Text style={styles.pickLabel}>Camera</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.pickBtn}
-            onPress={() => pickReceipt(false)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.pickIcon}>🖼</Text>
-            <Text style={styles.pickLabel}>Photo Library</Text>
-          </TouchableOpacity>
-        </View>
-
-        {receiptUri && (
-          <Image source={{ uri: receiptUri }} style={styles.receiptPreview} />
-        )}
-
-        {parsing && (
-          <View style={styles.statusBox}>
-            <ActivityIndicator color="#2e86ab" />
-            <Text style={styles.statusText}>Reading receipt…</Text>
-          </View>
-        )}
-
-        {receiptItems.length > 0 && (
+      <FlatList
+        data={items}
+        keyExtractor={item => item}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.container}
+        ListHeaderComponent={
           <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>
-                Ingredients from receipt ({receiptItems.length})
-              </Text>
-              {receiptItems.map(item => (
-                <View key={item} style={styles.itemRow}>
-                  <Text style={styles.itemText}>• {item}</Text>
-                  <TouchableOpacity onPress={() => removeItem(item)}>
-                    <Text style={styles.removeBtn}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
+            {/* Diet type badge */}
+            <View style={[styles.dietBadge, { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color }]}>
+              <Text style={styles.dietBadgeEmoji}>{dietConfig.emoji}</Text>
+              <Text style={[styles.dietBadgeLabel, { color: dietConfig.color }]}>{dietConfig.label} Plan</Text>
             </View>
 
-            <View style={styles.section}>
-              <View style={styles.pantryHeader}>
-                <Text style={styles.sectionTitle}>Save to Pantry?</Text>
+            <Text style={styles.title}>Scan Your Receipt</Text>
+            <Text style={styles.subtitle}>
+              Photograph your grocery receipt and we'll extract the ingredients automatically.
+            </Text>
+
+            <View style={styles.pickRow}>
+              <TouchableOpacity style={styles.pickBtn} onPress={() => pickReceipt(true)} activeOpacity={0.85}>
+                <Text style={styles.pickIcon}>📷</Text>
+                <Text style={styles.pickLabel}>Camera</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.pickBtn} onPress={() => pickReceipt(false)} activeOpacity={0.85}>
+                <Text style={styles.pickIcon}>🖼</Text>
+                <Text style={styles.pickLabel}>Photo Library</Text>
+              </TouchableOpacity>
+            </View>
+
+            {receiptUri && (
+              <Image source={{ uri: receiptUri }} style={styles.receiptPreview} />
+            )}
+
+            {parsing && (
+              <View style={styles.statusBox}>
+                <ActivityIndicator color="#2e86ab" />
+                <Text style={styles.statusText}>Reading receipt…</Text>
+              </View>
+            )}
+
+            {items.length > 0 && (
+              <View style={styles.sectionHeader}>
+                <View>
+                  <Text style={styles.sectionTitle}>Your Ingredients ({items.length})</Text>
+                  <Text style={styles.pantryHint}>
+                    Checked items are included in your meal plan and saved to your pantry.
+                  </Text>
+                </View>
                 <View style={styles.toggleRow}>
                   <TouchableOpacity onPress={() => toggleAll(true)}>
                     <Text style={styles.toggleLink}>All</Text>
@@ -209,94 +268,116 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                   </TouchableOpacity>
                 </View>
               </View>
-              <Text style={styles.pantryHint}>
-                Checked items will be added to your pantry for future meal plans.
-              </Text>
-              {receiptItems.map(item => (
-                <TouchableOpacity
-                  key={item}
-                  style={styles.checkRow}
-                  onPress={() => setPantryChecked(prev => ({ ...prev, [item]: !prev[item] }))}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.checkbox, pantryChecked[item] && styles.checkboxChecked]}>
-                    {pantryChecked[item] && <Text style={styles.checkmark}>✓</Text>}
-                  </View>
-                  <Text style={styles.checkLabel}>{item}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            )}
           </>
-        )}
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Add item manually</Text>
-          <View style={styles.addRow}>
-            <TextInput
-              style={styles.input}
-              value={newItem}
-              onChangeText={setNewItem}
-              placeholder="e.g. canned chickpeas"
-              placeholderTextColor="#bbb"
-              returnKeyType="done"
-              onSubmitEditing={addManualItem}
-            />
-            <TouchableOpacity style={styles.addBtn} onPress={addManualItem}>
-              <Text style={styles.addBtnText}>Add</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Gluten-free toggle */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dietary options</Text>
+        }
+        renderItem={({ item }) => (
           <TouchableOpacity
-            style={styles.glutenFreeRow}
-            onPress={() => setGlutenFree(prev => !prev)}
+            style={styles.itemRow}
+            onPress={() => setChecked(prev => ({ ...prev, [item]: !prev[item] }))}
             activeOpacity={0.7}
           >
-            <View style={[styles.toggle, glutenFree && styles.toggleOn]}>
-              <View style={[styles.toggleThumb, glutenFree && styles.toggleThumbOn]} />
+            <View style={[styles.checkbox, checked[item] && styles.checkboxChecked]}>
+              {checked[item] && <Text style={styles.checkmark}>✓</Text>}
             </View>
-            <View style={styles.glutenFreeText}>
-              <Text style={styles.glutenFreeLabel}>Gluten-Free</Text>
-              <Text style={styles.glutenFreeHint}>All recipes will avoid gluten-containing ingredients</Text>
-            </View>
+            <Text style={styles.itemText}>{item}</Text>
+            <TouchableOpacity onPress={() => removeItem(item)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.removeBtn}>✕</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles.generateBtn,
-            { backgroundColor: dietConfig.color },
-            (generating || receiptItems.length === 0) && styles.btnDisabled,
-          ]}
-          onPress={handleGenerate}
-          disabled={generating || receiptItems.length === 0}
-          activeOpacity={0.85}
-        >
-          {generating ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.generateBtnText}>
-              Generate {dietConfig.label} Plan →
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        {generating && (
-          <Text style={styles.generatingNote}>
-            Creating your {dietConfig.label}{glutenFree ? ' gluten-free' : ''} meal plan… this may take 15–30 seconds.
-          </Text>
         )}
-      </ScrollView>
+        ListFooterComponent={
+          <>
+            {/* Add item manually */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Add item manually</Text>
+              <View style={styles.addRow}>
+                <TextInput
+                  style={styles.input}
+                  value={newItem}
+                  onChangeText={setNewItem}
+                  placeholder="e.g. canned chickpeas"
+                  placeholderTextColor="#bbb"
+                  returnKeyType="done"
+                  onSubmitEditing={addManualItem}
+                />
+                <TouchableOpacity style={styles.addBtn} onPress={addManualItem}>
+                  <Text style={styles.addBtnText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Gluten-free toggle */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Dietary options</Text>
+              <TouchableOpacity
+                style={styles.glutenFreeRow}
+                onPress={() => setGlutenFree(prev => !prev)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.toggle, glutenFree && styles.toggleOn]}>
+                  <View style={[styles.toggleThumb, glutenFree && styles.toggleThumbOn]} />
+                </View>
+                <View style={styles.glutenFreeText}>
+                  <Text style={styles.glutenFreeLabel}>Gluten-Free</Text>
+                  <Text style={styles.glutenFreeHint}>All recipes will avoid gluten-containing ingredients</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Start Over */}
+            {items.length > 0 && (
+              <TouchableOpacity style={styles.startOverBtn} onPress={handleStartOver} activeOpacity={0.75}>
+                <Text style={styles.startOverText}>Start Over</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Retry countdown */}
+            {retryCountdown > 0 && (
+              <View style={styles.countdownBox}>
+                <ActivityIndicator color="#f4a261" size="small" />
+                <Text style={styles.countdownText}>
+                  AI service busy — retrying in {retryCountdown}s
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[
+                styles.generateBtn,
+                { backgroundColor: dietConfig.color },
+                (generating || checkedCount === 0 || retryCountdown > 0) && styles.btnDisabled,
+              ]}
+              onPress={handleGenerate}
+              disabled={generating || checkedCount === 0 || retryCountdown > 0}
+              activeOpacity={0.85}
+            >
+              {generating ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.generateBtnText}>
+                  {checkedCount > 0
+                    ? `Generate ${dietConfig.label} Plan (${checkedCount} items) →`
+                    : `Generate ${dietConfig.label} Plan →`}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            {generating && (
+              <Text style={styles.generatingNote}>
+                Creating your {dietConfig.label}{glutenFree ? ' gluten-free' : ''} meal plan… this may take 15–30 seconds.
+              </Text>
+            )}
+          </>
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
-  container: { padding: 24 },
+  container: { padding: 24, paddingBottom: 40 },
 
   dietBadge: {
     flexDirection: 'row',
@@ -336,8 +417,20 @@ const styles = StyleSheet.create({
   },
   statusBox: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
   statusText: { color: '#2e86ab', fontWeight: '600' },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1a1a1a', marginBottom: 10 },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 },
+  pantryHint: { fontSize: 12, color: '#888', fontStyle: 'italic' },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  toggleLink: { fontSize: 13, color: '#2e86ab', fontWeight: '600' },
+  toggleSep: { fontSize: 13, color: '#bbb' },
+
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -346,9 +439,24 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     marginBottom: 6,
+    gap: 12,
   },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+  },
+  checkboxChecked: { backgroundColor: '#2e86ab', borderColor: '#2e86ab' },
+  checkmark: { color: 'white', fontSize: 13, fontWeight: '800' },
   itemText: { flex: 1, fontSize: 14, color: '#333', textTransform: 'capitalize' },
   removeBtn: { color: '#bbb', fontWeight: '700', fontSize: 14 },
+
+  section: { marginBottom: 24, marginTop: 8 },
   addRow: { flexDirection: 'row', gap: 10 },
   input: {
     flex: 1,
@@ -402,6 +510,27 @@ const styles = StyleSheet.create({
   glutenFreeLabel: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
   glutenFreeHint: { fontSize: 12, color: '#888', marginTop: 2 },
 
+  startOverBtn: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  startOverText: { color: '#888', fontSize: 14, textDecorationLine: 'underline' },
+
+  countdownBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#fff8f0',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f4a261',
+  },
+  countdownText: { color: '#c07030', fontSize: 14, fontWeight: '600' },
+
   generateBtn: {
     borderRadius: 14,
     paddingVertical: 16,
@@ -411,36 +540,4 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.5 },
   generateBtnText: { color: 'white', fontSize: 17, fontWeight: '700' },
   generatingNote: { textAlign: 'center', fontSize: 13, color: '#888', fontStyle: 'italic' },
-
-  pantryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  toggleLink: { fontSize: 13, color: '#2e86ab', fontWeight: '600' },
-  toggleSep: { fontSize: 13, color: '#bbb' },
-  pantryHint: { fontSize: 12, color: '#888', fontStyle: 'italic', marginBottom: 10 },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 6,
-    gap: 12,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#ccc',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
-  },
-  checkboxChecked: {
-    backgroundColor: '#2e86ab',
-    borderColor: '#2e86ab',
-  },
-  checkmark: { color: 'white', fontSize: 13, fontWeight: '800' },
-  checkLabel: { flex: 1, fontSize: 14, color: '#333', textTransform: 'capitalize' },
 });
