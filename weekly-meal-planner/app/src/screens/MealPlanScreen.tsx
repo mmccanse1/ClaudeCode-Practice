@@ -35,11 +35,11 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace, dietType);
       const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
       const updated = recipes.map((r, i) =>
-        i === index ? { ...newRecipe, photoUrl } : r
+        i === index ? { ...newRecipe, photoUrl, dietType } : r
       );
       setRecipes(updated);
       setMenuSaved(false);
-      await saveCurrentMealPlan(updated, ingredients);
+      await saveCurrentMealPlan(updated, ingredients, dietType);
     } catch (e: any) {
       Alert.alert('Could not refresh recipe', e.message);
     } finally {
@@ -50,7 +50,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   async function handleSaveMenu() {
     setSaving(true);
     try {
-      await saveMenu(recipes, ingredients);
+      await saveMenu(recipes, ingredients, dietType);
       setMenuSaved(true);
       Alert.alert('Menu Saved!', 'This meal plan has been saved to your Menus folder.');
     } catch (e: any) {
@@ -101,6 +101,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
             onPress={() => navigation.navigate('RecipeDetail', { recipe: item, dietType })}
             onRefresh={() => handleRefreshRecipe(index)}
             refreshing={refreshingDay === item.day}
+            refreshDisabled={refreshingDay !== null && refreshingDay !== item.day}
           />
         )}
         contentContainerStyle={styles.list}

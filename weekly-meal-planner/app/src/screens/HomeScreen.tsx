@@ -37,7 +37,7 @@ export default function HomeScreen({ navigation }: Props) {
   const HeaderContent = (
     <View style={styles.headerOverlay}>
       <Text style={styles.title}>Weekly Meal Planner</Text>
-      <Text style={styles.subtitle}>Mediterranean diet · Powered by your pantry</Text>
+      <Text style={styles.subtitle}>AI-powered recipes · Built from your pantry</Text>
     </View>
   );
 
@@ -68,7 +68,7 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.cardTitle}>Ready to plan your week?</Text>
             <Text style={styles.cardBody}>
               Scan your grocery receipt and add your pantry items. We'll generate
-              7 Mediterranean diet recipes tailored to what you have on hand.
+              7 personalized recipes tailored to what you have on hand.
             </Text>
           </View>
 
@@ -87,6 +87,7 @@ export default function HomeScreen({ navigation }: Props) {
                 navigation.navigate('MealPlan', {
                   recipes: currentPlan.recipes,
                   ingredients: currentPlan.ingredients,
+                  dietType: currentPlan.dietType,
                 })
               }
               activeOpacity={0.85}
@@ -121,7 +122,7 @@ export default function HomeScreen({ navigation }: Props) {
             {[
               ['1', 'Photograph your grocery receipt'],
               ['2', 'Add items already in your pantry'],
-              ['3', 'Get 7 Mediterranean recipes generated for you'],
+              ['3', 'Get 7 personalized recipes generated for you'],
               ['4', 'Save and share beautifully formatted recipe cards'],
             ].map(([num, text]) => (
               <View key={num} style={styles.step}>

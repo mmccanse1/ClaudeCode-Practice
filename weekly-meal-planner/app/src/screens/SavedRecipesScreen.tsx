@@ -103,6 +103,7 @@ export default function SavedRecipesScreen({ navigation }: Props) {
                 navigation.navigate('MealPlan', {
                   recipes: item.recipes,
                   ingredients: item.ingredients,
+                  dietType: item.dietType,
                 })
               }
               activeOpacity={0.85}

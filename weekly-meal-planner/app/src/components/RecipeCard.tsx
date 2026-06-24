@@ -8,15 +8,18 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Recipe } from '../types';
+import { DIET_TYPES } from '../constants/dietTypes';
 
 interface Props {
   recipe: Recipe;
   onPress: () => void;
   onRefresh?: () => void;
   refreshing?: boolean;
+  refreshDisabled?: boolean;
 }
 
-export default function RecipeCard({ recipe, onPress, onRefresh, refreshing }: Props) {
+export default function RecipeCard({ recipe, onPress, onRefresh, refreshing, refreshDisabled }: Props) {
+  const dietConfig = DIET_TYPES.find(d => d.id === recipe.dietType) ?? DIET_TYPES[0];
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       {recipe.photoUrl ? (
@@ -32,7 +35,7 @@ export default function RecipeCard({ recipe, onPress, onRefresh, refreshing }: P
             <Text style={styles.dayText}>{recipe.day}</Text>
           </View>
           <View style={styles.dietBadge}>
-            <Text style={styles.dietText}>Mediterranean</Text>
+            <Text style={styles.dietText}>{dietConfig.emoji} {dietConfig.label}</Text>
           </View>
         </View>
         <Text style={styles.name}>{recipe.name}</Text>
@@ -49,7 +52,7 @@ export default function RecipeCard({ recipe, onPress, onRefresh, refreshing }: P
             <TouchableOpacity
               style={styles.refreshBtn}
               onPress={onRefresh}
-              disabled={refreshing}
+              disabled={refreshing || refreshDisabled}
               activeOpacity={0.7}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >

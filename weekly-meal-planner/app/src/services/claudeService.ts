@@ -86,7 +86,8 @@ export async function regenerateRecipe(
       text: `You are a ${dietConfig.label} diet expert. ${dietConfig.promptGuidelines}
 
 Available ingredients: ${ingredients.join(', ')}
-You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs).
+You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
+STRICT protein rule: ONLY use proteins (meat, poultry, fish, seafood, eggs, tofu, tempeh, legumes, beans) that appear explicitly in the available ingredients list above. Do NOT introduce any protein that is not on the list.
 
 Generate exactly 1 new ${dietConfig.label} diet recipe for ${dayToReplace}.
 
@@ -125,7 +126,8 @@ export async function generateMealPlan(ingredients: string[], dietType: DietType
 
 Available ingredients: ${ingredients.join(', ')}
 
-You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs).
+You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
+STRICT protein rule: ONLY use proteins (meat, poultry, fish, seafood, eggs, tofu, tempeh, legumes, beans) that appear explicitly in the available ingredients list above. Do NOT introduce any protein that is not on the list.
 
 Generate exactly 7 ${dietConfig.label} diet recipes, one per day (Monday–Sunday). Each recipe must primarily use ingredients from the list above.
 

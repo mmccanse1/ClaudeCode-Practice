@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,11 @@ export default function ScanReceiptScreen({ navigation }: Props) {
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [selectedDiet, setSelectedDiet] = useState<DietType>('mediterranean');
+  const [pantryCount, setPantryCount] = useState(0);
+
+  useEffect(() => {
+    getPantryItems().then(items => setPantryCount(items.length));
+  }, []);
 
   function toggleAll(checked: boolean) {
     const next: Record<string, boolean> = {};
@@ -107,8 +112,8 @@ export default function ScanReceiptScreen({ navigation }: Props) {
   }
 
   async function handleGenerate() {
-    if (receiptItems.length === 0) {
-      Alert.alert('No ingredients', 'Please scan a receipt or add items manually.');
+    if (receiptItems.length === 0 && pantryCount === 0) {
+      Alert.alert('No ingredients', 'Please scan a receipt, add items manually, or add items to your pantry.');
       return;
     }
 
@@ -121,15 +126,16 @@ export default function ScanReceiptScreen({ navigation }: Props) {
       const allIngredients = Array.from(new Set([...receiptItems, ...pantryItems]));
       const recipes = await generateMealPlan(allIngredients, selectedDiet);
 
-      // Fetch Unsplash photos in parallel
+      // Fetch photos in parallel and stamp dietType on every recipe
       const withPhotos = await Promise.all(
         recipes.map(async recipe => ({
           ...recipe,
+          dietType: selectedDiet,
           photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
         }))
       );
 
-      await saveCurrentMealPlan(withPhotos, allIngredients);
+      await saveCurrentMealPlan(withPhotos, allIngredients, selectedDiet);
 
       navigation.navigate('MealPlan', {
         recipes: withPhotos,
@@ -269,9 +275,9 @@ export default function ScanReceiptScreen({ navigation }: Props) {
         </View>
 
         <TouchableOpacity
-          style={[styles.generateBtn, (generating || receiptItems.length === 0) && styles.btnDisabled]}
+          style={[styles.generateBtn, (generating || (receiptItems.length === 0 && pantryCount === 0)) && styles.btnDisabled]}
           onPress={handleGenerate}
-          disabled={generating || receiptItems.length === 0}
+          disabled={generating || (receiptItems.length === 0 && pantryCount === 0)}
           activeOpacity={0.85}
         >
           {generating ? (
@@ -283,7 +289,7 @@ export default function ScanReceiptScreen({ navigation }: Props) {
 
         {generating && (
           <Text style={styles.generatingNote}>
-            Creating your Mediterranean meal plan… this may take 15–30 seconds.
+            Creating your {DIET_TYPES.find(d => d.id === selectedDiet)?.label ?? 'meal'} plan… this may take 15–30 seconds.
           </Text>
         )}
       </ScrollView>

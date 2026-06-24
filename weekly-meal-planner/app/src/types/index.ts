@@ -10,6 +10,7 @@ export interface Recipe {
   nutritionNotes: string;
   searchQuery: string;
   photoUrl?: string;
+  dietType?: DietType;
 }
 
 export interface MealPlan {

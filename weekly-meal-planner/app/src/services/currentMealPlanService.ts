@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Recipe } from '../types';
+import { Recipe, DietType } from '../types';
 
 const KEY = '@meal_planner_current_plan';
 
@@ -8,6 +8,7 @@ interface StoredPlan {
   ingredients: string[];
   createdAt: string;
   expiresAt: string;
+  dietType: DietType;
 }
 
 export interface CurrentPlan {
@@ -15,15 +16,17 @@ export interface CurrentPlan {
   ingredients: string[];
   daysRemaining: number;
   createdAt: Date;
+  dietType: DietType;
 }
 
 export async function saveCurrentMealPlan(
   recipes: Recipe[],
-  ingredients: string[]
+  ingredients: string[],
+  dietType: DietType = 'mediterranean'
 ): Promise<void> {
   const createdAt = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const plan: StoredPlan = { recipes, ingredients, createdAt, expiresAt };
+  const plan: StoredPlan = { recipes, ingredients, createdAt, expiresAt, dietType };
   await AsyncStorage.setItem(KEY, JSON.stringify(plan));
 }
 
@@ -49,6 +52,7 @@ export async function getCurrentMealPlan(): Promise<CurrentPlan | null> {
       ingredients: plan.ingredients,
       daysRemaining,
       createdAt: new Date(plan.createdAt),
+      dietType: plan.dietType ?? 'mediterranean',
     };
   } catch {
     return null;
