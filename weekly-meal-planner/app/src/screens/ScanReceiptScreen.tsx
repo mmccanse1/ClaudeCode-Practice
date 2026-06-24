@@ -12,6 +12,7 @@ import {
   Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { parseReceiptFromImage } from '../services/claudeService';
@@ -57,19 +58,25 @@ export default function ScanReceiptScreen({ navigation }: Props) {
 
     if (result.canceled || !result.assets[0]) return;
 
-    const { uri, base64, mimeType } = result.assets[0];
+    const { uri } = result.assets[0];
     setReceiptUri(uri);
     setReceiptItems([]);
     setPantryChecked({});
 
-    if (!base64) {
-      Alert.alert('Could not read receipt', 'Image data unavailable.');
-      return;
-    }
-
     setParsing(true);
     try {
-      const items = await parseReceiptFromImage(base64, mimeType || 'image/jpeg');
+      const converted = await ImageManipulator.manipulateAsync(
+        uri,
+        [],
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+
+      if (!converted.base64) {
+        Alert.alert('Could not read receipt', 'Image data unavailable.');
+        return;
+      }
+
+      const items = await parseReceiptFromImage(converted.base64, 'image/jpeg');
       const initialChecked: Record<string, boolean> = {};
       items.forEach(i => { initialChecked[i] = true; });
       setReceiptItems(items);
