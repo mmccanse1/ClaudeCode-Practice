@@ -123,6 +123,7 @@ export default function ScanReceiptScreen({ navigation }: Props) {
       navigation.navigate('MealPlan', {
         recipes: withPhotos,
         ingredients: allIngredients,
+        pantrySavedCount: toSave.length,
       });
     } catch (e: any) {
       Alert.alert('Generation failed', e.message);
@@ -170,41 +171,28 @@ export default function ScanReceiptScreen({ navigation }: Props) {
         )}
 
         {receiptItems.length > 0 && (
-          <>
-            <View style={styles.section}>
+          <View style={styles.section}>
+            <View style={styles.pantryHeader}>
               <Text style={styles.sectionTitle}>
-                Ingredients from receipt ({receiptItems.length})
+                Ingredients ({receiptItems.length})
               </Text>
-              {receiptItems.map(item => (
-                <View key={item} style={styles.itemRow}>
-                  <Text style={styles.itemText}>• {item}</Text>
-                  <TouchableOpacity onPress={() => removeItem(item)}>
-                    <Text style={styles.removeBtn}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.section}>
-              <View style={styles.pantryHeader}>
-                <Text style={styles.sectionTitle}>Save to Pantry?</Text>
-                <View style={styles.toggleRow}>
-                  <TouchableOpacity onPress={() => toggleAll(true)}>
-                    <Text style={styles.toggleLink}>All</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.toggleSep}>/</Text>
-                  <TouchableOpacity onPress={() => toggleAll(false)}>
-                    <Text style={styles.toggleLink}>None</Text>
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.toggleRow}>
+                <TouchableOpacity onPress={() => toggleAll(true)}>
+                  <Text style={styles.toggleLink}>All</Text>
+                </TouchableOpacity>
+                <Text style={styles.toggleSep}>/</Text>
+                <TouchableOpacity onPress={() => toggleAll(false)}>
+                  <Text style={styles.toggleLink}>None</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.pantryHint}>
-                Checked items will be added to your pantry for future meal plans.
-              </Text>
-              {receiptItems.map(item => (
+            </View>
+            <Text style={styles.pantryHint}>
+              Check items to save to your pantry. Tap ✕ to remove from this plan.
+            </Text>
+            {receiptItems.map(item => (
+              <View key={item} style={styles.checkRow}>
                 <TouchableOpacity
-                  key={item}
-                  style={styles.checkRow}
+                  style={styles.checkRowInner}
                   onPress={() => setPantryChecked(prev => ({ ...prev, [item]: !prev[item] }))}
                   activeOpacity={0.7}
                 >
@@ -213,9 +201,12 @@ export default function ScanReceiptScreen({ navigation }: Props) {
                   </View>
                   <Text style={styles.checkLabel}>{item}</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          </>
+                <TouchableOpacity onPress={() => removeItem(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.removeBtn}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
         )}
 
         <View style={styles.section}>
@@ -342,6 +333,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     marginBottom: 6,
+    gap: 12,
+  },
+  checkRowInner: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
   checkbox: {
