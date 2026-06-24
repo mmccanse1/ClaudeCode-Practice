@@ -28,6 +28,7 @@ The app currently uses Google Gemini (`gemini-2.5-flash`) for both receipt OCR a
 
 ---
 
+
 ## 🫙 Visual Spice Rack (Premium Pantry)
 
 **The concept:**
@@ -106,6 +107,7 @@ A regular user who hits this on their first generate attempt will likely delete 
 
 **This is the #1 infrastructure item before scaling to real users.**
 
+
 ---
 
 ## 🍽️ Additional Diet Types
@@ -176,6 +178,7 @@ A promo code or access code system that unlocks the full premium tier for free �
 ---
 
 ## 💰 Subscription Promotions
+
 
 - First month free (trial period to convert free users)
 - Discounted annual plan (e.g. $19.99/year vs $2.99/month — saves the user ~$16)

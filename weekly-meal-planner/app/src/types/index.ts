@@ -25,7 +25,7 @@ export type DietType = 'mediterranean' | 'keto' | 'paleo' | 'vegetarian' | 'vega
 
 export type RootStackParamList = {
   Home: undefined;
-  ScanReceipt: undefined;
+  ScanReceipt: { dietType: DietType };
   Pantry: undefined;
   PantryShelf: undefined;
   MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType; pantrySavedCount?: number };

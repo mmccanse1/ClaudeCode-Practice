@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#f5f0e8"
     },
@@ -32,6 +33,9 @@
     },
     "web": {
       "favicon": "./assets/icon.png"
+    },
+    "extra": {
+      "privacyPolicyUrl": "https://mmccanse1.github.io/ClaudeCode-Practice/privacy-policy.html"
     },
     "plugins": [
       [

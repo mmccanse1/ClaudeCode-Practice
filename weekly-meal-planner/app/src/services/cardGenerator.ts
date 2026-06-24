@@ -260,6 +260,6 @@ export async function saveAndShareRecipeCard(recipe: Recipe, dietType: DietType 
   return path;
 }
 
-export function buildRecipeCardHtmlString(recipe: Recipe): string {
-  return buildRecipeCardHtml(recipe);
+export function buildRecipeCardHtmlString(recipe: Recipe, dietType: DietType = 'mediterranean'): string {
+  return buildRecipeCardHtml(recipe, dietType);
 }
