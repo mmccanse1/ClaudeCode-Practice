@@ -26,7 +26,8 @@
       "package": "com.mmccanse.weeklymealplanner",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -45,6 +46,11 @@
           "photosPermission": "Used to select a photo of your grocery receipt."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "655aad75-8050-4eb4-908b-ba64562c4b27"
+      }
+    }
   }
 }
