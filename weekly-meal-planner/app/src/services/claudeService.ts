@@ -1,4 +1,5 @@
-import { Recipe } from '../types';
+import { Recipe, DietType } from '../types';
+import { DIET_TYPES } from '../constants/dietTypes';
 
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 const CLAUDE_BASE = 'https://api.anthropic.com/v1/messages';
@@ -65,8 +66,10 @@ export async function parseReceiptFromImage(base64: string, mimeType: string = '
 export async function regenerateRecipe(
   ingredients: string[],
   existingRecipes: Recipe[],
-  dayToReplace: string
+  dayToReplace: string,
+  dietType: DietType = 'mediterranean'
 ): Promise<Recipe> {
+  const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const otherRecipes = existingRecipes
     .filter(r => r.day !== dayToReplace)
     .map(r => `${r.day}: ${r.name}`)
@@ -80,26 +83,18 @@ export async function regenerateRecipe(
   const text = await callClaude([
     {
       type: 'text',
-      text: `You are a Mediterranean diet nutritionist following Mayo Clinic guidelines.
+      text: `You are a ${dietConfig.label} diet expert. ${dietConfig.promptGuidelines}
 
 Available ingredients: ${ingredients.join(', ')}
 You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs).
 
-Generate exactly 1 new Mediterranean diet recipe for ${dayToReplace}.
+Generate exactly 1 new ${dietConfig.label} diet recipe for ${dayToReplace}.
 
 The rest of the weekly menu is already set — do NOT duplicate any of these:
 ${otherRecipes}
 
-Mayo Clinic Mediterranean diet principles:
-- Emphasise vegetables, fruits, whole grains, legumes, nuts
-- Use olive oil as the main fat
-- Include fish or seafood when possible (vary the fish)
-- Limit red meat
-- Moderate dairy
-
 STRICT rules:
 - ${salmonAlreadyUsed ? 'Do NOT use salmon — it already appears elsewhere in the week.' : 'Salmon may appear only if it has not been used elsewhere this week.'}
-- Do NOT use zucchini (courgette) or yellow squash.
 - Must be different from all the recipes listed above.
 
 Return ONLY a valid JSON object (not an array) with this exact shape:
@@ -112,7 +107,7 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
   "servings": 4,
   "ingredients": ["quantity + ingredient"],
   "steps": ["Full sentence step."],
-  "nutritionNotes": "string (1 sentence Mediterranean benefit)",
+  "nutritionNotes": "string (1 sentence diet benefit)",
   "searchQuery": "concise food photo search term"
 }`,
     },
@@ -121,29 +116,22 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
   return extractJson<Recipe>(text);
 }
 
-export async function generateMealPlan(ingredients: string[]): Promise<Recipe[]> {
+export async function generateMealPlan(ingredients: string[], dietType: DietType = 'mediterranean'): Promise<Recipe[]> {
+  const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const text = await callClaude([
     {
       type: 'text',
-      text: `You are a Mediterranean diet nutritionist following Mayo Clinic guidelines.
+      text: `You are a ${dietConfig.label} diet expert. ${dietConfig.promptGuidelines}
 
 Available ingredients: ${ingredients.join(', ')}
 
 You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs).
 
-Generate exactly 7 Mediterranean diet recipes, one per day (Monday–Sunday). Each recipe must primarily use ingredients from the list above.
-
-Mayo Clinic Mediterranean diet principles to follow:
-- Emphasise vegetables, fruits, whole grains, legumes, nuts
-- Use olive oil as the main fat
-- Include fish or seafood at least twice a week (vary the fish — cod, sea bass, tuna, shrimp, sardines, etc.)
-- Limit red meat to a few times per month
-- Moderate dairy (mainly cheese and yoghurt)
+Generate exactly 7 ${dietConfig.label} diet recipes, one per day (Monday–Sunday). Each recipe must primarily use ingredients from the list above.
 
 STRICT variety rules — follow these exactly:
-- Salmon may appear in AT MOST 1 of the 7 recipes. Prefer other fish varieties.
-- Do NOT use zucchini (courgette) or yellow squash in any recipe. Use other vegetables instead.
 - Vary proteins across the week: no single protein source should appear more than twice.
+- Each recipe must be distinct — no repeated dishes.
 
 Return ONLY a valid JSON array of 7 objects with this exact shape:
 [
@@ -156,7 +144,7 @@ Return ONLY a valid JSON array of 7 objects with this exact shape:
     "servings": 4,
     "ingredients": ["quantity + ingredient"],
     "steps": ["Full sentence step."],
-    "nutritionNotes": "string (1 sentence Mediterranean benefit)",
+    "nutritionNotes": "string (1 sentence diet benefit)",
     "searchQuery": "concise food photo search term"
   }
 ]`,

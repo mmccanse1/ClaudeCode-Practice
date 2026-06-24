@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Recipe } from '../types';
+import { RootStackParamList, Recipe, DietType } from '../types';
+import { DIET_TYPES } from '../constants/dietTypes';
 import RecipeCard from '../components/RecipeCard';
 import { saveMenu } from '../services/savedMenusService';
 import { regenerateRecipe } from '../services/claudeService';
@@ -20,7 +21,8 @@ import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 
 export default function MealPlanScreen({ navigation, route }: Props) {
-  const { ingredients } = route.params;
+  const { ingredients, pantrySavedCount, dietType = 'mediterranean' } = route.params;
+  const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
   const [saving, setSaving] = useState(false);
   const [menuSaved, setMenuSaved] = useState(false);
@@ -30,7 +32,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     const dayToReplace = recipes[index].day;
     setRefreshingDay(dayToReplace);
     try {
-      const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace);
+      const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace, dietType);
       const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
       const updated = recipes.map((r, i) =>
         i === index ? { ...newRecipe, photoUrl } : r
@@ -67,9 +69,16 @@ export default function MealPlanScreen({ navigation, route }: Props) {
           <View style={styles.header}>
             <Text style={styles.title}>Your Week of Meals</Text>
             <Text style={styles.subtitle}>
-              7 Mediterranean recipes built from {ingredients.length} ingredients.
+              7 {dietConfig.emoji} {dietConfig.label} recipes built from {ingredients.length} ingredients.
               Tap any recipe for the full card.
             </Text>
+            {pantrySavedCount != null && pantrySavedCount > 0 && (
+              <View style={styles.pantryBanner}>
+                <Text style={styles.pantryBannerText}>
+                  🧺  {pantrySavedCount} item{pantrySavedCount !== 1 ? 's' : ''} saved to your pantry
+                </Text>
+              </View>
+            )}
             <TouchableOpacity
               style={[styles.saveMenuBtn, menuSaved && styles.saveMenuBtnSaved]}
               onPress={handleSaveMenu}
@@ -89,7 +98,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         renderItem={({ item, index }) => (
           <RecipeCard
             recipe={item}
-            onPress={() => navigation.navigate('RecipeDetail', { recipe: item })}
+            onPress={() => navigation.navigate('RecipeDetail', { recipe: item, dietType })}
             onRefresh={() => handleRefreshRecipe(index)}
             refreshing={refreshingDay === item.day}
           />
@@ -115,4 +124,14 @@ const styles = StyleSheet.create({
   },
   saveMenuBtnSaved: { backgroundColor: '#1d5c63' },
   saveMenuBtnText: { color: 'white', fontSize: 15, fontWeight: '700' },
+  pantryBanner: {
+    backgroundColor: '#e8f5e9',
+    borderWidth: 1,
+    borderColor: '#a8dadc',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  pantryBannerText: { fontSize: 13, color: '#1d5c63', fontWeight: '600' },
 });
