@@ -4,6 +4,30 @@ Ideas discussed during development. Not in scope for v1 launch.
 
 ---
 
+## 🤖 Anthropic Claude API vs. Gemini — Evaluate Before Backend Build
+
+**The question:**
+The app currently uses Google Gemini (`gemini-2.5-flash`) for both receipt OCR and meal plan generation. Before building the subscription backend and moving to a paid API key, evaluate whether switching to the Anthropic Claude API would be a better long-term choice.
+
+**Angles to explore:**
+
+| Factor | Gemini | Claude (Anthropic) |
+|---|---|---|
+| Recipe quality | Good | Potentially better reasoning, more nuanced dietary guidance |
+| OCR / vision | Yes (receipt scanning) | Yes (Claude supports vision) |
+| Free tier | Yes (current setup) | Limited — paid from the start |
+| Pricing | Competitive | Compare per-token costs at expected usage volume |
+| Uptime / reliability | 503s observed on free tier | Paid tier SLA — worth comparing |
+| API stability | Google ecosystem | Anthropic — independent, focused on AI |
+| SDK | REST only | Official Anthropic SDK (TypeScript/JS available) |
+| Streaming | Yes | Yes |
+
+**Note:** The backend proxy (Node/Express) planned for v2 makes an API swap almost trivial — the model call is in one place (`claudeService.ts`). This decision does not need to be made before the proxy is built.
+
+**Recommendation to evaluate:** Run the same meal plan prompt through both APIs side-by-side and compare recipe quality, consistency, and adherence to diet guidelines before committing to either for the paid tier.
+
+---
+
 ## 🫙 Visual Spice Rack (Premium Pantry)
 
 **The concept:**
