@@ -118,9 +118,11 @@ export default function HomeScreen({ navigation }: Props) {
                 onPress={() => handleDietSelect(diet)}
                 activeOpacity={0.82}
               >
-                <View style={styles.lockBadge}>
-                  <Text style={styles.lockIcon}>🔒</Text>
-                </View>
+                {diet.premium && (
+                  <View style={styles.lockBadge}>
+                    <Text style={styles.lockIcon}>🔒</Text>
+                  </View>
+                )}
                 <Text style={styles.dietEmoji}>{diet.emoji}</Text>
                 <Text style={[styles.dietLabel, { color: diet.color }]}>{diet.label}</Text>
                 <Text style={styles.dietTagline}>{diet.tagline}</Text>
@@ -129,7 +131,7 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
 
           <Text style={styles.upgradeHint}>
-            Unlock Keto, Paleo, Vegetarian & Vegan — Planner plan $2.99/mo
+            Unlock Keto, Paleo & Vegan — Planner plan $2.99/mo
           </Text>
 
           {/* Active plans */}

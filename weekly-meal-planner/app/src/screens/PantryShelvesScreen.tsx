@@ -24,7 +24,6 @@ import {
   PantrySection,
 } from '../services/pantryService';
 import { fetchIngredientPhoto } from '../services/unsplashService';
-import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PantryShelf'>;
 
@@ -131,14 +130,6 @@ export default function PantryShelvesScreen({}: Props) {
 
   const totalItems = allItems.length;
 
-  function showUpgradeAlert() {
-    Alert.alert(
-      'Organized Pantry Sections — Planner Plan',
-      'Upgrade to Planner ($2.99/month) to see your pantry automatically sorted into Refrigerated, Spices & Seasonings, and Dry Goods sections.\n\nAll your items are still here and usable — this is just about organization.\n\nUpgrade coming soon!',
-      [{ text: 'OK' }]
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safe}>
       {loading ? (
@@ -150,8 +141,8 @@ export default function PantryShelvesScreen({}: Props) {
             Add ingredients on the My Pantry page — items will be automatically sorted into sections.
           </Text>
         </View>
-      ) : IS_PREMIUM ? (
-        /* ── Premium view: 3 labeled sections ── */
+      ) : (
+        /* ── Sectioned view: 3 labeled sections for all users ── */
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {SECTION_ORDER.map(section => {
             const items = pantry[section];
@@ -177,31 +168,6 @@ export default function PantryShelvesScreen({}: Props) {
               </View>
             );
           })}
-        </ScrollView>
-      ) : (
-        /* ── Free view: flat grid of all items + upgrade nudge ── */
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <TouchableOpacity style={styles.upgradeNudge} onPress={showUpgradeAlert} activeOpacity={0.85}>
-            <Text style={styles.upgradeNudgeText}>
-              📂  Upgrade to organize your pantry into sections
-            </Text>
-            <View style={styles.upgradeBadge}>
-              <Text style={styles.upgradeBadgeText}>$2.99/mo</Text>
-            </View>
-          </TouchableOpacity>
-
-          <View style={styles.section}>
-            <View style={[styles.sectionHeader, { backgroundColor: '#f5f0e8', borderLeftColor: '#2e86ab' }]}>
-              <Text style={styles.sectionEmoji}>🗄</Text>
-              <View style={styles.sectionHeaderText}>
-                <Text style={[styles.sectionLabel, { color: '#2e86ab' }]}>My Pantry</Text>
-                <Text style={styles.sectionCount}>
-                  {totalItems} {totalItems === 1 ? 'item' : 'items'}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.gridWrap}>{renderGrid(allItems)}</View>
-          </View>
         </ScrollView>
       )}
     </SafeAreaView>
@@ -289,23 +255,4 @@ const styles = StyleSheet.create({
   },
   removeBtnText: { color: 'white', fontSize: 8, fontWeight: '800' },
 
-  upgradeNudge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#f4a261',
-    gap: 10,
-  },
-  upgradeNudgeText: { flex: 1, fontSize: 13, color: '#555' },
-  upgradeBadge: {
-    backgroundColor: '#f4a261',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  upgradeBadgeText: { color: 'white', fontSize: 11, fontWeight: '800' },
 });
