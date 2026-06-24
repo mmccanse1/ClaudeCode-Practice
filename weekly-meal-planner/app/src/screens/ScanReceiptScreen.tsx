@@ -41,6 +41,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [glutenFree, setGlutenFree] = useState(false);
   const [retryCountdown, setRetryCountdown] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const flowCompletedRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -50,14 +51,16 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      // reset state each time user navigates back to this screen
-      setReceiptUri(null);
-      setItems([]);
-      setChecked({});
-      setNewItem('');
-      setGlutenFree(false);
-      setRetryCountdown(0);
-      if (countdownRef.current) clearInterval(countdownRef.current);
+      if (flowCompletedRef.current) {
+        flowCompletedRef.current = false;
+        setReceiptUri(null);
+        setItems([]);
+        setChecked({});
+        setNewItem('');
+        setGlutenFree(false);
+        setRetryCountdown(0);
+        if (countdownRef.current) clearInterval(countdownRef.current);
+      }
     }, [])
   );
 
@@ -77,12 +80,11 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
   function mergeItems(newItems: string[]) {
     const deduped = [...new Set(newItems.map(i => i.trim().toLowerCase()))];
-    setItems(prev => {
-      const merged = [...new Set([...prev, ...deduped])];
-      const nextChecked: Record<string, boolean> = { ...checked };
-      deduped.forEach(i => { if (!(i in nextChecked)) nextChecked[i] = true; });
-      setChecked(nextChecked);
-      return merged;
+    setItems(prev => [...new Set([...prev, ...deduped])]);
+    setChecked(prev => {
+      const next = { ...prev };
+      deduped.forEach(i => { if (!(i in next)) next[i] = true; });
+      return next;
     });
   }
 
@@ -178,6 +180,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
       await saveCurrentMealPlan(withPhotos, allIngredients, dietType);
 
+      flowCompletedRef.current = true;
       navigation.navigate('MealPlan', {
         recipes: withPhotos,
         ingredients: allIngredients,
@@ -189,7 +192,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         startRetryCountdown(60);
         Alert.alert(
           'Too Many Requests',
-          'The AI service is busy. We\'ll retry automatically in 60 seconds, or you can try again manually.'
+          'The AI service is busy. Please wait 60 seconds, then tap Generate to try again.'
         );
       } else if (e.message === AI_PARSE_ERROR) {
         Alert.alert(
