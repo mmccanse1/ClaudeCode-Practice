@@ -32,7 +32,9 @@ async function callGemini(parts: object[]): Promise<string> {
   }
 
   const data = await response.json();
-  return data.candidates[0].content.parts[0].text as string;
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (typeof text !== 'string') throw new Error(AI_PARSE_ERROR);
+  return text;
 }
 
 function extractJson<T>(text: string): T {

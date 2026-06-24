@@ -90,7 +90,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
             <TouchableOpacity
               style={[styles.saveMenuBtn, menuSaved && styles.saveMenuBtnSaved]}
               onPress={handleSaveMenu}
-              disabled={saving || menuSaved}
+              disabled={saving || menuSaved || refreshingDay !== null}
               activeOpacity={0.85}
             >
               {saving ? (

@@ -164,9 +164,6 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
     setGenerating(true);
     try {
-      const toSave = checkedItems;
-      if (toSave.length > 0) await addPantryItems(toSave);
-
       const pantryItems = await getPantryItems();
       const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
       const recipes = await generateMealPlan(allIngredients, dietType, glutenFree);
@@ -178,6 +175,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         }))
       );
 
+      // Write to pantry only after generation succeeds so a failed call doesn't mutate pantry
+      if (checkedItems.length > 0) await addPantryItems(checkedItems);
       await saveCurrentMealPlan(withPhotos, allIngredients, dietType);
 
       flowCompletedRef.current = true;
