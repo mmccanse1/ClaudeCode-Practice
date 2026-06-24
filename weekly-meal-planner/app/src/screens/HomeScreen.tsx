@@ -118,9 +118,13 @@ export default function HomeScreen({ navigation }: Props) {
                 onPress={() => handleDietSelect(diet)}
                 activeOpacity={0.82}
               >
-                {diet.premium && (
+                {diet.premium ? (
                   <View style={styles.lockBadge}>
                     <Text style={styles.lockIcon}>🔒</Text>
+                  </View>
+                ) : (
+                  <View style={styles.freeBadge}>
+                    <Text style={styles.freeBadgeText}>FREE</Text>
                   </View>
                 )}
                 <Text style={styles.dietEmoji}>{diet.emoji}</Text>
