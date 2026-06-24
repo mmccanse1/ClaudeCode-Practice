@@ -19,6 +19,9 @@ import { getPantryItems, addPantryItems } from '../services/pantryService';
 import { generateMealPlan } from '../services/claudeService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan } from '../services/currentMealPlanService';
+import { DIET_TYPES } from '../constants/dietTypes';
+import { IS_PREMIUM } from '../constants/subscription';
+import { DietType } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
@@ -29,6 +32,7 @@ export default function ScanReceiptScreen({ navigation }: Props) {
   const [newItem, setNewItem] = useState('');
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [selectedDiet, setSelectedDiet] = useState<DietType>('mediterranean');
 
   function toggleAll(checked: boolean) {
     const next: Record<string, boolean> = {};
@@ -108,7 +112,7 @@ export default function ScanReceiptScreen({ navigation }: Props) {
 
       const pantryItems = await getPantryItems();
       const allIngredients = Array.from(new Set([...receiptItems, ...pantryItems]));
-      const recipes = await generateMealPlan(allIngredients);
+      const recipes = await generateMealPlan(allIngredients, selectedDiet);
 
       // Fetch Unsplash photos in parallel
       const withPhotos = await Promise.all(
@@ -123,6 +127,7 @@ export default function ScanReceiptScreen({ navigation }: Props) {
       navigation.navigate('MealPlan', {
         recipes: withPhotos,
         ingredients: allIngredients,
+        dietType: selectedDiet,
         pantrySavedCount: toSave.length,
       });
     } catch (e: any) {
@@ -225,6 +230,35 @@ export default function ScanReceiptScreen({ navigation }: Props) {
               <Text style={styles.addBtnText}>Add</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Diet Type</Text>
+          {DIET_TYPES.map(diet => {
+            const locked = diet.isPremium && !IS_PREMIUM;
+            const selected = selectedDiet === diet.id;
+            return (
+              <TouchableOpacity
+                key={diet.id}
+                style={[styles.dietRow, selected && styles.dietRowSelected, locked && styles.dietRowLocked]}
+                onPress={() => { if (!locked) setSelectedDiet(diet.id); }}
+                activeOpacity={locked ? 1 : 0.7}
+              >
+                <Text style={styles.dietEmoji}>{diet.emoji}</Text>
+                <View style={styles.dietInfo}>
+                  <Text style={[styles.dietLabel, selected && styles.dietLabelSelected, locked && styles.dietLabelLocked]}>
+                    {diet.label}
+                  </Text>
+                  <Text style={styles.dietDesc}>{diet.description}</Text>
+                </View>
+                {locked ? (
+                  <Text style={styles.lockIcon}>🔒</Text>
+                ) : selected ? (
+                  <Text style={styles.checkIcon}>✓</Text>
+                ) : null}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <TouchableOpacity
@@ -357,4 +391,26 @@ const styles = StyleSheet.create({
   },
   checkmark: { color: 'white', fontSize: 13, fontWeight: '800' },
   checkLabel: { flex: 1, fontSize: 14, color: '#333', textTransform: 'capitalize' },
+
+  dietRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    gap: 12,
+  },
+  dietRowSelected: { borderColor: '#2e86ab', backgroundColor: '#f0f8fb' },
+  dietRowLocked: { opacity: 0.5 },
+  dietEmoji: { fontSize: 22 },
+  dietInfo: { flex: 1 },
+  dietLabel: { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
+  dietLabelSelected: { color: '#2e86ab' },
+  dietLabelLocked: { color: '#999' },
+  dietDesc: { fontSize: 12, color: '#888', marginTop: 2 },
+  lockIcon: { fontSize: 16 },
+  checkIcon: { fontSize: 16, color: '#2e86ab', fontWeight: '800' },
 });
