@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   ImageBackground,
-  ActivityIndicator,
   Linking,
   Modal,
   TextInput,
@@ -24,18 +23,20 @@ import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
+const FREE_DIETS = DIET_TYPES.filter(d => !d.premium);
+const PREMIUM_DIETS = DIET_TYPES.filter(d => d.premium);
+
 export default function HomeScreen({ navigation }: Props) {
   const [coastPhotoUrl, setCoastPhotoUrl] = useState<string | null>(null);
-  const [photoLoading, setPhotoLoading] = useState(true);
   const [activePlans, setActivePlans] = useState<CurrentPlan[]>([]);
   const [upgradeModalDiet, setUpgradeModalDiet] = useState<DietConfig | null>(null);
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 
   useEffect(() => {
     fetchSceneryPhoto('mediterranean coast sea greece santorini')
-      .then(url => setCoastPhotoUrl(url))
-      .finally(() => setPhotoLoading(false));
+      .then(url => setCoastPhotoUrl(url));
   }, []);
 
   useFocusEffect(
@@ -49,6 +50,7 @@ export default function HomeScreen({ navigation }: Props) {
       setUpgradeModalDiet(diet);
       setWaitlistEmail('');
       setWaitlistSubmitted(false);
+      setBillingPeriod('monthly');
       return;
     }
     navigation.navigate('ScanReceipt', { dietType: diet.id });
@@ -69,10 +71,12 @@ export default function HomeScreen({ navigation }: Props) {
     return DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   }
 
+  const isNewUser = activePlans.length === 0;
+
   const HeaderContent = (
     <View style={styles.headerOverlay}>
       <Text style={styles.title}>Weekly Meal Planner</Text>
-      <Text style={styles.subtitle}>5 diet plans · Powered by your pantry</Text>
+      <Text style={styles.subtitle}>Scan a receipt. Get a full week of recipes.</Text>
     </View>
   );
 
@@ -90,58 +94,79 @@ export default function HomeScreen({ navigation }: Props) {
           </ImageBackground>
         ) : (
           <View style={[styles.heroImage, styles.heroFallback]}>
-            {photoLoading ? (
-              <ActivityIndicator color="white" style={{ marginBottom: 12 }} />
-            ) : null}
             {HeaderContent}
           </View>
         )}
 
         <View style={styles.body}>
 
-          <Text style={styles.sectionLabel}>Choose your diet plan</Text>
-
-          {/* Mediterranean — featured free card */}
-          <TouchableOpacity
-            style={[styles.featuredCard, { borderColor: DIET_TYPES[0].color }]}
-            onPress={() => handleDietSelect(DIET_TYPES[0])}
-            activeOpacity={0.85}
-          >
-            <View style={styles.featuredCardInner}>
-              <Text style={styles.featuredEmoji}>{DIET_TYPES[0].emoji}</Text>
-              <View style={styles.featuredText}>
-                <View style={styles.featuredLabelRow}>
-                  <Text style={[styles.featuredLabel, { color: DIET_TYPES[0].color }]}>
-                    {DIET_TYPES[0].label}
-                  </Text>
-                  <View style={styles.freeBadge}>
-                    <Text style={styles.freeBadgeText}>FREE</Text>
-                  </View>
+          {/* Mini how-it-works */}
+          <View style={styles.miniSteps}>
+            {[
+              ['📷', 'Scan receipt'],
+              ['🤖', 'AI builds 7 recipes'],
+              ['🍽', 'Eat well all week'],
+            ].map(([icon, label], i, arr) => (
+              <React.Fragment key={label}>
+                <View style={styles.miniStep}>
+                  <Text style={styles.miniStepIcon}>{icon}</Text>
+                  <Text style={styles.miniStepLabel}>{label}</Text>
                 </View>
-                <Text style={styles.featuredTagline}>{DIET_TYPES[0].tagline}</Text>
-              </View>
-              <Text style={[styles.arrow, { color: DIET_TYPES[0].color }]}>›</Text>
-            </View>
-          </TouchableOpacity>
+                {i < arr.length - 1 && <Text style={styles.miniStepArrow}>›</Text>}
+              </React.Fragment>
+            ))}
+          </View>
 
-          {/* Premium diet cards — 2 column grid */}
+          {/* Free plans */}
+          <View style={styles.tierHeader}>
+            <Text style={styles.sectionLabel}>Free plans</Text>
+            <View style={styles.freePill}>
+              <Text style={styles.freePillText}>ALWAYS FREE</Text>
+            </View>
+          </View>
+
+          {FREE_DIETS.map(diet => (
+            <TouchableOpacity
+              key={diet.id}
+              style={[styles.featuredCard, { borderColor: diet.color }]}
+              onPress={() => handleDietSelect(diet)}
+              activeOpacity={0.65}
+            >
+              <View style={styles.featuredCardInner}>
+                <Text style={styles.featuredEmoji}>{diet.emoji}</Text>
+                <View style={styles.featuredText}>
+                  <View style={styles.featuredLabelRow}>
+                    <Text style={[styles.featuredLabel, { color: diet.color }]}>{diet.label}</Text>
+                    <View style={styles.freeBadge}>
+                      <Text style={styles.freeBadgeText}>FREE</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.featuredTagline}>{diet.tagline}</Text>
+                </View>
+                <Text style={[styles.arrow, { color: diet.color }]}>›</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+
+          {/* Planner plan (premium) */}
+          <View style={[styles.tierHeader, { marginTop: 24 }]}>
+            <Text style={styles.sectionLabel}>Planner plan</Text>
+            <TouchableOpacity onPress={() => handleDietSelect(PREMIUM_DIETS[0])}>
+              <Text style={styles.premiumPillText}>Unlock all · $2.99/mo →</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.dietGrid}>
-            {DIET_TYPES.slice(1).map(diet => (
+            {PREMIUM_DIETS.map(diet => (
               <TouchableOpacity
                 key={diet.id}
                 style={[styles.dietCard, { backgroundColor: diet.accentColor }]}
                 onPress={() => handleDietSelect(diet)}
-                activeOpacity={0.82}
+                activeOpacity={0.65}
               >
-                {diet.premium ? (
-                  <View style={styles.lockBadge}>
-                    <Text style={styles.lockIcon}>🔒</Text>
-                  </View>
-                ) : (
-                  <View style={styles.freeBadge}>
-                    <Text style={styles.freeBadgeText}>FREE</Text>
-                  </View>
-                )}
+                <View style={styles.lockBadge}>
+                  <Text style={styles.lockIcon}>🔒</Text>
+                </View>
                 <Text style={styles.dietEmoji}>{diet.emoji}</Text>
                 <Text style={[styles.dietLabel, { color: diet.color }]}>{diet.label}</Text>
                 <Text style={styles.dietTagline}>{diet.tagline}</Text>
@@ -149,16 +174,22 @@ export default function HomeScreen({ navigation }: Props) {
             ))}
           </View>
 
-          <Text style={styles.upgradeHint}>
-            Unlock Keto, Paleo & Vegan — Planner plan $2.99/mo
-          </Text>
+          {/* New-user directed CTA */}
+          {isNewUser && (
+            <View style={styles.newUserCta}>
+              <Text style={styles.newUserCtaText}>
+                👆 Tap a plan above to build your first week of meals
+              </Text>
+            </View>
+          )}
 
           {/* Active plans */}
           {activePlans.length > 0 && (
             <View style={styles.activePlansSection}>
-              <Text style={styles.sectionLabel}>Active plans</Text>
+              <Text style={[styles.sectionLabel, { marginBottom: 12 }]}>Active plans</Text>
               {activePlans.map(plan => {
                 const cfg = getDietConfig(plan.dietType);
+                const expiringSoon = plan.daysRemaining <= 2;
                 return (
                   <TouchableOpacity
                     key={plan.dietType}
@@ -176,8 +207,10 @@ export default function HomeScreen({ navigation }: Props) {
                       {cfg.emoji}  {cfg.label} Meal Plan
                     </Text>
                     <Text style={styles.currentPlanDays}>
-                      {plan.daysRemaining === 1
-                        ? 'Expires today'
+                      {expiringSoon
+                        ? plan.daysRemaining === 1
+                          ? '⚠️ Expires today — time to replan!'
+                          : '⚠️ Expires tomorrow — time to replan!'
                         : `${plan.daysRemaining} days remaining`}
                     </Text>
                   </TouchableOpacity>
@@ -261,7 +294,7 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={[styles.sheetDietName, { color: upgradeModalDiet?.color }]}>
               {upgradeModalDiet?.label}
             </Text>
-            <Text style={styles.sheetTagline}>{upgradeModalDiet?.tagline}</Text>
+            <Text style={styles.sheetTaglineText}>{upgradeModalDiet?.tagline}</Text>
 
             <View style={styles.sheetBenefits}>
               {upgradeModalDiet?.benefits.map((benefit, i) => (
@@ -273,12 +306,46 @@ export default function HomeScreen({ navigation }: Props) {
             </View>
 
             <View style={styles.sheetDivider} />
-            <Text style={styles.sheetPrice}>$2.99/month · less than a cup of coffee</Text>
+
+            {/* Billing toggle */}
+            <View style={styles.billingToggle}>
+              <TouchableOpacity
+                style={[styles.billingOption, billingPeriod === 'monthly' && styles.billingOptionActive]}
+                onPress={() => setBillingPeriod('monthly')}
+              >
+                <Text style={[styles.billingOptionLabel, billingPeriod === 'monthly' && styles.billingOptionLabelActive]}>
+                  Monthly
+                </Text>
+                <Text style={[styles.billingOptionPrice, billingPeriod === 'monthly' && styles.billingOptionPriceActive]}>
+                  $2.99/mo
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.billingOption, billingPeriod === 'annual' && styles.billingOptionActive]}
+                onPress={() => setBillingPeriod('annual')}
+              >
+                <View style={styles.bestValueBadge}>
+                  <Text style={styles.bestValueText}>2 MONTHS FREE</Text>
+                </View>
+                <Text style={[styles.billingOptionLabel, billingPeriod === 'annual' && styles.billingOptionLabelActive]}>
+                  Annual
+                </Text>
+                <Text style={[styles.billingOptionPrice, billingPeriod === 'annual' && styles.billingOptionPriceActive]}>
+                  $24.99/yr
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sheetPrice}>
+              {billingPeriod === 'annual'
+                ? 'Just $2.08/month · less than a cup of coffee'
+                : 'Less than a cup of coffee per month'}
+            </Text>
 
             {waitlistSubmitted ? (
               <View style={styles.sheetSuccess}>
                 <Text style={styles.sheetSuccessText}>
-                  You're on the list! We'll notify you when {upgradeModalDiet?.label} launches.
+                  You're on the list! We'll send you 7 days free when {upgradeModalDiet?.label} launches.
                 </Text>
               </View>
             ) : (
@@ -303,7 +370,7 @@ export default function HomeScreen({ navigation }: Props) {
                   disabled={!waitlistEmail.trim() || !waitlistEmail.includes('@')}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.sheetJoinBtnText}>Join Waitlist</Text>
+                  <Text style={styles.sheetJoinBtnText}>Join Waitlist · 7 days free at launch</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -357,15 +424,43 @@ const styles = StyleSheet.create({
 
   body: { padding: 24 },
 
+  miniSteps: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 24,
+    gap: 4,
+  },
+  miniStep: { alignItems: 'center', flex: 1 },
+  miniStepIcon: { fontSize: 22, marginBottom: 4 },
+  miniStepLabel: { fontSize: 11, color: '#555', fontWeight: '600', textAlign: 'center', lineHeight: 14 },
+  miniStepArrow: { fontSize: 20, color: '#ccc', fontWeight: '300', marginBottom: 14 },
+
+  tierHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    marginTop: 4,
+  },
   sectionLabel: {
     fontSize: 13,
     fontWeight: '700',
     color: '#888',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 12,
-    marginTop: 4,
   },
+  freePill: {
+    backgroundColor: '#2e86ab',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  freePillText: { color: 'white', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  premiumPillText: { fontSize: 13, color: '#c0392b', fontWeight: '700' },
 
   featuredCard: {
     backgroundColor: 'white',
@@ -410,26 +505,24 @@ const styles = StyleSheet.create({
     padding: 14,
     position: 'relative',
   },
-  lockBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-  },
+  lockBadge: { position: 'absolute', top: 10, right: 10 },
   lockIcon: { fontSize: 14 },
   dietEmoji: { fontSize: 30, marginBottom: 6 },
   dietLabel: { fontSize: 15, fontWeight: '800', marginBottom: 3 },
   dietTagline: { fontSize: 12, color: '#666' },
 
-  upgradeHint: {
-    fontSize: 12,
-    color: '#aaa',
-    textAlign: 'center',
+  newUserCta: {
+    backgroundColor: '#fff8e1',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 4,
     marginBottom: 24,
-    fontStyle: 'italic',
+    borderLeftWidth: 4,
+    borderLeftColor: '#f4a261',
   },
+  newUserCtaText: { fontSize: 14, color: '#555', fontWeight: '500', lineHeight: 20 },
 
   activePlansSection: { marginBottom: 16 },
-
   currentPlanBtn: {
     borderRadius: 14,
     paddingVertical: 14,
@@ -438,7 +531,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   currentPlanTitle: { color: 'white', fontSize: 16, fontWeight: '700', marginBottom: 2 },
-  currentPlanDays: { color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: '500' },
+  currentPlanDays: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '500' },
 
   secondaryBtn: {
     backgroundColor: 'white',
@@ -478,6 +571,16 @@ const styles = StyleSheet.create({
 
   source: { textAlign: 'center', fontSize: 11, color: '#aaa', marginBottom: 8 },
 
+  legalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  legalLink: { fontSize: 11, color: '#aaa' },
+  legalSep: { fontSize: 11, color: '#aaa' },
+
+  // Upgrade modal
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -494,12 +597,40 @@ const styles = StyleSheet.create({
   sheetCloseText: { fontSize: 18, color: '#aaa', fontWeight: '700' },
   sheetEmoji: { fontSize: 40, marginBottom: 8, marginTop: 8 },
   sheetDietName: { fontSize: 26, fontWeight: '800', marginBottom: 4 },
-  sheetTagline: { fontSize: 14, color: '#888', marginBottom: 20 },
+  sheetTaglineText: { fontSize: 14, color: '#888', marginBottom: 20 },
   sheetBenefits: { marginBottom: 16 },
   sheetBenefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
   sheetBenefitCheck: { fontSize: 16, fontWeight: '800', marginTop: 1 },
   sheetBenefitText: { flex: 1, fontSize: 15, color: '#333', lineHeight: 22 },
-  sheetDivider: { height: 1, backgroundColor: '#eee', marginBottom: 14 },
+  sheetDivider: { height: 1, backgroundColor: '#eee', marginBottom: 16 },
+
+  billingToggle: { flexDirection: 'row', gap: 10, marginBottom: 12 },
+  billingOption: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  billingOptionActive: { backgroundColor: '#f0f7fb', borderColor: '#2e86ab' },
+  billingOptionLabel: { fontSize: 14, fontWeight: '600', color: '#888', marginBottom: 4 },
+  billingOptionLabelActive: { color: '#1a1a1a' },
+  billingOptionPrice: { fontSize: 16, fontWeight: '800', color: '#888' },
+  billingOptionPriceActive: { color: '#2e86ab' },
+  bestValueBadge: {
+    position: 'absolute',
+    top: -10,
+    backgroundColor: '#f4a261',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  bestValueText: { fontSize: 9, fontWeight: '800', color: 'white', letterSpacing: 0.5 },
+
   sheetPrice: { fontSize: 13, color: '#888', textAlign: 'center', marginBottom: 16, fontStyle: 'italic' },
   sheetEmailInput: {
     backgroundColor: '#f8f8f8',
@@ -514,18 +645,9 @@ const styles = StyleSheet.create({
   },
   sheetJoinBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 16 },
   sheetBtnDisabled: { opacity: 0.4 },
-  sheetJoinBtnText: { color: 'white', fontSize: 17, fontWeight: '700' },
+  sheetJoinBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
   sheetSuccess: { backgroundColor: '#edf7f1', borderRadius: 12, padding: 16, marginBottom: 16 },
   sheetSuccessText: { fontSize: 15, color: '#2d6a4f', lineHeight: 22, fontWeight: '600' },
   sheetFreeBtn: { alignItems: 'center', paddingVertical: 8 },
   sheetFreeBtnText: { color: '#2e86ab', fontSize: 15, fontWeight: '600' },
-
-  legalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  legalLink: { fontSize: 11, color: '#aaa' },
-  legalSep: { fontSize: 11, color: '#aaa' },
 });

@@ -330,6 +330,12 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
           )}
         </TouchableOpacity>
 
+        {!generating && receiptItems.length === 0 && pantryCount === 0 && (
+          <Text style={styles.generateHint}>
+            Scan a receipt or add items above to get started
+          </Text>
+        )}
+
         {generating && (
           <Animated.Text style={[styles.generatingNote, { opacity: fadeAnim }]}>
             {PROGRESS_STEPS[progressStep]}
@@ -460,6 +466,7 @@ const styles = StyleSheet.create({
 
   sampleBtn: { alignItems: 'center', paddingVertical: 10, marginBottom: 8 },
   sampleBtnText: { color: '#2e86ab', fontSize: 14, fontWeight: '600' },
+  generateHint: { textAlign: 'center', fontSize: 13, color: '#aaa', marginTop: 6 },
 
   pantryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
