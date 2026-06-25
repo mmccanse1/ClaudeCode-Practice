@@ -33,6 +33,31 @@ async function callClaude(parts: object[]): Promise<string> {
   return data.content[0].text as string;
 }
 
+const PROTEIN_KEYWORDS = [
+  'chicken', 'beef', 'pork', 'lamb', 'turkey', 'duck', 'venison', 'rabbit',
+  'salmon', 'tuna', 'cod', 'tilapia', 'halibut', 'shrimp', 'prawn', 'crab',
+  'lobster', 'scallop', 'sardine', 'anchovy', 'bass', 'trout', 'mahi', 'fish', 'seafood',
+  'egg', 'tofu', 'tempeh', 'seitan', 'edamame',
+  'lentil', 'chickpea', 'bean', 'legume', 'pea',
+  'sausage', 'bacon', 'ham', 'steak', 'ground beef', 'ground turkey', 'ground pork',
+  'mince', 'meat', 'poultry',
+];
+
+function extractProteins(ingredients: string[]): string[] {
+  return ingredients.filter(ing =>
+    PROTEIN_KEYWORDS.some(kw => ing.toLowerCase().includes(kw))
+  );
+}
+
+function buildProteinConstraint(ingredients: string[]): string {
+  const proteins = extractProteins(ingredients);
+  if (proteins.length > 0) {
+    return `PROTEINS AVAILABLE (the ONLY proteins you may use): ${proteins.join(', ')}
+Do NOT introduce any other meat, poultry, fish, seafood, eggs, tofu, or legumes — even if they would be a natural fit for this diet. If a protein is not in this list, it is not in the kitchen.`;
+  }
+  return `No animal proteins are in the pantry. Use only plant-based proteins visible in the ingredient list above (legumes, tofu, tempeh, edamame, nuts, seeds). Do not introduce any meat, poultry, or fish.`;
+}
+
 function extractJson<T>(text: string): T {
   try {
     return JSON.parse(text);
@@ -184,6 +209,8 @@ export async function regenerateRecipe(
     .some(r => r.name.toLowerCase().includes('salmon') ||
                r.ingredients?.some(i => i.toLowerCase().includes('salmon')));
 
+  const proteinConstraint = buildProteinConstraint(ingredients);
+
   const text = await callClaude([
     {
       type: 'text',
@@ -191,7 +218,7 @@ export async function regenerateRecipe(
 
 Available ingredients: ${ingredients.join(', ')}
 You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
-STRICT protein rule: ONLY use proteins (meat, poultry, fish, seafood, eggs, tofu, tempeh, legumes, beans) that appear explicitly in the available ingredients list above. Do NOT introduce any protein that is not on the list.
+${proteinConstraint}
 
 Generate exactly 1 new recipe for ${dayToReplace}.
 
@@ -228,6 +255,8 @@ export async function generateMealPlan(
 ): Promise<Recipe[]> {
   const systemPrompt = buildSystemPrompt(dietType, glutenFree);
 
+  const proteinConstraint = buildProteinConstraint(ingredients);
+
   const text = await callClaude([
     {
       type: 'text',
@@ -235,7 +264,7 @@ export async function generateMealPlan(
 
 Available ingredients: ${ingredients.join(', ')}
 You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
-STRICT protein rule: ONLY use proteins (meat, poultry, fish, seafood, eggs, tofu, tempeh, legumes, beans) that appear explicitly in the available ingredients list above. Do NOT introduce any protein that is not on the list.
+${proteinConstraint}
 
 Generate exactly 7 recipes, one per day (Monday–Sunday). Each recipe must primarily use ingredients from the list above.
 
