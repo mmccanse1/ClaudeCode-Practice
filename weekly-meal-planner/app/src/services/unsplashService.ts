@@ -123,7 +123,8 @@ export async function fetchIngredientPhoto(query: string): Promise<string | null
   if (off) return off;
   const mdb = await fetchMealDBPhoto(query);
   if (mdb) return mdb;
-  return fetchWikipediaPhoto(query);
+  const { generateIngredientPhoto } = await import('./imagenService');
+  return generateIngredientPhoto(query);
 }
 
 async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
