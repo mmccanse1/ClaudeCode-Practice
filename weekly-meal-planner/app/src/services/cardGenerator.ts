@@ -1,5 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { Share, Platform } from 'react-native';
 import { Recipe, DietType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
 
@@ -262,4 +263,77 @@ export async function saveAndShareRecipeCard(recipe: Recipe, dietType: DietType 
 
 export function buildRecipeCardHtmlString(recipe: Recipe, dietType: DietType = 'mediterranean'): string {
   return buildRecipeCardHtml(recipe, dietType);
+}
+
+function buildShareableText(recipe: Recipe, dietType: DietType = 'mediterranean'): string {
+  const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
+  const ingredients = recipe.ingredients.map(i => `• ${i}`).join('\n');
+  const steps = recipe.steps.map((s, idx) => `${idx + 1}. ${s}`).join('\n');
+
+  return [
+    `🍽️ ${recipe.name}`,
+    `${dietConfig.emoji} ${dietConfig.label} Diet  •  ${recipe.day}`,
+    '',
+    recipe.description,
+    '',
+    `⏱ Prep: ${recipe.prepTime}  •  Cook: ${recipe.cookTime}  •  Serves: ${recipe.servings}`,
+    '',
+    '📋 Ingredients:',
+    ingredients,
+    '',
+    '👨‍🍳 Instructions:',
+    steps,
+    '',
+    `🌿 ${recipe.nutritionNotes}`,
+    '',
+    '📱 Created with Weekly Meal Planner',
+  ].join('\n');
+}
+
+export async function shareRecipePng(pngUri: string, recipeName: string): Promise<void> {
+  if (Platform.OS === 'ios') {
+    await Share.share({ url: pngUri, message: '' });
+  } else {
+    const canShare = await Sharing.isAvailableAsync();
+    if (canShare) {
+      await Sharing.shareAsync(pngUri, {
+        mimeType: 'image/jpeg',
+        dialogTitle: `${recipeName} Recipe Card`,
+      });
+    }
+  }
+}
+
+export async function shareRecipeNative(recipe: Recipe, dietType: DietType = 'mediterranean'): Promise<void> {
+  const message = buildShareableText(recipe, dietType);
+
+  if (recipe.photoUrl) {
+    try {
+      const localUri = `${FileSystem.cacheDirectory}recipe_share_${Date.now()}.jpg`;
+      const dl = await FileSystem.downloadAsync(recipe.photoUrl, localUri);
+
+      if (dl.status === 200) {
+        if (Platform.OS === 'ios') {
+          // iOS: native share sheet sends both the image file and the text body
+          await Share.share({ message, url: localUri });
+        } else {
+          // Android: share the image via the native sheet (text not bundled, but image is primary)
+          const canShare = await Sharing.isAvailableAsync();
+          if (canShare) {
+            await Sharing.shareAsync(localUri, {
+              mimeType: 'image/jpeg',
+              dialogTitle: recipe.name,
+            });
+          } else {
+            await Share.share({ message, title: recipe.name });
+          }
+        }
+        return;
+      }
+    } catch {
+      // photo download failed — fall through to text-only share
+    }
+  }
+
+  await Share.share({ message, title: `${recipe.name} Recipe` });
 }

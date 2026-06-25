@@ -30,7 +30,9 @@ async function callClaude(parts: object[]): Promise<string> {
   }
 
   const data = await response.json();
-  return data.content[0].text as string;
+  const block = data?.content?.[0];
+  if (!block || block.type !== 'text') throw new Error('Unexpected response from AI — please try again.');
+  return block.text as string;
 }
 
 const PROTEIN_KEYWORDS = [

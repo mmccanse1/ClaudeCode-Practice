@@ -126,13 +126,16 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const allIngredients = Array.from(new Set([...receiptItems, ...pantryItems]));
       const recipes = await generateMealPlan(allIngredients, dietType, glutenFree);
 
-      const withPhotos = await Promise.all(
-        recipes.map(async recipe => ({
-          ...recipe,
-          dietType,
-          photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
-        }))
+      const photoResults = await Promise.allSettled(
+        recipes.map(recipe => fetchFoodPhoto(recipe.searchQuery))
       );
+      const withPhotos = recipes.map((recipe, i) => ({
+        ...recipe,
+        dietType,
+        photoUrl: photoResults[i].status === 'fulfilled'
+          ? (photoResults[i] as PromiseFulfilledResult<string | null>).value ?? undefined
+          : undefined,
+      }));
 
       await saveCurrentMealPlan(withPhotos, allIngredients, dietType);
 

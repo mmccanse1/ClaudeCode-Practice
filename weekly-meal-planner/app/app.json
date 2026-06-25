@@ -16,7 +16,8 @@
       "bundleIdentifier": "com.mmccanse.weeklymealplanner",
       "infoPlist": {
         "NSCameraUsageDescription": "Used to photograph grocery receipts and scan product barcodes for your pantry.",
-        "NSPhotoLibraryUsageDescription": "Used to select a photo of your grocery receipt from your library."
+        "NSPhotoLibraryUsageDescription": "Used to select a photo of your grocery receipt from your library.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -27,15 +28,11 @@
       "package": "com.mmccanse.weeklymealplanner",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
     },
     "web": {
       "favicon": "./assets/icon.png"
-    },
-    "extra": {
-      "privacyPolicyUrl": "https://mmccanse1.github.io/ClaudeCode-Practice/privacy-policy.html"
     },
     "plugins": [
       [
@@ -52,6 +49,7 @@
       ]
     ],
     "extra": {
+      "privacyPolicyUrl": "https://mmccanse1.github.io/ClaudeCode-Practice/privacy-policy.html",
       "eas": {
         "projectId": "655aad75-8050-4eb4-908b-ba64562c4b27"
       }

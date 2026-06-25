@@ -23,7 +23,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 export default function MealPlanScreen({ navigation, route }: Props) {
   const { ingredients, pantrySavedCount, dietType = 'mediterranean' } = route.params;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
-  const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
+  const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes ?? []);
   const [saving, setSaving] = useState(false);
   const [menuSaved, setMenuSaved] = useState(false);
   const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
@@ -67,13 +67,13 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     <View style={styles.root}>
       {refreshToast && (
         <View style={styles.toast} pointerEvents="none">
-          <Text style={styles.toastText}>✓  Plan updated &amp; saved</Text>
+          <Text style={styles.toastText}>{'✓  Plan updated & saved'}</Text>
         </View>
       )}
       <SafeAreaView style={styles.safe}>
       <FlatList
         data={recipes}
-        keyExtractor={item => item.day}
+        keyExtractor={item => `${item.day}-${item.name}`}
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={styles.title}>Your Week of Meals</Text>

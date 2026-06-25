@@ -162,7 +162,7 @@ export default function SavedRecipesScreen({ navigation }: Props) {
         renderItem={({ item }) => (
           <RecipeCard
             recipe={item}
-            onPress={() => navigation.navigate('RecipeDetail', { recipe: item })}
+            onPress={() => navigation.navigate('RecipeDetail', { recipe: item, dietType: item.dietType })}
           />
         )}
         contentContainerStyle={styles.list}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,22 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
+import ViewShot from 'react-native-view-shot';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import { saveAndShareRecipeCard } from '../services/cardGenerator';
+import { shareRecipePng } from '../services/cardGenerator';
 import { saveRecipe, unsaveRecipe, isRecipeSaved } from '../services/savedRecipesService';
 import { DIET_TYPES } from '../constants/dietTypes';
+import RecipeShareCard from '../components/RecipeShareCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RecipeDetail'>;
 
 export default function RecipeDetailScreen({ route }: Props) {
   const { recipe, dietType = 'mediterranean' } = route.params;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
+  const shareCardRef = useRef<ViewShot>(null);
   const [sharing, setSharing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -51,9 +55,11 @@ export default function RecipeDetailScreen({ route }: Props) {
   async function handleShare() {
     setSharing(true);
     try {
-      await saveAndShareRecipeCard(recipe, dietType);
+      const uri = await shareCardRef.current?.capture?.();
+      if (!uri) throw new Error('Could not capture recipe card');
+      await shareRecipePng(uri, recipe.name);
     } catch (e: any) {
-      Alert.alert('Could not share card', e.message);
+      Alert.alert('Could not share', e.message);
     } finally {
       setSharing(false);
     }
@@ -61,6 +67,15 @@ export default function RecipeDetailScreen({ route }: Props) {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* Off-screen card captured by ViewShot when the user taps Share */}
+      <ViewShot
+        ref={shareCardRef}
+        options={{ format: 'jpg', quality: 0.92 }}
+        style={styles.offScreen}
+      >
+        <RecipeShareCard recipe={recipe} dietType={dietType} />
+      </ViewShot>
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {recipe.photoUrl ? (
           <Image source={{ uri: recipe.photoUrl }} style={styles.hero} />
@@ -164,6 +179,11 @@ export default function RecipeDetailScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
+  offScreen: {
+    position: 'absolute',
+    top: 0,
+    left: Dimensions.get('window').width,
+  },
   hero: { width: '100%', height: 280, resizeMode: 'cover' },
   heroPlaceholder: {
     width: '100%',

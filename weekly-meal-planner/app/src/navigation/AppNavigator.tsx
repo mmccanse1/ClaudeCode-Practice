@@ -54,7 +54,7 @@ export default function AppNavigator() {
           name="RecipeDetail"
           component={RecipeDetailScreen}
           options={({ route }) => ({
-            title: route.params.recipe.name,
+            title: route.params.recipe?.name ?? 'Recipe',
             headerBackTitle: 'Back',
           })}
         />
