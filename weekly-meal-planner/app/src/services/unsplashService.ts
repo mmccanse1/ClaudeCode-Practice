@@ -140,9 +140,8 @@ async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
 }
 
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
-  const mdbPhoto = await fetchMealDBRecipePhoto(query);
-  if (mdbPhoto) return mdbPhoto;
-  return searchUnsplash(`${query} food plated meal`, 'squarish');
+  const { generateFoodPhoto } = await import('./imagenService');
+  return generateFoodPhoto(query);
 }
 
 export async function fetchSceneryPhoto(query: string): Promise<string | null> {

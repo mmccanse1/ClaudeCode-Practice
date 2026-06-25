@@ -16,7 +16,7 @@ async function callClaude(parts: object[]): Promise<string> {
     },
     body: JSON.stringify({
       model: CLAUDE_MODEL,
-      max_tokens: 4096,
+      max_tokens: 8192,
       messages: [{ role: 'user', content: parts }],
     }),
   });
@@ -59,10 +59,11 @@ Do NOT introduce any other meat, poultry, fish, seafood, eggs, tofu, or legumes 
 }
 
 function extractJson<T>(text: string): T {
+  const stripped = text.replace(/^```(?:json)?\s*/m, '').replace(/```\s*$/m, '').trim();
   try {
-    return JSON.parse(text);
+    return JSON.parse(stripped);
   } catch {
-    const match = text.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+    const match = stripped.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
     if (match) return JSON.parse(match[0]);
     throw new Error('Could not parse JSON from Claude response');
   }
