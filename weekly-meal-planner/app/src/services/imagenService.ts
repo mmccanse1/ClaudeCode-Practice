@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const PHOTO_DIR = `${FileSystem.documentDirectory}recipe_photos/`;
 const INDEX_KEY = '@recipe_photo_index_v1';
@@ -26,6 +26,24 @@ async function saveToIndex(key: string, filePath: string): Promise<void> {
   } catch {}
 }
 
+async function callImagen(query: string, apiKey: string): Promise<string | null> {
+  const res = await fetch(`${IMAGEN_URL}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      instances: [
+        {
+          prompt: `professional food photography of ${query}, overhead shot, white ceramic plate, warm natural light, appetizing, restaurant quality`,
+        },
+      ],
+      parameters: { sampleCount: 1, aspectRatio: '1:1' },
+    }),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.predictions?.[0]?.bytesBase64Encoded ?? null;
+}
+
 export async function generateFoodPhoto(query: string): Promise<string | null> {
   const key = cacheKey(query);
 
@@ -38,35 +56,23 @@ export async function generateFoodPhoto(query: string): Promise<string | null> {
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
   if (!apiKey) return null;
 
-  try {
-    await FileSystem.makeDirectoryAsync(PHOTO_DIR, { intermediates: true }).catch(() => {});
+  await FileSystem.makeDirectoryAsync(PHOTO_DIR, { intermediates: true }).catch(() => {});
 
-    const res = await fetch(`${IMAGEN_URL}?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [
-          {
-            prompt: `professional food photography of ${query}, overhead shot, white ceramic plate, warm natural light, appetizing, restaurant quality`,
-          },
-        ],
-        parameters: { sampleCount: 1, aspectRatio: '1:1' },
-      }),
-    });
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    const b64: string | undefined = data.predictions?.[0]?.bytesBase64Encoded;
-    if (!b64) return null;
-
-    const filePath = `${PHOTO_DIR}${key}.png`;
-    await FileSystem.writeAsStringAsync(filePath, b64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    await saveToIndex(key, filePath);
-    return filePath;
-  } catch {
-    return null;
+  let b64: string | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      b64 = await callImagen(query, apiKey);
+      if (b64) break;
+    } catch {
+      // transient error — retry
+    }
   }
+  if (!b64) return null;
+
+  const filePath = `${PHOTO_DIR}${key}.png`;
+  await FileSystem.writeAsStringAsync(filePath, b64, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  await saveToIndex(key, filePath);
+  return filePath;
 }
