@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  Animated,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -20,6 +21,12 @@ import { getPantryItems, addPantryItems } from '../services/pantryService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES } from '../constants/dietTypes';
+
+const SAMPLE_PANTRY: string[] = [
+  'chicken breast', 'olive oil', 'garlic', 'cherry tomatoes',
+  'bell peppers', 'zucchini', 'lemon', 'pasta', 'canned chickpeas',
+  'baby spinach', 'red onion', 'eggs', 'canned diced tomatoes',
+];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
@@ -35,10 +42,41 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
   const [pantryCount, setPantryCount] = useState(0);
+  const [progressStep, setProgressStep] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const PROGRESS_STEPS = [
+    'Analyzing your ingredients…',
+    `Building your ${dietConfig.label} menu…`,
+    'Finding balanced recipes…',
+    'Almost ready…',
+  ];
 
   useEffect(() => {
     getPantryItems().then(items => setPantryCount(items.length));
   }, []);
+
+  useEffect(() => {
+    if (!generating) {
+      setProgressStep(0);
+      fadeAnim.setValue(1);
+      return;
+    }
+    const interval = setInterval(() => {
+      Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+        setProgressStep(prev => Math.min(prev + 1, 3));
+        Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [generating]);
+
+  function loadSamplePantry() {
+    const initialChecked: Record<string, boolean> = {};
+    SAMPLE_PANTRY.forEach(item => { initialChecked[item] = true; });
+    setReceiptItems(SAMPLE_PANTRY);
+    setPantryChecked(initialChecked);
+  }
 
   function toggleAll(checked: boolean) {
     const next: Record<string, boolean> = {};
@@ -183,6 +221,10 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry}>
+          <Text style={styles.sampleBtnText}>No receipt? Try a sample pantry →</Text>
+        </TouchableOpacity>
+
         {receiptUri && (
           <Image source={{ uri: receiptUri }} style={styles.receiptPreview} />
         )}
@@ -289,9 +331,9 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         </TouchableOpacity>
 
         {generating && (
-          <Text style={styles.generatingNote}>
-            Creating your {dietConfig.label}{glutenFree ? ' gluten-free' : ''} meal plan… this may take 15–30 seconds.
-          </Text>
+          <Animated.Text style={[styles.generatingNote, { opacity: fadeAnim }]}>
+            {PROGRESS_STEPS[progressStep]}
+          </Animated.Text>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -415,6 +457,9 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.5 },
   generateBtnText: { color: 'white', fontSize: 17, fontWeight: '700' },
   generatingNote: { textAlign: 'center', fontSize: 13, color: '#888', fontStyle: 'italic' },
+
+  sampleBtn: { alignItems: 'center', paddingVertical: 10, marginBottom: 8 },
+  sampleBtnText: { color: '#2e86ab', fontSize: 14, fontWeight: '600' },
 
   pantryHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

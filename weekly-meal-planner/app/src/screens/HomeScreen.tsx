@@ -8,7 +8,10 @@ import {
   ImageBackground,
   ActivityIndicator,
   Linking,
-  Alert,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -25,6 +28,9 @@ export default function HomeScreen({ navigation }: Props) {
   const [coastPhotoUrl, setCoastPhotoUrl] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(true);
   const [activePlans, setActivePlans] = useState<CurrentPlan[]>([]);
+  const [upgradeModalDiet, setUpgradeModalDiet] = useState<DietConfig | null>(null);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
 
   useEffect(() => {
     fetchSceneryPhoto('mediterranean coast sea greece santorini')
@@ -40,24 +46,23 @@ export default function HomeScreen({ navigation }: Props) {
 
   function handleDietSelect(diet: DietConfig) {
     if (diet.premium && !IS_PREMIUM) {
-      Alert.alert(
-        `${diet.label} — Planner Plan`,
-        `Unlock ${diet.label} meal plans and 4 other diet types for $2.99/month.\n\nUpgrade coming soon!`,
-        [
-          {
-            text: 'Notify Me',
-            onPress: () => {
-              Linking.openURL(
-                `mailto:mmccanse@yahoo.com?subject=Notify me when ${encodeURIComponent(diet.label)} launches&body=Please notify me when ${encodeURIComponent(diet.label)} is available in the Weekly Meal Planner app.`
-              );
-            },
-          },
-          { text: 'OK' },
-        ]
-      );
+      setUpgradeModalDiet(diet);
+      setWaitlistEmail('');
+      setWaitlistSubmitted(false);
       return;
     }
     navigation.navigate('ScanReceipt', { dietType: diet.id });
+  }
+
+  function closeUpgradeModal() {
+    setUpgradeModalDiet(null);
+    setWaitlistEmail('');
+    setWaitlistSubmitted(false);
+  }
+
+  function handleWaitlistSubmit() {
+    if (!waitlistEmail.trim() || !waitlistEmail.includes('@')) return;
+    setWaitlistSubmitted(true);
   }
 
   function getDietConfig(dietType: DietType): DietConfig {
@@ -235,6 +240,86 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={upgradeModalDiet !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={closeUpgradeModal}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={closeUpgradeModal} />
+          <View style={styles.upgradeSheet}>
+            <TouchableOpacity style={styles.sheetClose} onPress={closeUpgradeModal}>
+              <Text style={styles.sheetCloseText}>✕</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.sheetEmoji}>{upgradeModalDiet?.emoji}</Text>
+            <Text style={[styles.sheetDietName, { color: upgradeModalDiet?.color }]}>
+              {upgradeModalDiet?.label}
+            </Text>
+            <Text style={styles.sheetTagline}>{upgradeModalDiet?.tagline}</Text>
+
+            <View style={styles.sheetBenefits}>
+              {upgradeModalDiet?.benefits.map((benefit, i) => (
+                <View key={i} style={styles.sheetBenefitRow}>
+                  <Text style={[styles.sheetBenefitCheck, { color: upgradeModalDiet.color }]}>✓</Text>
+                  <Text style={styles.sheetBenefitText}>{benefit}</Text>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.sheetDivider} />
+            <Text style={styles.sheetPrice}>$2.99/month · less than a cup of coffee</Text>
+
+            {waitlistSubmitted ? (
+              <View style={styles.sheetSuccess}>
+                <Text style={styles.sheetSuccessText}>
+                  You're on the list! We'll notify you when {upgradeModalDiet?.label} launches.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <TextInput
+                  style={styles.sheetEmailInput}
+                  value={waitlistEmail}
+                  onChangeText={setWaitlistEmail}
+                  placeholder="Your email address"
+                  placeholderTextColor="#bbb"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.sheetJoinBtn,
+                    { backgroundColor: upgradeModalDiet?.color },
+                    (!waitlistEmail.trim() || !waitlistEmail.includes('@')) && styles.sheetBtnDisabled,
+                  ]}
+                  onPress={handleWaitlistSubmit}
+                  disabled={!waitlistEmail.trim() || !waitlistEmail.includes('@')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.sheetJoinBtnText}>Join Waitlist</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            <TouchableOpacity
+              style={styles.sheetFreeBtn}
+              onPress={() => {
+                closeUpgradeModal();
+                navigation.navigate('ScanReceipt', { dietType: 'mediterranean' });
+              }}
+            >
+              <Text style={styles.sheetFreeBtnText}>Try Mediterranean free →</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -392,6 +477,48 @@ const styles = StyleSheet.create({
   stepText: { flex: 1, fontSize: 14, color: '#444', lineHeight: 20 },
 
   source: { textAlign: 'center', fontSize: 11, color: '#aaa', marginBottom: 8 },
+
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  upgradeSheet: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 28,
+    paddingBottom: 44,
+  },
+  sheetClose: { position: 'absolute', top: 20, right: 24, padding: 6 },
+  sheetCloseText: { fontSize: 18, color: '#aaa', fontWeight: '700' },
+  sheetEmoji: { fontSize: 40, marginBottom: 8, marginTop: 8 },
+  sheetDietName: { fontSize: 26, fontWeight: '800', marginBottom: 4 },
+  sheetTagline: { fontSize: 14, color: '#888', marginBottom: 20 },
+  sheetBenefits: { marginBottom: 16 },
+  sheetBenefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
+  sheetBenefitCheck: { fontSize: 16, fontWeight: '800', marginTop: 1 },
+  sheetBenefitText: { flex: 1, fontSize: 15, color: '#333', lineHeight: 22 },
+  sheetDivider: { height: 1, backgroundColor: '#eee', marginBottom: 14 },
+  sheetPrice: { fontSize: 13, color: '#888', textAlign: 'center', marginBottom: 16, fontStyle: 'italic' },
+  sheetEmailInput: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: '#1a1a1a',
+    borderWidth: 1.5,
+    borderColor: '#eee',
+    marginBottom: 12,
+  },
+  sheetJoinBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 16 },
+  sheetBtnDisabled: { opacity: 0.4 },
+  sheetJoinBtnText: { color: 'white', fontSize: 17, fontWeight: '700' },
+  sheetSuccess: { backgroundColor: '#edf7f1', borderRadius: 12, padding: 16, marginBottom: 16 },
+  sheetSuccessText: { fontSize: 15, color: '#2d6a4f', lineHeight: 22, fontWeight: '600' },
+  sheetFreeBtn: { alignItems: 'center', paddingVertical: 8 },
+  sheetFreeBtnText: { color: '#2e86ab', fontSize: 15, fontWeight: '600' },
 
   legalFooter: {
     flexDirection: 'row',
