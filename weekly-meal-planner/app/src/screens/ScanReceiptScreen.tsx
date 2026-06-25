@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -34,6 +34,11 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
+  const [pantryCount, setPantryCount] = useState(0);
+
+  useEffect(() => {
+    getPantryItems().then(items => setPantryCount(items.length));
+  }, []);
 
   function toggleAll(checked: boolean) {
     const next: Record<string, boolean> = {};
@@ -107,8 +112,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   }
 
   async function handleGenerate() {
-    if (receiptItems.length === 0) {
-      Alert.alert('No ingredients', 'Please scan a receipt or add items manually.');
+    if (receiptItems.length === 0 && pantryCount === 0) {
+      Alert.alert('No ingredients', 'Please scan a receipt, add items manually, or add items to your pantry.');
       return;
     }
 
@@ -268,10 +273,10 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
           style={[
             styles.generateBtn,
             { backgroundColor: dietConfig.color },
-            (generating || receiptItems.length === 0) && styles.btnDisabled,
+            (generating || (receiptItems.length === 0 && pantryCount === 0)) && styles.btnDisabled,
           ]}
           onPress={handleGenerate}
-          disabled={generating || receiptItems.length === 0}
+          disabled={generating || (receiptItems.length === 0 && pantryCount === 0)}
           activeOpacity={0.85}
         >
           {generating ? (
