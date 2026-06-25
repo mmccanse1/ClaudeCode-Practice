@@ -27,6 +27,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const [saving, setSaving] = useState(false);
   const [menuSaved, setMenuSaved] = useState(false);
   const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
+  const [refreshToast, setRefreshToast] = useState(false);
 
   async function handleRefreshRecipe(index: number) {
     const dayToReplace = recipes[index].day;
@@ -40,6 +41,8 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       setRecipes(updated);
       setMenuSaved(false);
       await saveCurrentMealPlan(updated, ingredients, dietType);
+      setRefreshToast(true);
+      setTimeout(() => setRefreshToast(false), 2500);
     } catch (e: any) {
       Alert.alert('Could not refresh recipe', e.message);
     } finally {
@@ -61,7 +64,13 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.root}>
+      {refreshToast && (
+        <View style={styles.toast} pointerEvents="none">
+          <Text style={styles.toastText}>✓  Plan updated &amp; saved</Text>
+        </View>
+      )}
+      <SafeAreaView style={styles.safe}>
       <FlatList
         data={recipes}
         keyExtractor={item => item.day}
@@ -108,10 +117,28 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
+  toast: {
+    position: 'absolute',
+    bottom: 32,
+    alignSelf: 'center',
+    backgroundColor: '#1d5c63',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    zIndex: 99,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  toastText: { color: 'white', fontSize: 14, fontWeight: '700' },
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
   list: { padding: 20, paddingBottom: 40 },
   header: { marginBottom: 20 },

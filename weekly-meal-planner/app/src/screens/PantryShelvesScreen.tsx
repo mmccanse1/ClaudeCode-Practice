@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   },
   placeholderEmoji: { fontSize: 24 },
   tileLabel: {
-    fontSize: 9,
+    fontSize: 12,
     color: '#555',
     textAlign: 'center',
     marginTop: 4,

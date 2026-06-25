@@ -43,7 +43,17 @@ export default function HomeScreen({ navigation }: Props) {
       Alert.alert(
         `${diet.label} — Planner Plan`,
         `Unlock ${diet.label} meal plans and 4 other diet types for $2.99/month.\n\nUpgrade coming soon!`,
-        [{ text: 'OK' }]
+        [
+          {
+            text: 'Notify Me',
+            onPress: () => {
+              Linking.openURL(
+                `mailto:mmccanse@yahoo.com?subject=Notify me when ${encodeURIComponent(diet.label)} launches&body=Please notify me when ${encodeURIComponent(diet.label)} is available in the Weekly Meal Planner app.`
+              );
+            },
+          },
+          { text: 'OK' },
+        ]
       );
       return;
     }
