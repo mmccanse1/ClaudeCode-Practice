@@ -2,7 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system/legacy';
 
 const PHOTO_DIR = `${FileSystem.documentDirectory}recipe_photos/`;
+const INGREDIENT_DIR = `${FileSystem.documentDirectory}ingredient_photos/`;
 const INDEX_KEY = '@recipe_photo_index_v1';
+const INGREDIENT_INDEX_KEY = '@ingredient_photo_index_v1';
 const IMAGEN_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict';
 
@@ -10,58 +12,48 @@ function cacheKey(query: string): string {
   return query.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').slice(0, 80);
 }
 
-async function getIndex(): Promise<Record<string, string>> {
+async function getIndex(storageKey: string): Promise<Record<string, string>> {
   try {
-    const raw = await AsyncStorage.getItem(INDEX_KEY);
+    const raw = await AsyncStorage.getItem(storageKey);
     return raw ? JSON.parse(raw) : {};
   } catch {
     return {};
   }
 }
 
-async function saveToIndex(key: string, filePath: string): Promise<void> {
+async function saveToIndex(storageKey: string, key: string, filePath: string): Promise<void> {
   try {
-    const index = await getIndex();
-    await AsyncStorage.setItem(INDEX_KEY, JSON.stringify({ ...index, [key]: filePath }));
+    const index = await getIndex(storageKey);
+    await AsyncStorage.setItem(storageKey, JSON.stringify({ ...index, [key]: filePath }));
   } catch {}
 }
 
-async function callImagen(query: string, apiKey: string): Promise<string | null> {
-  const res = await fetch(`${IMAGEN_URL}?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      instances: [
-        {
-          prompt: `professional food photography of ${query}, overhead shot, white ceramic plate, warm natural light, appetizing, restaurant quality`,
-        },
-      ],
-      parameters: { sampleCount: 1, aspectRatio: '1:1' },
-    }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.predictions?.[0]?.bytesBase64Encoded ?? null;
-}
 
-export async function generateFoodPhoto(query: string): Promise<string | null> {
-  const key = cacheKey(query);
-
-  const index = await getIndex();
-  if (index[key]) {
-    const info = await FileSystem.getInfoAsync(index[key]);
-    if (info.exists) return index[key];
-  }
-
+async function generateAndCache(
+  prompt: string,
+  dir: string,
+  indexKey: string,
+  cacheK: string
+): Promise<string | null> {
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
   if (!apiKey) return null;
 
-  await FileSystem.makeDirectoryAsync(PHOTO_DIR, { intermediates: true }).catch(() => {});
+  await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => {});
 
   let b64: string | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      b64 = await callImagen(query, apiKey);
+      const res = await fetch(`${IMAGEN_URL}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt }],
+          parameters: { sampleCount: 1, aspectRatio: '1:1' },
+        }),
+      });
+      if (!res.ok) break;
+      const data = await res.json();
+      b64 = data.predictions?.[0]?.bytesBase64Encoded ?? null;
       if (b64) break;
     } catch {
       // transient error — retry
@@ -69,10 +61,40 @@ export async function generateFoodPhoto(query: string): Promise<string | null> {
   }
   if (!b64) return null;
 
-  const filePath = `${PHOTO_DIR}${key}.png`;
+  const filePath = `${dir}${cacheK}.png`;
   await FileSystem.writeAsStringAsync(filePath, b64, {
     encoding: FileSystem.EncodingType.Base64,
   });
-  await saveToIndex(key, filePath);
+  await saveToIndex(indexKey, cacheK, filePath);
   return filePath;
+}
+
+export async function generateFoodPhoto(query: string): Promise<string | null> {
+  const key = cacheKey(query);
+  const index = await getIndex(INDEX_KEY);
+  if (index[key]) {
+    const info = await FileSystem.getInfoAsync(index[key]);
+    if (info.exists) return index[key];
+  }
+  return generateAndCache(
+    `professional food photography of ${query}, overhead shot, white ceramic plate, warm natural light, appetizing, restaurant quality`,
+    PHOTO_DIR,
+    INDEX_KEY,
+    key
+  );
+}
+
+export async function generateIngredientPhoto(query: string): Promise<string | null> {
+  const key = cacheKey(query);
+  const index = await getIndex(INGREDIENT_INDEX_KEY);
+  if (index[key]) {
+    const info = await FileSystem.getInfoAsync(index[key]);
+    if (info.exists) return index[key];
+  }
+  return generateAndCache(
+    `professional product photography of ${query}, clean white background, sharp focus, studio lighting, ingredient shot`,
+    INGREDIENT_DIR,
+    INGREDIENT_INDEX_KEY,
+    key
+  );
 }
