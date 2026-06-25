@@ -10,6 +10,7 @@ export interface Recipe {
   nutritionNotes: string;
   searchQuery: string;
   photoUrl?: string;
+  dietType?: DietType;
 }
 
 export interface MealPlan {
@@ -27,7 +28,7 @@ export type RootStackParamList = {
   ScanReceipt: { dietType: DietType };
   Pantry: undefined;
   PantryShelf: undefined;
-  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType };
+  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType; pantrySavedCount?: number };
   RecipeDetail: { recipe: Recipe; dietType?: DietType };
   SavedRecipes: undefined;
 };

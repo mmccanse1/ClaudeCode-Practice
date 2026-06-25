@@ -4,6 +4,107 @@ Ideas discussed during development. Not in scope for v1 launch.
 
 ---
 
+## 📊 Macro Breakdown on Recipe Cards
+
+**The insight (from focus group):**
+The app generates a one-sentence `nutritionNotes` field per recipe but shows no actual numbers. For keto users especially, net carbs, fat, and protein are the whole ballgame — a recipe described as "low carb" is worthless without a number. This was flagged as a non-negotiable gap.
+
+**The concept:**
+Ask Claude to return estimated macros alongside each recipe in the JSON response — or make a second lightweight API call to estimate macros from the ingredient list.
+
+**Proposed recipe JSON additions:**
+```json
+"macros": {
+  "calories": 480,
+  "proteinG": 38,
+  "fatG": 22,
+  "carbsG": 18,
+  "netCarbsG": 12,
+  "fiberG": 6
+}
+```
+
+**Display ideas:**
+- Compact macro bar on the RecipeCard (icons + numbers in a row below the meta row)
+- Full macro panel on the RecipeDetail screen
+- For keto users: highlight net carbs prominently in a colored badge (red if over threshold, green if compliant)
+- For general users: show calories + protein only to keep it uncluttered
+
+**Files to touch:** `claudeService.ts` (extend JSON shape in prompt and `RECIPE_SHAPE` const), `types/index.ts` (add `macros` field to `Recipe`), `components/RecipeCard.tsx` (macro bar UI), `screens/RecipeDetailScreen.tsx` (full macro panel)
+
+---
+
+## 🧮 Pantry Quantity & Consumption Tracking
+
+**The concept:**
+When a pantry item is scanned or added, the app caches not just the item name but its **total quantity** — normalized into a standard unit (cups, oz, grams, count). As the item is used across weekly recipes, the quantity decrements. When it hits zero, the item automatically disappears from the pantry. This turns the pantry from a static ingredient list into a live inventory.
+
+**How it would work:**
+
+1. **At scan time:** Claude parses the receipt and returns both the item name AND quantity/unit from the receipt text (e.g., `"1 gallon whole milk"` → `{ name: "whole milk", quantity: 16, unit: "cups" }`). Common unit conversions handled automatically: 1 gallon = 16 cups, 1 lb = 16 oz, 1 dozen = 12 count, etc.
+
+2. **At recipe generation time:** Claude tags each ingredient in a recipe with an estimated consumption amount (e.g., `"2 cups whole milk"`). The service maps that back to the pantry item and decrements the stored quantity.
+
+3. **Live pantry state:** Each pantry tile shows a quantity badge (e.g., "9 cups remaining"). A subtle low-quantity indicator (amber color) appears when below ~20% of original. When quantity reaches 0, the item is removed from the pantry automatically.
+
+4. **Manual override:** Users can tap a pantry item to manually adjust the quantity (e.g., if they used some outside of a recipe, or bought more).
+
+**Proposed pantry item schema:**
+```ts
+interface PantryItem {
+  name: string;
+  quantity: number;       // current remaining amount
+  originalQuantity: number;
+  unit: string;           // 'cups' | 'oz' | 'g' | 'count' | 'lbs' | 'ml'
+  addedAt: string;
+  category: 'refrigerated' | 'spices' | 'dry_goods';
+}
+```
+
+**Files to touch:** `types/index.ts` (new `PantryItem` interface), `services/pantryService.ts` (quantity storage + decrement logic), `services/claudeService.ts` (parse quantities from receipt, tag recipe ingredient amounts), `screens/PantryShelvesScreen.tsx` (quantity badge UI, low-quantity styling, auto-remove at 0), `screens/ScanReceiptScreen.tsx` (pass quantity data through the flow)
+
+---
+
+## 🌍 Ethnic & Regional Cuisine Diet Tiers
+
+**The insight (from focus group):**
+The free Mediterranean tier assumes a Western pantry baseline. Users with South Asian, East Asian, Middle Eastern, or Latin American pantries get recipes that ignore their existing ingredients (garam masala, ghee, turmeric, miso, tahini, etc.). This is a large underserved demographic in English-language meal planning apps.
+
+**Ideas:**
+- Add cuisine-aware diet tiers: **Indian/South Asian Vegetarian**, **East Asian**, **Middle Eastern**, **Latin American**
+- Alternatively, make the AI ingredient-aware before selecting a cuisine style — if the input list contains garam masala, cumin seeds, ghee, and basmati rice, bias the recipe output toward South Asian flavors even within a "Vegetarian" or generic free tier
+- Add spice rack awareness: when a user has specific spice profiles in their pantry (e.g., ras el hanout, five-spice, sumac), surface that as a cuisine signal to the AI prompt
+- Could be a premium "World Cuisine" tier, or individual cultural tiers at the same $2.99/mo price point
+
+**Files to touch:** `claudeService.ts` (new cuisine-aware system prompts), `constants/dietTypes.ts` (new diet type IDs), `types/index.ts` (extend `DietType` union)
+
+---
+
+## 🤖 Anthropic Claude API vs. Gemini — Evaluate Before Backend Build
+
+**The question:**
+The app currently uses Google Gemini (`gemini-2.5-flash`) for both receipt OCR and meal plan generation. Before building the subscription backend and moving to a paid API key, evaluate whether switching to the Anthropic Claude API would be a better long-term choice.
+
+**Angles to explore:**
+
+| Factor | Gemini | Claude (Anthropic) |
+|---|---|---|
+| Recipe quality | Good | Potentially better reasoning, more nuanced dietary guidance |
+| OCR / vision | Yes (receipt scanning) | Yes (Claude supports vision) |
+| Free tier | Yes (current setup) | Limited — paid from the start |
+| Pricing | Competitive | Compare per-token costs at expected usage volume |
+| Uptime / reliability | 503s observed on free tier | Paid tier SLA — worth comparing |
+| API stability | Google ecosystem | Anthropic — independent, focused on AI |
+| SDK | REST only | Official Anthropic SDK (TypeScript/JS available) |
+| Streaming | Yes | Yes |
+
+**Note:** The backend proxy (Node/Express) planned for v2 makes an API swap almost trivial — the model call is in one place (`claudeService.ts`). This decision does not need to be made before the proxy is built.
+
+**Recommendation to evaluate:** Run the same meal plan prompt through both APIs side-by-side and compare recipe quality, consistency, and adherence to diet guidelines before committing to either for the paid tier.
+
+---
+
+
 ## 🫙 Visual Spice Rack (Premium Pantry)
 
 **The concept:**
@@ -61,6 +162,27 @@ Replace the hardcoded `IS_PREMIUM = false` flag with a real subscription status 
 
 **Current state:** All gating UI is wired up and ready. Only the flag needs to be swapped for a real check.
 `src/constants/subscription.ts` → `export const IS_PREMIUM = false;` is the seam to replace.
+
+**⚠️ Also critical for API reliability — see Gemini API Risk note below.**
+
+---
+
+## ⚠️ Gemini API Reliability Risk (Pre-Launch Blocker)
+
+**The problem:**
+The app calls the Gemini API directly from the client using a free-tier API key. Free tier users are deprioritized during high-demand periods — resulting in 503 "UNAVAILABLE" errors that completely block the core feature (generating a meal plan). Observed in real usage even with very low call volume.
+
+**Why this matters:**
+A regular user who hits this on their first generate attempt will likely delete the app. The entire value proposition is blocked when Gemini is down.
+
+**The fix (tied to Subscription Backend):**
+- Route all Gemini calls through a **backend proxy server** (Node/Express on Railway or Render)
+- Use a **paid Gemini API key** on the server — paid tier has higher limits and better uptime SLA
+- Add **server-side retry with backoff** so transient 503s are handled silently before the user ever sees an error
+- Optional: add a **fallback model** (e.g. Claude or GPT-4o) if Gemini is down entirely
+
+**This is the #1 infrastructure item before scaling to real users.**
+
 
 ---
 
@@ -129,7 +251,11 @@ A promo code or access code system that unlocks the full premium tier for free �
 
 **To explore:** How codes are generated, how many, expiry dates, single-use vs. multi-use.
 
-**Subscription promotions to consider:**
+---
+
+## 💰 Subscription Promotions
+
+
 - First month free (trial period to convert free users)
 - Discounted annual plan (e.g. $19.99/year vs $2.99/month — saves the user ~$16)
 - Launch week promo — limited time reduced rate to drive early adoption

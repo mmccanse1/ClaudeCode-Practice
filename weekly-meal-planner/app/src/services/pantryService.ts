@@ -151,21 +151,25 @@ export async function clearPantry(): Promise<void> {
 export async function lookupBarcode(
   barcode: string
 ): Promise<{ name: string; photoUrl: string | null } | null> {
-  try {
-    const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(barcode)}.json`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.status !== 1) return null;
-    const name =
-      data.product?.product_name_en ||
-      data.product?.product_name ||
-      data.product?.generic_name;
-    if (!name) return null;
-    const photoUrl =
-      data.product?.image_front_url ?? data.product?.image_url ?? null;
-    return { name: String(name).trim(), photoUrl };
-  } catch {
-    return null;
-  }
+  const timeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10000));
+  const lookup = async (): Promise<{ name: string; photoUrl: string | null } | null> => {
+    try {
+      const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(barcode)}.json`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.status !== 1) return null;
+      const name =
+        data.product?.product_name_en ||
+        data.product?.product_name ||
+        data.product?.generic_name;
+      if (!name) return null;
+      const photoUrl =
+        data.product?.image_front_url ?? data.product?.image_url ?? null;
+      return { name: String(name).trim(), photoUrl };
+    } catch {
+      return null;
+    }
+  };
+  return Promise.race([lookup(), timeout]);
 }

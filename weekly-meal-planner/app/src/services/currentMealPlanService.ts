@@ -13,7 +13,7 @@ interface StoredPlan {
   ingredients: string[];
   createdAt: string;
   expiresAt: string;
-  dietType?: DietType;
+  dietType: DietType;
 }
 
 export interface CurrentPlan {

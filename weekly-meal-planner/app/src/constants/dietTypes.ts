@@ -45,7 +45,7 @@ export const DIET_TYPES: DietConfig[] = [
     tagline: 'Plant-forward · No meat',
     color: '#2d6a4f',
     accentColor: '#edf7f1',
-    premium: true,
+    premium: false,
   },
   {
     id: 'vegan',

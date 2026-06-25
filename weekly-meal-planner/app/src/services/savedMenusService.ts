@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Recipe, DietType } from '../types';
+import { DIET_TYPES } from '../constants/dietTypes';
 
 const KEY = '@meal_planner_saved_menus';
 
@@ -21,16 +22,21 @@ export async function getSavedMenus(): Promise<SavedMenu[]> {
   }
 }
 
-export async function saveMenu(recipes: Recipe[], ingredients: string[], dietType?: DietType): Promise<void> {
+export async function saveMenu(
+  recipes: Recipe[],
+  ingredients: string[],
+  dietType: DietType = 'mediterranean'
+): Promise<void> {
   const existing = await getSavedMenus();
   const date = new Date().toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
+  const dietLabel = DIET_TYPES.find(d => d.id === dietType)?.label ?? dietType;
   const newMenu: SavedMenu = {
     id: Date.now().toString(),
-    name: `Week of ${date}`,
+    name: `${dietLabel} Week of ${date}`,
     savedAt: new Date().toISOString(),
     recipes,
     ingredients,

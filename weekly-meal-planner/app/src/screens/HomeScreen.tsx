@@ -43,7 +43,17 @@ export default function HomeScreen({ navigation }: Props) {
       Alert.alert(
         `${diet.label} — Planner Plan`,
         `Unlock ${diet.label} meal plans and 4 other diet types for $2.99/month.\n\nUpgrade coming soon!`,
-        [{ text: 'OK' }]
+        [
+          {
+            text: 'Notify Me',
+            onPress: () => {
+              Linking.openURL(
+                `mailto:mmccanse@yahoo.com?subject=Notify me when ${encodeURIComponent(diet.label)} launches&body=Please notify me when ${encodeURIComponent(diet.label)} is available in the Weekly Meal Planner app.`
+              );
+            },
+          },
+          { text: 'OK' },
+        ]
       );
       return;
     }
@@ -118,9 +128,15 @@ export default function HomeScreen({ navigation }: Props) {
                 onPress={() => handleDietSelect(diet)}
                 activeOpacity={0.82}
               >
-                <View style={styles.lockBadge}>
-                  <Text style={styles.lockIcon}>🔒</Text>
-                </View>
+                {diet.premium ? (
+                  <View style={styles.lockBadge}>
+                    <Text style={styles.lockIcon}>🔒</Text>
+                  </View>
+                ) : (
+                  <View style={styles.freeBadge}>
+                    <Text style={styles.freeBadgeText}>FREE</Text>
+                  </View>
+                )}
                 <Text style={styles.dietEmoji}>{diet.emoji}</Text>
                 <Text style={[styles.dietLabel, { color: diet.color }]}>{diet.label}</Text>
                 <Text style={styles.dietTagline}>{diet.tagline}</Text>
@@ -129,7 +145,7 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
 
           <Text style={styles.upgradeHint}>
-            Unlock Keto, Paleo, Vegetarian & Vegan — Planner plan $2.99/mo
+            Unlock Keto, Paleo & Vegan — Planner plan $2.99/mo
           </Text>
 
           {/* Active plans */}

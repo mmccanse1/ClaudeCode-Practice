@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { parseReceiptFromImage, generateMealPlan } from '../services/claudeService';
@@ -33,6 +34,11 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
+  const [pantryCount, setPantryCount] = useState(0);
+
+  useEffect(() => {
+    getPantryItems().then(items => setPantryCount(items.length));
+  }, []);
 
   function toggleAll(checked: boolean) {
     const next: Record<string, boolean> = {};
@@ -61,19 +67,25 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
     if (result.canceled || !result.assets[0]) return;
 
-    const { uri, base64, mimeType } = result.assets[0];
+    const { uri } = result.assets[0];
     setReceiptUri(uri);
     setReceiptItems([]);
     setPantryChecked({});
 
-    if (!base64) {
-      Alert.alert('Could not read receipt', 'Image data unavailable.');
-      return;
-    }
-
     setParsing(true);
     try {
-      const items = await parseReceiptFromImage(base64, mimeType || 'image/jpeg');
+      const converted = await ImageManipulator.manipulateAsync(
+        uri,
+        [],
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+
+      if (!converted.base64) {
+        Alert.alert('Could not read receipt', 'Image data unavailable.');
+        return;
+      }
+
+      const items = await parseReceiptFromImage(converted.base64, 'image/jpeg');
       const initialChecked: Record<string, boolean> = {};
       items.forEach(i => { initialChecked[i] = true; });
       setReceiptItems(items);
@@ -100,8 +112,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   }
 
   async function handleGenerate() {
-    if (receiptItems.length === 0) {
-      Alert.alert('No ingredients', 'Please scan a receipt or add items manually.');
+    if (receiptItems.length === 0 && pantryCount === 0) {
+      Alert.alert('No ingredients', 'Please scan a receipt, add items manually, or add items to your pantry.');
       return;
     }
 
@@ -117,6 +129,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const withPhotos = await Promise.all(
         recipes.map(async recipe => ({
           ...recipe,
+          dietType,
           photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
         }))
       );
@@ -127,6 +140,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         recipes: withPhotos,
         ingredients: allIngredients,
         dietType,
+        pantrySavedCount: toSave.length,
       });
     } catch (e: any) {
       Alert.alert('Generation failed', e.message);
@@ -181,41 +195,28 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         )}
 
         {receiptItems.length > 0 && (
-          <>
-            <View style={styles.section}>
+          <View style={styles.section}>
+            <View style={styles.pantryHeader}>
               <Text style={styles.sectionTitle}>
-                Ingredients from receipt ({receiptItems.length})
+                Ingredients ({receiptItems.length})
               </Text>
-              {receiptItems.map(item => (
-                <View key={item} style={styles.itemRow}>
-                  <Text style={styles.itemText}>• {item}</Text>
-                  <TouchableOpacity onPress={() => removeItem(item)}>
-                    <Text style={styles.removeBtn}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.section}>
-              <View style={styles.pantryHeader}>
-                <Text style={styles.sectionTitle}>Save to Pantry?</Text>
-                <View style={styles.toggleRow}>
-                  <TouchableOpacity onPress={() => toggleAll(true)}>
-                    <Text style={styles.toggleLink}>All</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.toggleSep}>/</Text>
-                  <TouchableOpacity onPress={() => toggleAll(false)}>
-                    <Text style={styles.toggleLink}>None</Text>
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.toggleRow}>
+                <TouchableOpacity onPress={() => toggleAll(true)}>
+                  <Text style={styles.toggleLink}>All</Text>
+                </TouchableOpacity>
+                <Text style={styles.toggleSep}>/</Text>
+                <TouchableOpacity onPress={() => toggleAll(false)}>
+                  <Text style={styles.toggleLink}>None</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.pantryHint}>
-                Checked items will be added to your pantry for future meal plans.
-              </Text>
-              {receiptItems.map(item => (
+            </View>
+            <Text style={styles.pantryHint}>
+              Check items to save to your pantry. Tap ✕ to remove from this plan.
+            </Text>
+            {receiptItems.map(item => (
+              <View key={item} style={styles.checkRow}>
                 <TouchableOpacity
-                  key={item}
-                  style={styles.checkRow}
+                  style={styles.checkRowInner}
                   onPress={() => setPantryChecked(prev => ({ ...prev, [item]: !prev[item] }))}
                   activeOpacity={0.7}
                 >
@@ -224,9 +225,12 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                   </View>
                   <Text style={styles.checkLabel}>{item}</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          </>
+                <TouchableOpacity onPress={() => removeItem(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Text style={styles.removeBtn}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
         )}
 
         <View style={styles.section}>
@@ -269,10 +273,10 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
           style={[
             styles.generateBtn,
             { backgroundColor: dietConfig.color },
-            (generating || receiptItems.length === 0) && styles.btnDisabled,
+            (generating || (receiptItems.length === 0 && pantryCount === 0)) && styles.btnDisabled,
           ]}
           onPress={handleGenerate}
-          disabled={generating || receiptItems.length === 0}
+          disabled={generating || (receiptItems.length === 0 && pantryCount === 0)}
           activeOpacity={0.85}
         >
           {generating ? (
@@ -427,6 +431,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     gap: 12,
   },
+  checkRowInner: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   checkbox: {
     width: 22,
     height: 22,
@@ -443,4 +453,5 @@ const styles = StyleSheet.create({
   },
   checkmark: { color: 'white', fontSize: 13, fontWeight: '800' },
   checkLabel: { flex: 1, fontSize: 14, color: '#333', textTransform: 'capitalize' },
+
 });
