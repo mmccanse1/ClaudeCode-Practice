@@ -296,6 +296,22 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               Photograph your grocery receipt and we'll extract the ingredients automatically.
             </Text>
 
+            <View style={styles.miniSteps}>
+              {[
+                ['📷', 'Scan receipt'],
+                ['🤖', 'AI builds 7 recipes'],
+                ['🍽', 'Eat well all week'],
+              ].map(([icon, label], i, arr) => (
+                <React.Fragment key={label}>
+                  <View style={styles.miniStep}>
+                    <Text style={styles.miniStepIcon}>{icon}</Text>
+                    <Text style={styles.miniStepLabel}>{label}</Text>
+                  </View>
+                  {i < arr.length - 1 && <Text style={styles.miniStepArrow}>›</Text>}
+                </React.Fragment>
+              ))}
+            </View>
+
             <View style={styles.pickRow}>
               <TouchableOpacity style={styles.pickBtn} onPress={() => pickReceipt(true)} activeOpacity={0.85}>
                 <Text style={styles.pickIcon}>📷</Text>
@@ -481,6 +497,20 @@ const styles = StyleSheet.create({
 
   title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a', marginBottom: 8 },
   subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 24 },
+  miniSteps: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 20,
+    gap: 4,
+  },
+  miniStep: { alignItems: 'center', flex: 1 },
+  miniStepIcon: { fontSize: 22, marginBottom: 4 },
+  miniStepLabel: { fontSize: 11, color: '#555', fontWeight: '600', textAlign: 'center', lineHeight: 14 },
+  miniStepArrow: { fontSize: 20, color: '#ccc', fontWeight: '300', marginBottom: 14 },
   pickRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   pickBtn: {
     flex: 1,

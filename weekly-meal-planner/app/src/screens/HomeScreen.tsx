@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  ImageBackground,
   Linking,
   Modal,
   TextInput,
@@ -16,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, DietType } from '../types';
-import { fetchSceneryPhoto } from '../services/unsplashService';
 import { getAllCurrentPlans, CurrentPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES, DietConfig } from '../constants/dietTypes';
 import { IS_PREMIUM } from '../constants/subscription';
@@ -27,17 +25,11 @@ const FREE_DIETS = DIET_TYPES.filter(d => !d.premium);
 const PREMIUM_DIETS = DIET_TYPES.filter(d => d.premium);
 
 export default function HomeScreen({ navigation }: Props) {
-  const [coastPhotoUrl, setCoastPhotoUrl] = useState<string | null>(null);
   const [activePlans, setActivePlans] = useState<CurrentPlan[]>([]);
   const [upgradeModalDiet, setUpgradeModalDiet] = useState<DietConfig | null>(null);
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
-
-  useEffect(() => {
-    fetchSceneryPhoto('mediterranean coast sea greece santorini')
-      .then(url => setCoastPhotoUrl(url));
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -84,36 +76,26 @@ export default function HomeScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.container} bounces={false}>
 
-        {coastPhotoUrl ? (
-          <ImageBackground
-            source={{ uri: coastPhotoUrl }}
-            style={styles.heroImage}
-            imageStyle={styles.heroImageStyle}
-          >
-            <View style={styles.heroScrim}>{HeaderContent}</View>
-          </ImageBackground>
-        ) : (
-          <View style={[styles.heroImage, styles.heroFallback]}>
-            {HeaderContent}
-          </View>
-        )}
+        <View style={[styles.heroImage, styles.heroFallback]}>
+          {HeaderContent}
+        </View>
 
         <View style={styles.body}>
 
-          {/* Mini how-it-works */}
-          <View style={styles.miniSteps}>
+          <View style={styles.howItWorks}>
+            <Text style={styles.howTitle}>How it works</Text>
             {[
-              ['📷', 'Scan receipt'],
-              ['🤖', 'AI builds 7 recipes'],
-              ['🍽', 'Eat well all week'],
-            ].map(([icon, label], i, arr) => (
-              <React.Fragment key={label}>
-                <View style={styles.miniStep}>
-                  <Text style={styles.miniStepIcon}>{icon}</Text>
-                  <Text style={styles.miniStepLabel}>{label}</Text>
+              ['1', 'Choose your diet plan'],
+              ['2', 'Photograph your grocery receipt or add pantry items'],
+              ['3', 'Get 7 AI-generated recipes tailored to your diet and pantry'],
+              ['4', 'Save and share beautifully formatted recipe cards'],
+            ].map(([num, text]) => (
+              <View key={num} style={styles.step}>
+                <View style={styles.stepNum}>
+                  <Text style={styles.stepNumText}>{num}</Text>
                 </View>
-                {i < arr.length - 1 && <Text style={styles.miniStepArrow}>›</Text>}
-              </React.Fragment>
+                <Text style={styles.stepText}>{text}</Text>
+              </View>
             ))}
           </View>
 
@@ -234,23 +216,6 @@ export default function HomeScreen({ navigation }: Props) {
           >
             <Text style={styles.savedBtnText}>🔖  Saved Recipes & Menus</Text>
           </TouchableOpacity>
-
-          <View style={styles.howItWorks}>
-            <Text style={styles.howTitle}>How it works</Text>
-            {[
-              ['1', 'Choose your diet plan'],
-              ['2', 'Photograph your grocery receipt or add pantry items'],
-              ['3', 'Get 7 AI-generated recipes tailored to your diet and pantry'],
-              ['4', 'Save and share beautifully formatted recipe cards'],
-            ].map(([num, text]) => (
-              <View key={num} style={styles.step}>
-                <View style={styles.stepNum}>
-                  <Text style={styles.stepNumText}>{num}</Text>
-                </View>
-                <Text style={styles.stepText}>{text}</Text>
-              </View>
-            ))}
-          </View>
 
           <Text style={styles.source}>
             Mediterranean recipes follow Mayo Clinic diet guidelines
