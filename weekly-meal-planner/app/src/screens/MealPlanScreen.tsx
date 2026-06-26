@@ -204,7 +204,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
             <View style={styles.header}>
               <Text style={styles.title}>Your Weekly Menu</Text>
               <Text style={styles.subtitle}>
-                {dietConfig.emoji} {dietConfig.label} · {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+                {dietConfig.label} · {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
                 {mealTypeCount > 1 ? ` across ${mealTypeCount} meals` : ''}.
                 Tap a day to see its recipes.
               </Text>

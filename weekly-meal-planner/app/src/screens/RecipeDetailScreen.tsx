@@ -76,7 +76,7 @@ export default function RecipeDetailScreen({ route }: Props) {
               <Text style={styles.dayText}>{recipe.day}</Text>
             </View>
             <View style={styles.dietBadge}>
-              <Text style={styles.dietText}>{dietConfig.emoji} {dietConfig.label} Diet</Text>
+              <Text style={styles.dietText}>{dietConfig.label} Diet</Text>
             </View>
           </View>
 

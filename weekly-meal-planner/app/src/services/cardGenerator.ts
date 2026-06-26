@@ -203,7 +203,7 @@ function buildRecipeCardHtml(recipe: Recipe, dietType: DietType = 'mediterranean
 </head>
 <body>
   <div class="day-badge">${e(recipe.day)}</div>
-  <span class="diet-badge">${dietConfig.emoji} ${e(dietConfig.label)} Diet</span>
+  <span class="diet-badge">${e(dietConfig.label)} Diet</span>
   <h1>${e(recipe.name)}</h1>
   <p class="description">${e(recipe.description)}</p>
 
