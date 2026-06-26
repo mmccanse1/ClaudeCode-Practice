@@ -1,3 +1,13 @@
+/** Estimated per-serving nutrition. All values are numbers in fixed units:
+ *  calories = kcal, protein/carbs/sugar = grams, sodium = milligrams. */
+export interface Nutrition {
+  calories: number;
+  protein: number;
+  carbs: number;
+  sugar: number;
+  sodium: number;
+}
+
 export interface Recipe {
   name: string;
   description: string;
@@ -8,6 +18,8 @@ export interface Recipe {
   ingredients: string[];
   steps: string[];
   nutritionNotes: string;
+  /** Optional — older saved recipes predate this and render without it. */
+  nutrition?: Nutrition;
   searchQuery: string;
   photoUrl?: string;
   dietType?: DietType;

@@ -118,6 +118,29 @@ export default function RecipeDetailScreen({ route }: Props) {
             </View>
           ))}
 
+          {recipe.nutrition && (
+            <View style={styles.macrosCard}>
+              <Text style={styles.macrosTitle}>Nutrition · per serving</Text>
+              <View style={styles.macrosRow}>
+                {([
+                  ['CAL', `${recipe.nutrition.calories}`],
+                  ['PROTEIN', `${recipe.nutrition.protein}g`],
+                  ['CARBS', `${recipe.nutrition.carbs}g`],
+                  ['SUGAR', `${recipe.nutrition.sugar}g`],
+                  ['SODIUM', `${recipe.nutrition.sodium}mg`],
+                ] as const).map(([label, value]) => (
+                  <View key={label} style={styles.macroItem}>
+                    <Text style={styles.macroValue}>{value}</Text>
+                    <Text style={styles.macroLabel}>{label}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.macrosDisclaimer}>
+                Estimated for general guidance — not medical or dietary advice.
+              </Text>
+            </View>
+          )}
+
           <View style={styles.nutritionBox}>
             <Text style={styles.nutritionIcon}>🌿</Text>
             <Text style={styles.nutritionText}>{recipe.nutritionNotes}</Text>
@@ -263,6 +286,36 @@ const styles = StyleSheet.create({
   },
   stepNumText: { color: 'white', fontWeight: '700', fontSize: 13 },
   stepText: { flex: 1, fontSize: 14, color: '#333', lineHeight: 22 },
+  macrosCard: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  macrosTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 12,
+  },
+  macrosRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  macroItem: { flex: 1, alignItems: 'center' },
+  macroValue: { fontSize: 16, fontWeight: '800', color: '#2e86ab' },
+  macroLabel: { fontSize: 9, color: '#aaa', fontWeight: '700', letterSpacing: 0.5, marginTop: 3 },
+  macrosDisclaimer: {
+    fontSize: 11,
+    color: '#aaa',
+    fontStyle: 'italic',
+    marginTop: 12,
+    textAlign: 'center',
+  },
   nutritionBox: {
     flexDirection: 'row',
     gap: 10,

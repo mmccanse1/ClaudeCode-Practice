@@ -89,6 +89,13 @@ function extractJson<T>(text: string): T {
   }
 }
 
+// Per-serving nutrition estimate. Units are fixed so the UI can label them.
+const NUTRITION_INSTRUCTION = `For "nutrition", give realistic PER-SERVING estimates as integers:
+- calories in kcal, protein/carbs/sugar in grams, sodium in milligrams.
+These are estimates for general guidance only — they do not need lab precision, but should be plausible for the ingredients and serving size.`;
+
+const NUTRITION_SHAPE = `"nutrition": { "calories": 520, "protein": 32, "carbs": 18, "sugar": 6, "sodium": 640 }`;
+
 const RECIPE_SHAPE = `[
   {
     "name": "string",
@@ -100,9 +107,24 @@ const RECIPE_SHAPE = `[
     "ingredients": ["quantity + ingredient"],
     "steps": ["Full sentence step."],
     "nutritionNotes": "string (1 sentence about why this recipe fits the diet)",
+    ${NUTRITION_SHAPE},
     "searchQuery": "concise food photo search term"
   }
 ]`;
+
+// Coerce a model-supplied nutrition object to clean integers, or drop it.
+// Returns undefined if the data is missing/garbage so the recipe still renders.
+function normalizeNutrition(raw: any): Recipe['nutrition'] {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const keys = ['calories', 'protein', 'carbs', 'sugar', 'sodium'] as const;
+  const out: Record<string, number> = {};
+  for (const k of keys) {
+    const n = Number(raw[k]);
+    if (!Number.isFinite(n) || n < 0) return undefined;
+    out[k] = Math.round(n);
+  }
+  return out as Recipe['nutrition'];
+}
 
 function buildSystemPrompt(dietType: DietType, glutenFree: boolean): string {
   const gfNote = glutenFree
@@ -255,6 +277,8 @@ STRICT rules:
 - ${salmonAlreadyUsed ? 'Do NOT use salmon — it already appears elsewhere in the week.' : 'Salmon may appear only if it has not been used elsewhere this week.'}
 - Must be different from all the recipes listed above.
 
+${NUTRITION_INSTRUCTION}
+
 Return ONLY a valid JSON object (not an array) with this exact shape:
 {
   "name": "string",
@@ -266,6 +290,7 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
   "ingredients": ["quantity + ingredient"],
   "steps": ["Full sentence step."],
   "nutritionNotes": "string (1 sentence diet benefit)",
+  ${NUTRITION_SHAPE},
   "searchQuery": "concise food photo search term"
 }`,
     },
@@ -275,7 +300,7 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
   if (!recipe || typeof recipe !== 'object' || !recipe.day || typeof recipe.day !== 'string' || !recipe.name) {
     throw new Error(AI_PARSE_ERROR);
   }
-  return recipe;
+  return { ...recipe, nutrition: normalizeNutrition(recipe.nutrition) };
 }
 
 export async function generateMealPlan(
@@ -302,6 +327,8 @@ STRICT variety rules — follow these exactly:
 - Vary proteins across the week: no single protein source should appear more than twice.
 - Each recipe must be distinct — no repeated dishes.
 
+${NUTRITION_INSTRUCTION}
+
 Return ONLY a valid JSON array of 7 objects with this exact shape:
 ${RECIPE_SHAPE}`,
     },
@@ -315,5 +342,5 @@ ${RECIPE_SHAPE}`,
   ) {
     throw new Error(AI_PARSE_ERROR);
   }
-  return parsed;
+  return parsed.map(r => ({ ...r, nutrition: normalizeNutrition(r.nutrition) }));
 }
