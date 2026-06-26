@@ -81,6 +81,19 @@ export default function PantryScreen({ navigation }: Props) {
           Items here are added to every meal plan you generate.
         </Text>
 
+        <View style={styles.instructions}>
+          {[
+            ['✏️', 'Type an item and tap + Add'],
+            ['📦', 'Scan a barcode to add a product'],
+            ['🧾', 'Items from your receipt are saved here automatically'],
+          ].map(([icon, tip]) => (
+            <View key={tip} style={styles.instructionRow}>
+              <Text style={styles.instructionIcon}>{icon}</Text>
+              <Text style={styles.instructionText}>{tip}</Text>
+            </View>
+          ))}
+        </View>
+
         <View style={styles.addRow}>
           <TextInput
             style={styles.input}
@@ -142,6 +155,20 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a' },
   clearBtn: { fontSize: 14, color: '#e05c5c', fontWeight: '600' },
   subtitle: { fontSize: 13, color: '#777', lineHeight: 19, marginBottom: 16 },
+
+  instructions: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  instructionRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  instructionIcon: { fontSize: 16, width: 24, textAlign: 'center' },
+  instructionText: { fontSize: 13, color: '#555', flex: 1, lineHeight: 18 },
 
   addRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   input: {
