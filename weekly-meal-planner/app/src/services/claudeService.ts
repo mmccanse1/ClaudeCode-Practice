@@ -386,7 +386,7 @@ export async function generateMealPlan(
 ): Promise<Recipe[]> {
   // Only generate the meals the user asked for — one model call per meal type,
   // run in parallel. A flat list of all (day × meal) recipes comes back.
-  const selected = meals.length > 0 ? meals : ['dinner'];
+  const selected: MealType[] = meals.length > 0 ? meals : ['dinner'];
   const perMeal = await Promise.all(
     selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal))
   );
