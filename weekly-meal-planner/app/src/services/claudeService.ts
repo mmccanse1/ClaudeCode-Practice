@@ -6,12 +6,21 @@ export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 
-async function callClaude(parts: object[], signal?: AbortSignal): Promise<string> {
+interface CallOpts {
+  signal?: AbortSignal;
+  /** Wall-clock cap before aborting. Defaults to 20s (fine for short calls). */
+  timeoutMs?: number;
+  /** Max output tokens. Defaults to 4096. */
+  maxTokens?: number;
+}
+
+async function callClaude(parts: object[], opts: CallOpts = {}): Promise<string> {
+  const { signal, timeoutMs = 20_000, maxTokens = 4096 } = opts;
   const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('EXPO_PUBLIC_ANTHROPIC_API_KEY is not set');
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20_000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   if (signal) signal.addEventListener('abort', () => controller.abort());
 
   let response: Response;
@@ -25,7 +34,7 @@ async function callClaude(parts: object[], signal?: AbortSignal): Promise<string
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 4096,
+        max_tokens: maxTokens,
         messages: [{ role: 'user', content: parts }],
       }),
       signal: controller.signal,
@@ -299,7 +308,7 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
   "searchQuery": "concise food photo search term"
 }`,
     },
-  ]);
+  ], { timeoutMs: 45_000 });
 
   const recipe = extractJson<Recipe>(text);
   if (!recipe || typeof recipe !== 'object' || !recipe.day || typeof recipe.day !== 'string' || !recipe.name) {
@@ -337,7 +346,7 @@ ${NUTRITION_INSTRUCTION}
 Return ONLY a valid JSON array of 7 objects with this exact shape:
 ${RECIPE_SHAPE}`,
     },
-  ]);
+  ], { timeoutMs: 60_000, maxTokens: 8192 });
 
   const parsed = extractJson<Recipe[]>(text);
   if (
