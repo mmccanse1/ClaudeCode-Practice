@@ -17,6 +17,7 @@
     "expo-file-system": "*",
     "expo-image-manipulator": "^56.0.19",
     "expo-image-picker": "*",
+    "expo-notifications": "~0.32.17",
     "expo-sharing": "*",
     "expo-status-bar": "*",
     "react": "*",

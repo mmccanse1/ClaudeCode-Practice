@@ -31,9 +31,9 @@ export const DIET_TYPES: DietConfig[] = [
     accentColor: '#fdf0ef',
     premium: true,
     benefits: [
-      'Low-carb meal plans built from your groceries',
-      'Stay in ketosis without the guesswork',
-      'Personalized macros from what you already own',
+      'Use what’s already in your fridge — no special keto shopping',
+      'Every recipe keeps you under your carb target, automatically',
+      'Hit your macros without tracking a single thing',
     ],
   },
   {
@@ -45,9 +45,9 @@ export const DIET_TYPES: DietConfig[] = [
     accentColor: '#faf0e6',
     premium: true,
     benefits: [
-      'Whole-food meals with no grains or processed ingredients',
-      'Built from your real grocery haul each week',
-      'One clean week of eating, planned automatically',
+      'Whole-food dinners from the groceries you already bought',
+      'No grains, no processed junk — sorted for you',
+      'A clean week of eating, planned in one scan',
     ],
   },
   {
@@ -69,9 +69,9 @@ export const DIET_TYPES: DietConfig[] = [
     accentColor: '#edf7f1',
     premium: true,
     benefits: [
-      'Fully plant-based menus from your pantry',
-      '7 diverse plant-forward recipes per week',
-      'Complete nutrition powered by your ingredients',
+      'Fully plant-based dinners from what’s in your kitchen',
+      '7 different recipes so no week feels repetitive',
+      'Balanced nutrition without the meal-planning headache',
     ],
   },
 ];
