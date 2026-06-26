@@ -8,6 +8,7 @@ export interface DietConfig {
   color: string;
   accentColor: string;
   premium: boolean;
+  benefits: string[];
 }
 
 export const DIET_TYPES: DietConfig[] = [
@@ -19,6 +20,7 @@ export const DIET_TYPES: DietConfig[] = [
     color: '#2e86ab',
     accentColor: '#e3f3f8',
     premium: false,
+    benefits: [],
   },
   {
     id: 'keto',
@@ -28,6 +30,11 @@ export const DIET_TYPES: DietConfig[] = [
     color: '#c0392b',
     accentColor: '#fdf0ef',
     premium: true,
+    benefits: [
+      'Low-carb meal plans built from your groceries',
+      'Stay in ketosis without the guesswork',
+      'Personalized macros from what you already own',
+    ],
   },
   {
     id: 'paleo',
@@ -37,6 +44,11 @@ export const DIET_TYPES: DietConfig[] = [
     color: '#7B4A1E',
     accentColor: '#faf0e6',
     premium: true,
+    benefits: [
+      'Whole-food meals with no grains or processed ingredients',
+      'Built from your real grocery haul each week',
+      'One clean week of eating, planned automatically',
+    ],
   },
   {
     id: 'vegetarian',
@@ -46,6 +58,7 @@ export const DIET_TYPES: DietConfig[] = [
     color: '#2d6a4f',
     accentColor: '#edf7f1',
     premium: false,
+    benefits: [],
   },
   {
     id: 'vegan',
@@ -55,5 +68,10 @@ export const DIET_TYPES: DietConfig[] = [
     color: '#40916c',
     accentColor: '#edf7f1',
     premium: true,
+    benefits: [
+      'Fully plant-based menus from your pantry',
+      '7 diverse plant-forward recipes per week',
+      'Complete nutrition powered by your ingredients',
+    ],
   },
 ];

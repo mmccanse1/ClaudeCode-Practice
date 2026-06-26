@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,17 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Recipe, DietType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
 import RecipeCard from '../components/RecipeCard';
-import { saveMenu } from '../services/savedMenusService';
+import { saveMenu, getSavedMenus } from '../services/savedMenusService';
 import { regenerateRecipe } from '../services/claudeService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan } from '../services/currentMealPlanService';
+import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 
@@ -26,8 +28,28 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
   const [saving, setSaving] = useState(false);
   const [menuSaved, setMenuSaved] = useState(false);
+  const [milestoneMessage, setMilestoneMessage] = useState('');
+  const [showUpsell, setShowUpsell] = useState(false);
   const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
   const [refreshToast, setRefreshToast] = useState(false);
+  const celebrationOpacity = useRef(new Animated.Value(0)).current;
+  const isFromFreshScan = pantrySavedCount != null;
+
+  useEffect(() => {
+    if (!isFromFreshScan) return;
+    Animated.sequence([
+      Animated.timing(celebrationOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.delay(2200),
+      Animated.timing(celebrationOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  function getMilestoneMessage(count: number): string {
+    if (count === 1) return 'First menu saved! 🎉';
+    if (count === 2) return "You're on a roll! 🔥";
+    if (count === 3) return 'Three menus planned! 🏆';
+    return `${count} menus saved and counting!`;
+  }
 
   async function handleRefreshRecipe(index: number) {
     const dayToReplace = recipes[index].day;
@@ -54,8 +76,10 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     setSaving(true);
     try {
       await saveMenu(recipes, ingredients, dietType);
+      const allMenus = await getSavedMenus();
+      setMilestoneMessage(getMilestoneMessage(allMenus.length));
       setMenuSaved(true);
-      Alert.alert('Menu Saved!', 'This meal plan has been saved to your Menus folder.');
+      if (!IS_PREMIUM) setShowUpsell(true);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
@@ -69,6 +93,14 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         <View style={styles.toast} pointerEvents="none">
           <Text style={styles.toastText}>✓  Plan updated &amp; saved</Text>
         </View>
+      )}
+
+      {isFromFreshScan && (
+        <Animated.View style={[styles.celebrationBanner, { opacity: celebrationOpacity }]} pointerEvents="none">
+          <Text style={styles.celebrationText}>
+            🎉 Your 7-day {dietConfig.label} plan is ready!
+          </Text>
+        </Animated.View>
       )}
       <SafeAreaView style={styles.safe}>
       <FlatList
@@ -102,6 +134,18 @@ export default function MealPlanScreen({ navigation, route }: Props) {
                 </Text>
               )}
             </TouchableOpacity>
+
+            {menuSaved && milestoneMessage !== '' && (
+              <Text style={styles.milestoneText}>{milestoneMessage}</Text>
+            )}
+
+            {showUpsell && (
+              <View style={styles.upsellBanner}>
+                <Text style={styles.upsellText}>
+                  Love this? Unlock Keto, Paleo & Vegan for $2.99/mo
+                </Text>
+              </View>
+            )}
           </View>
         }
         renderItem={({ item, index }) => (
@@ -113,6 +157,15 @@ export default function MealPlanScreen({ navigation, route }: Props) {
             refreshDisabled={refreshingDay !== null && refreshingDay !== item.day}
           />
         )}
+        ListFooterComponent={
+          <TouchableOpacity
+            style={styles.replanBtn}
+            onPress={() => navigation.navigate('Home')}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.replanBtnText}>Plan Another Week →</Text>
+          </TouchableOpacity>
+        }
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />
@@ -162,4 +215,51 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pantryBannerText: { fontSize: 13, color: '#1d5c63', fontWeight: '600' },
+
+  celebrationBanner: {
+    position: 'absolute',
+    top: 60,
+    alignSelf: 'center',
+    backgroundColor: '#1d5c63',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    zIndex: 100,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  celebrationText: { color: 'white', fontSize: 15, fontWeight: '700' },
+
+  milestoneText: {
+    textAlign: 'center',
+    fontSize: 14,
+    color: '#1d5c63',
+    fontWeight: '700',
+    marginTop: 10,
+  },
+
+  upsellBanner: {
+    backgroundColor: '#fff8e1',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f4a261',
+  },
+  upsellText: { fontSize: 14, color: '#555', fontWeight: '500', lineHeight: 20 },
+
+  replanBtn: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: '#2e86ab',
+  },
+  replanBtnText: { color: '#2e86ab', fontSize: 16, fontWeight: '700' },
 });
