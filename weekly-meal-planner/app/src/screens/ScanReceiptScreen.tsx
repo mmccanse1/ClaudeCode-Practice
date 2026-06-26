@@ -359,12 +359,6 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         contentContainerStyle={styles.container}
         ListHeaderComponent={
           <>
-            {/* Diet type badge */}
-            <View style={[styles.dietBadge, { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color }]}>
-              <Text style={styles.dietBadgeEmoji}>{dietConfig.emoji}</Text>
-              <Text style={[styles.dietBadgeLabel, { color: dietConfig.color }]}>{dietConfig.label} Menu</Text>
-            </View>
-
             <Text style={styles.title}>Scan Your Receipt</Text>
             <Text style={styles.subtitle}>
               Photograph your grocery receipt and we'll extract the ingredients automatically.
@@ -577,20 +571,6 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
   container: { padding: 24, paddingBottom: 24 },
-
-  dietBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    alignSelf: 'flex-start',
-    borderWidth: 1.5,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginBottom: 10,
-  },
-  dietBadgeEmoji: { fontSize: 18 },
-  dietBadgeLabel: { fontSize: 14, fontWeight: '700' },
 
   title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
   subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 14 },
