@@ -9,12 +9,13 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, DietType } from '../types';
-import { getAllCurrentPlans, CurrentPlan } from '../services/currentMealPlanService';
+import { getAllCurrentPlans, hasEverGeneratedPlan, CurrentPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES, DietConfig } from '../constants/dietTypes';
 import { IS_PREMIUM } from '../constants/subscription';
 
@@ -25,12 +26,14 @@ const PREMIUM_DIETS = DIET_TYPES.filter(d => d.premium);
 
 export default function HomeScreen({ navigation }: Props) {
   const [activePlans, setActivePlans] = useState<CurrentPlan[]>([]);
+  const [hasMadePlan, setHasMadePlan] = useState(false);
   const [upgradeModalDiet, setUpgradeModalDiet] = useState<DietConfig | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 
   useFocusEffect(
     useCallback(() => {
       getAllCurrentPlans().then(setActivePlans);
+      hasEverGeneratedPlan().then(setHasMadePlan);
     }, [])
   );
 
@@ -52,6 +55,10 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   const isNewUser = activePlans.length === 0;
+  // True once the user has earned their first "aha" — either the persisted flag,
+  // or an active plan (covers users from before the flag existed). Gates the
+  // premium upsell and the empty-until-used Saved Recipes shortcut.
+  const hasActivated = hasMadePlan || activePlans.length > 0;
 
   const HeaderContent = (
     <View style={styles.headerOverlay}>
@@ -64,9 +71,14 @@ export default function HomeScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.container} bounces={false}>
 
-        <View style={[styles.heroImage, styles.heroFallback]}>
+        <ImageBackground
+          source={require('../../assets/hero-meal.jpg')}
+          style={styles.heroImage}
+          resizeMode="cover"
+        >
+          <View style={styles.heroOverlay} />
           {HeaderContent}
-        </View>
+        </ImageBackground>
 
         <View style={styles.body}>
 
@@ -118,31 +130,35 @@ export default function HomeScreen({ navigation }: Props) {
             </TouchableOpacity>
           ))}
 
-          {/* Plan (premium) */}
-          <View style={[styles.tierHeader, { marginTop: 24 }]}>
-            <Text style={styles.sectionLabel}>Plan</Text>
-            <TouchableOpacity onPress={() => handleDietSelect(PREMIUM_DIETS[0])}>
-              <Text style={styles.premiumPillText}>Unlock all · $2.99/mo →</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Plan (premium) — deferred until the user has completed their first plan */}
+          {hasActivated && (
+            <>
+              <View style={[styles.tierHeader, { marginTop: 24 }]}>
+                <Text style={styles.sectionLabel}>Plan</Text>
+                <TouchableOpacity onPress={() => handleDietSelect(PREMIUM_DIETS[0])}>
+                  <Text style={styles.premiumPillText}>Unlock all · $2.99/mo →</Text>
+                </TouchableOpacity>
+              </View>
 
-          <View style={styles.dietGrid}>
-            {PREMIUM_DIETS.map(diet => (
-              <TouchableOpacity
-                key={diet.id}
-                style={[styles.dietCard, { backgroundColor: diet.accentColor }]}
-                onPress={() => handleDietSelect(diet)}
-                activeOpacity={0.65}
-              >
-                <View style={styles.lockBadge}>
-                  <Text style={styles.lockIcon}>🔒</Text>
-                </View>
-                <Text style={styles.dietEmoji}>{diet.emoji}</Text>
-                <Text style={[styles.dietLabel, { color: diet.color }]}>{diet.label}</Text>
-                <Text style={styles.dietTagline}>{diet.tagline}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+              <View style={styles.dietGrid}>
+                {PREMIUM_DIETS.map(diet => (
+                  <TouchableOpacity
+                    key={diet.id}
+                    style={[styles.dietCard, { backgroundColor: diet.accentColor }]}
+                    onPress={() => handleDietSelect(diet)}
+                    activeOpacity={0.65}
+                  >
+                    <View style={styles.lockBadge}>
+                      <Text style={styles.lockIcon}>🔒</Text>
+                    </View>
+                    <Text style={styles.dietEmoji}>{diet.emoji}</Text>
+                    <Text style={[styles.dietLabel, { color: diet.color }]}>{diet.label}</Text>
+                    <Text style={styles.dietTagline}>{diet.tagline}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
 
           {/* New-user directed CTA */}
           {isNewUser && (
@@ -197,13 +213,15 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.secondaryBtnText}>🗄  Manage Pantry</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.savedBtn}
-            onPress={() => navigation.navigate('SavedRecipes')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.savedBtnText}>🔖  Saved Recipes & Menus</Text>
-          </TouchableOpacity>
+          {hasActivated && (
+            <TouchableOpacity
+              style={styles.savedBtn}
+              onPress={() => navigation.navigate('SavedRecipes')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.savedBtnText}>🔖  Saved Recipes & Menus</Text>
+            </TouchableOpacity>
+          )}
 
           <Text style={styles.source}>
             Mediterranean recipes follow Mayo Clinic diet guidelines
@@ -310,7 +328,7 @@ export default function HomeScreen({ navigation }: Props) {
                 navigation.navigate('ScanReceipt', { dietType: 'mediterranean' });
               }}
             >
-              <Text style={styles.sheetFreeBtnText}>Try Mediterranean free →</Text>
+              <Text style={styles.sheetFreeBtnText}>Start with Mediterranean — it's free →</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -323,14 +341,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
   container: { flexGrow: 1 },
 
-  heroImage: { width: '100%', height: 220 },
-  heroImageStyle: { resizeMode: 'cover' },
-  heroFallback: { backgroundColor: '#2e86ab', justifyContent: 'flex-end' },
-  heroScrim: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    padding: 24,
-    backgroundColor: 'rgba(0,0,0,0.28)',
+  heroImage: { width: '100%', height: 220, justifyContent: 'flex-end', backgroundColor: '#2e86ab' },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.38)',
   },
   headerOverlay: { padding: 24, paddingTop: 48 },
   title: {

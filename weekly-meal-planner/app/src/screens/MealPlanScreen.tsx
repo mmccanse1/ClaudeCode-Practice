@@ -14,10 +14,22 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Recipe, DietType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
 import RecipeCard from '../components/RecipeCard';
+import ConfettiBurst from '../components/ConfettiBurst';
 import { saveMenu, getSavedMenus } from '../services/savedMenusService';
 import { regenerateRecipe, RATE_LIMIT_ERROR, AI_PARSE_ERROR } from '../services/claudeService';
 import { fetchFoodPhoto } from '../services/unsplashService';
-import { saveCurrentMealPlan } from '../services/currentMealPlanService';
+import {
+  saveCurrentMealPlan,
+  hasCelebratedDiet,
+  markDietCelebrated,
+} from '../services/currentMealPlanService';
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  hasAskedNotificationPermission,
+  markNotificationAsked,
+  scheduleReplanReminder,
+} from '../services/notificationService';
 import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
@@ -34,18 +46,85 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const [showUpsell, setShowUpsell] = useState(false);
   const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
   const [refreshToast, setRefreshToast] = useState(false);
+  const [isFirstOfDiet, setIsFirstOfDiet] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
+  const celebrationScale = useRef(new Animated.Value(0.3)).current;
   const isRefreshing = useRef(false);
   const isFromFreshScan = pantrySavedCount != null;
 
   useEffect(() => {
     if (!isFromFreshScan) return;
-    Animated.sequence([
-      Animated.timing(celebrationOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.delay(2200),
-      Animated.timing(celebrationOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
-    ]).start();
+    let cancelled = false;
+    let reminderTimer: ReturnType<typeof setTimeout> | null = null;
+
+    (async () => {
+      // First menu ever of this diet type → big centered confetti celebration.
+      const alreadyCelebrated = await hasCelebratedDiet(dietType);
+      if (cancelled) return;
+
+      if (!alreadyCelebrated) {
+        setIsFirstOfDiet(true);
+        setShowConfetti(true);
+        markDietCelebrated(dietType);
+        // Pop the centered card in with a spring, hold, then fade out.
+        Animated.parallel([
+          Animated.timing(celebrationOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.spring(celebrationScale, { toValue: 1, friction: 5, tension: 80, useNativeDriver: true }),
+        ]).start(() => {
+          Animated.sequence([
+            Animated.delay(2400),
+            Animated.timing(celebrationOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+          ]).start();
+        });
+      } else {
+        // Repeat generation → small top banner only.
+        Animated.sequence([
+          Animated.timing(celebrationOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+          Animated.delay(2200),
+          Animated.timing(celebrationOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+        ]).start();
+      }
+
+      // Set up the replan reminder once the celebration has settled, so the
+      // permission ask never collides with the confetti moment.
+      reminderTimer = setTimeout(() => {
+        if (!cancelled) setUpReplanReminder();
+      }, alreadyCelebrated ? 800 : 3800);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (reminderTimer) clearTimeout(reminderTimer);
+    };
   }, []);
+
+  async function setUpReplanReminder() {
+    try {
+      let granted = await getNotificationPermission();
+      if (!granted) {
+        // Only ever ask once; if already granted we just (re)schedule silently.
+        if (await hasAskedNotificationPermission()) return;
+        const proceed = await new Promise<boolean>(resolve => {
+          Alert.alert(
+            'Remind you to replan?',
+            'We can send one heads-up near the end of the week, when your plan is about to expire — so you can scan a new receipt and refresh your recipes. That’s the only reminder we’ll send.',
+            [
+              { text: 'No thanks', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Yes, remind me', onPress: () => resolve(true) },
+            ]
+          );
+        });
+        await markNotificationAsked();
+        if (!proceed) return;
+        granted = await requestNotificationPermission();
+        if (!granted) return;
+      }
+      await scheduleReplanReminder(dietType);
+    } catch {
+      // Reminders are non-essential; never block the flow on failure.
+    }
+  }
 
   function getMilestoneMessage(count: number): string {
     if (count === 1) return 'First menu saved! 🎉';
@@ -114,13 +193,26 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         </View>
       )}
 
-      {isFromFreshScan && (
+      {isFromFreshScan && !isFirstOfDiet && (
         <Animated.View style={[styles.celebrationBanner, { opacity: celebrationOpacity }]} pointerEvents="none">
           <Text style={styles.celebrationText}>
             🎉 Your 7-day {dietConfig.label} plan is ready!
           </Text>
         </Animated.View>
       )}
+
+      {isFirstOfDiet && (
+        <>
+          <Animated.View style={[styles.celebrationScrim, { opacity: celebrationOpacity }]} pointerEvents="none" />
+          <Animated.View style={[styles.centerOverlay, { opacity: celebrationOpacity }]} pointerEvents="none">
+            <Animated.View style={{ alignItems: 'center', transform: [{ scale: celebrationScale }] }}>
+              <Text style={styles.centerTitle}>You made your first</Text>
+              <Text style={styles.centerDiet}>{dietConfig.label} Menu!</Text>
+            </Animated.View>
+          </Animated.View>
+        </>
+      )}
+
       <SafeAreaView style={styles.safe}>
       <FlatList
         data={recipes}
@@ -189,6 +281,8 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
+
+      {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
     </View>
   );
 }
@@ -251,6 +345,38 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   celebrationText: { color: 'white', fontSize: 15, fontWeight: '700' },
+
+  celebrationScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    zIndex: 140,
+  },
+  centerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 200,
+    elevation: 12,
+  },
+  centerTitle: {
+    color: 'rgba(255,255,255,0.95)',
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
+  centerDiet: {
+    color: 'white',
+    fontSize: 36,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginTop: 4,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
 
   milestoneText: {
     textAlign: 'center',

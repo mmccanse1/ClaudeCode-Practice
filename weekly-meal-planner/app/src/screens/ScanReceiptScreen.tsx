@@ -37,11 +37,13 @@ const SAMPLE_PANTRY: string[] = [
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
 const GENERATING_STEPS = [
-  'Reading your ingredients…',
-  'Choosing your Monday recipe…',
-  'Planning the rest of your week…',
-  'Adding nutrition notes…',
-  'Almost there…',
+  'Our chefs are thinking…',
+  'Chopping fresh veggies…',
+  'Whipping up recipes…',
+  'Sauces are simmering…',
+  'Seasoning to taste…',
+  'Plating your dishes…',
+  'Dinner is served!',
 ];
 
 export default function ScanReceiptScreen({ navigation, route }: Props) {
@@ -99,7 +101,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       setGeneratingStep(0);
       stepTimerRef.current = setInterval(() => {
         setGeneratingStep(prev => Math.min(prev + 1, GENERATING_STEPS.length - 1));
-      }, 5000);
+      }, 3000);
     } else {
       if (stepTimerRef.current) clearInterval(stepTimerRef.current);
       setGeneratingStep(0);
@@ -162,6 +164,28 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
   async function pickReceipt(useCamera: boolean) {
     if (isParsingRef.current) return;
+
+    // Show an app-authored rationale before the OS permission prompt, so the
+    // user understands why we need access. Only shown when not already granted.
+    const existing = useCamera
+      ? await ImagePicker.getCameraPermissionsAsync()
+      : await ImagePicker.getMediaLibraryPermissionsAsync();
+
+    if (existing.status !== 'granted') {
+      const proceed = await new Promise<boolean>(resolve => {
+        Alert.alert(
+          useCamera ? 'Camera access' : 'Photo access',
+          useCamera
+            ? 'We use your camera to photograph your grocery receipt. The image is sent to our AI only to read the ingredient list — that’s the one thing it’s used for.'
+            : 'We use the photo you choose to read your grocery receipt. The image is sent to our AI only to extract the ingredient list — that’s the one thing it’s used for.',
+          [
+            { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Continue', onPress: () => resolve(true) },
+          ]
+        );
+      });
+      if (!proceed) return;
+    }
 
     const { status } = useCamera
       ? await ImagePicker.requestCameraPermissionsAsync()
@@ -338,19 +362,17 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               ))}
             </View>
 
-            <View style={styles.pickRow}>
-              <TouchableOpacity style={styles.pickBtn} onPress={() => pickReceipt(true)} activeOpacity={0.85}>
-                <Text style={styles.pickIcon}>📷</Text>
-                <Text style={styles.pickLabel}>Camera</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.pickBtn} onPress={() => pickReceipt(false)} activeOpacity={0.85}>
-                <Text style={styles.pickIcon}>🖼</Text>
-                <Text style={styles.pickLabel}>Photo Library</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.cameraBtn} onPress={() => pickReceipt(true)} activeOpacity={0.85}>
+              <Text style={styles.cameraBtnIcon}>📷</Text>
+              <Text style={styles.cameraBtnLabel}>Scan with Camera</Text>
+            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry}>
-              <Text style={styles.sampleBtnText}>No receipt? Try a sample pantry →</Text>
+            <TouchableOpacity style={styles.libraryBtn} onPress={() => pickReceipt(false)} activeOpacity={0.85}>
+              <Text style={styles.libraryBtnLabel}>🖼  Choose from Photo Library</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry} activeOpacity={0.85}>
+              <Text style={styles.sampleBtnText}>🥗  Start with a sample pantry →</Text>
             </TouchableOpacity>
 
             {receiptUri && (
@@ -456,6 +478,20 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               </View>
             )}
 
+            {generating && (
+              <View style={styles.progressContainer}>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${Math.round(((generatingStep + 1) / GENERATING_STEPS.length) * 100)}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.progressLabel}>{GENERATING_STEPS[generatingStep]}</Text>
+              </View>
+            )}
+
             <TouchableOpacity
               style={[
                 styles.generateBtn,
@@ -482,20 +518,6 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                 Scan a receipt or add items above to get started
               </Text>
             )}
-
-            {generating && (
-              <View style={styles.progressContainer}>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      { width: `${Math.round(((generatingStep + 1) / GENERATING_STEPS.length) * 100)}%` },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.progressLabel}>{GENERATING_STEPS[generatingStep]}</Text>
-              </View>
-            )}
           </>
         }
       />
@@ -505,7 +527,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
-  container: { padding: 24, paddingBottom: 40 },
+  container: { padding: 24, paddingBottom: 24 },
 
   dietBadge: {
     flexDirection: 'row',
@@ -516,39 +538,49 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 5,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   dietBadgeEmoji: { fontSize: 18 },
   dietBadgeLabel: { fontSize: 14, fontWeight: '700' },
 
-  title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 24 },
+  title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
+  subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 14 },
   miniSteps: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'white',
     borderRadius: 14,
-    padding: 16,
-    marginBottom: 20,
+    padding: 12,
+    marginBottom: 14,
     gap: 4,
   },
   miniStep: { alignItems: 'center', flex: 1 },
   miniStepIcon: { fontSize: 22, marginBottom: 4 },
   miniStepLabel: { fontSize: 11, color: '#555', fontWeight: '600', textAlign: 'center', lineHeight: 14 },
   miniStepArrow: { fontSize: 20, color: '#ccc', fontWeight: '300', marginBottom: 14 },
-  pickRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  pickBtn: {
-    flex: 1,
+  cameraBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#2e86ab',
+    borderRadius: 14,
+    paddingVertical: 15,
+    marginBottom: 10,
+  },
+  cameraBtnIcon: { fontSize: 24 },
+  cameraBtnLabel: { color: 'white', fontSize: 17, fontWeight: '700' },
+  libraryBtn: {
     backgroundColor: 'white',
     borderRadius: 14,
-    paddingVertical: 20,
+    paddingVertical: 12,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: '#a8dadc',
+    marginBottom: 10,
   },
-  pickIcon: { fontSize: 32, marginBottom: 6 },
-  pickLabel: { fontSize: 13, fontWeight: '600', color: '#2e86ab' },
+  libraryBtnLabel: { fontSize: 15, fontWeight: '600', color: '#2e86ab' },
   receiptPreview: {
     width: '100%',
     height: 200,
@@ -598,7 +630,7 @@ const styles = StyleSheet.create({
   itemText: { flex: 1, fontSize: 14, color: '#333', textTransform: 'capitalize' },
   removeBtn: { color: '#bbb', fontWeight: '700', fontSize: 14 },
 
-  section: { marginBottom: 24, marginTop: 8 },
+  section: { marginBottom: 14, marginTop: 4 },
   addRow: { flexDirection: 'row', gap: 10 },
   input: {
     flex: 1,
@@ -675,7 +707,7 @@ const styles = StyleSheet.create({
 
   generateBtn: {
     borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
     marginBottom: 12,
   },
@@ -702,7 +734,15 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  sampleBtn: { alignItems: 'center', paddingVertical: 10, marginBottom: 8 },
-  sampleBtnText: { color: '#2e86ab', fontSize: 14, fontWeight: '600' },
+  sampleBtn: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#f4a261',
+    marginBottom: 14,
+  },
+  sampleBtnText: { color: '#d97b34', fontSize: 15, fontWeight: '600' },
   generateHint: { textAlign: 'center', fontSize: 13, color: '#aaa', marginTop: 6 },
 });
