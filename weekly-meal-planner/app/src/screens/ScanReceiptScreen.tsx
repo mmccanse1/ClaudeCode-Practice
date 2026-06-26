@@ -36,6 +36,14 @@ const SAMPLE_PANTRY: string[] = [
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
+const GENERATING_STEPS = [
+  'Reading your ingredients…',
+  'Choosing your Monday recipe…',
+  'Planning the rest of your week…',
+  'Adding nutrition notes…',
+  'Almost there…',
+];
+
 export default function ScanReceiptScreen({ navigation, route }: Props) {
   const { dietType } = route.params;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
@@ -50,16 +58,11 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [retryCountdown, setRetryCountdown] = useState(0);
   const [pantryCount, setPantryCount] = useState(0);
   const [progressStep, setProgressStep] = useState(0);
+  const [generatingStep, setGeneratingStep] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flowCompletedRef = useRef(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-
-  const PROGRESS_STEPS = [
-    'Analyzing your ingredients…',
-    `Building your ${dietConfig.label} menu…`,
-    'Finding balanced recipes…',
-    'Almost ready…',
-  ];
 
   useEffect(() => {
     getPantryItems().then(pantryItems => setPantryCount(pantryItems.length));
@@ -84,6 +87,19 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       });
     }, 5000);
     return () => clearInterval(interval);
+  }, [generating]);
+
+  useEffect(() => {
+    if (generating) {
+      setGeneratingStep(0);
+      stepTimerRef.current = setInterval(() => {
+        setGeneratingStep(prev => Math.min(prev + 1, GENERATING_STEPS.length - 1));
+      }, 5000);
+    } else {
+      if (stepTimerRef.current) clearInterval(stepTimerRef.current);
+      setGeneratingStep(0);
+    }
+    return () => { if (stepTimerRef.current) clearInterval(stepTimerRef.current); };
   }, [generating]);
 
   useFocusEffect(
@@ -426,9 +442,17 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
             )}
 
             {generating && (
-              <Animated.Text style={[styles.generatingNote, { opacity: fadeAnim }]}>
-                {PROGRESS_STEPS[progressStep]}
-              </Animated.Text>
+              <View style={styles.progressContainer}>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      { width: `${Math.round(((generatingStep + 1) / GENERATING_STEPS.length) * 100)}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.progressLabel}>{GENERATING_STEPS[generatingStep]}</Text>
+              </View>
             )}
           </>
         }
@@ -601,7 +625,26 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { opacity: 0.5 },
   generateBtnText: { color: 'white', fontSize: 17, fontWeight: '700' },
-  generatingNote: { textAlign: 'center', fontSize: 13, color: '#888', fontStyle: 'italic' },
+  progressContainer: { marginTop: 4, marginBottom: 8 },
+  progressTrack: {
+    height: 6,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#2e86ab',
+    borderRadius: 3,
+  },
+  progressLabel: {
+    textAlign: 'center',
+    fontSize: 13,
+    color: '#2e86ab',
+    fontWeight: '600',
+    fontStyle: 'italic',
+  },
 
   sampleBtn: { alignItems: 'center', paddingVertical: 10, marginBottom: 8 },
   sampleBtnText: { color: '#2e86ab', fontSize: 14, fontWeight: '600' },
