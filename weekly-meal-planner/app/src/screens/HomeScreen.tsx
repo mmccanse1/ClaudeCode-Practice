@@ -148,9 +148,9 @@ export default function HomeScreen({ navigation }: Props) {
             </TouchableOpacity>
           ))}
 
-          {/* Planner plan (premium) */}
+          {/* Plan (premium) */}
           <View style={[styles.tierHeader, { marginTop: 24 }]}>
-            <Text style={styles.sectionLabel}>Planner plan</Text>
+            <Text style={styles.sectionLabel}>Plan</Text>
             <TouchableOpacity onPress={() => handleDietSelect(PREMIUM_DIETS[0])}>
               <Text style={styles.premiumPillText}>Unlock all · $2.99/mo →</Text>
             </TouchableOpacity>
