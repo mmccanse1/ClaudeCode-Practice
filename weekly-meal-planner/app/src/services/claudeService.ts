@@ -1,4 +1,4 @@
-import { Recipe, DietType } from '../types';
+import { Recipe, DietType, MealType } from '../types';
 
 export const RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR';
 export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
@@ -104,6 +104,19 @@ const NUTRITION_INSTRUCTION = `For "nutrition", give realistic PER-SERVING estim
 These are estimates for general guidance only — they do not need lab precision, but should be plausible for the ingredients and serving size.`;
 
 const NUTRITION_SHAPE = `"nutrition": { "calories": 520, "protein": 32, "carbs": 18, "sugar": 6, "sodium": 640 }`;
+
+// Frames a 7-recipe generation as a specific meal of the day.
+const MEAL_DIRECTIVE: Record<MealType, string> = {
+  breakfast: 'These are BREAKFAST recipes — breakfast-appropriate dishes (eggs, oats, smoothies, yoghurt bowls, savoury breakfasts, etc.) that still fit the diet.',
+  lunch: 'These are LUNCH recipes — lighter midday meals (salads, grain bowls, wraps, soups, etc.) that still fit the diet.',
+  dinner: 'These are DINNER recipes — satisfying evening main dishes that fit the diet.',
+};
+
+const MEAL_LABEL: Record<MealType, string> = {
+  breakfast: 'breakfast',
+  lunch: 'lunch',
+  dinner: 'dinner',
+};
 
 const RECIPE_SHAPE = `[
   {
@@ -258,18 +271,23 @@ export async function regenerateRecipe(
   existingRecipes: Recipe[],
   dayToReplace: string,
   dietType: DietType = 'mediterranean',
-  glutenFree: boolean = false
+  glutenFree: boolean = false,
+  mealType: MealType = 'dinner'
 ): Promise<Recipe> {
   const systemPrompt = buildSystemPrompt(dietType, glutenFree);
-  const otherRecipes = existingRecipes
-    .filter(r => r.day !== dayToReplace)
-    .map(r => `${r.day}: ${r.name}`)
+  // The recipe being replaced is the one matching BOTH day and meal type.
+  const isTarget = (r: Recipe) =>
+    r.day === dayToReplace && (r.mealType ?? 'dinner') === mealType;
+  const others = existingRecipes.filter(r => !isTarget(r));
+
+  const otherRecipes = others
+    .map(r => `${r.day} ${MEAL_LABEL[r.mealType ?? 'dinner']}: ${r.name}`)
     .join(', ');
 
-  const salmonAlreadyUsed = existingRecipes
-    .filter(r => r.day !== dayToReplace)
-    .some(r => r.name.toLowerCase().includes('salmon') ||
-               r.ingredients?.some(i => i.toLowerCase().includes('salmon')));
+  const salmonAlreadyUsed = others.some(
+    r => r.name.toLowerCase().includes('salmon') ||
+         r.ingredients?.some(i => i.toLowerCase().includes('salmon'))
+  );
 
   const proteinConstraint = buildProteinConstraint(ingredients);
 
@@ -282,7 +300,7 @@ Available ingredients: ${ingredients.join(', ')}
 You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
 ${proteinConstraint}
 
-Generate exactly 1 new recipe for ${dayToReplace}.
+Generate exactly 1 new ${MEAL_LABEL[mealType]} recipe for ${dayToReplace}. ${MEAL_DIRECTIVE[mealType]}
 
 The rest of the weekly menu is already set — do NOT duplicate any of these:
 ${otherRecipes}
@@ -314,16 +332,17 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
   if (!recipe || typeof recipe !== 'object' || !recipe.day || typeof recipe.day !== 'string' || !recipe.name) {
     throw new Error(AI_PARSE_ERROR);
   }
-  return { ...recipe, nutrition: normalizeNutrition(recipe.nutrition) };
+  return { ...recipe, mealType, nutrition: normalizeNutrition(recipe.nutrition) };
 }
 
-export async function generateMealPlan(
+// Generates the 7 day-recipes for a single meal type, tagged with that meal.
+async function generateMealForType(
   ingredients: string[],
-  dietType: DietType = 'mediterranean',
-  glutenFree: boolean = false
+  dietType: DietType,
+  glutenFree: boolean,
+  mealType: MealType
 ): Promise<Recipe[]> {
   const systemPrompt = buildSystemPrompt(dietType, glutenFree);
-
   const proteinConstraint = buildProteinConstraint(ingredients);
 
   const text = await callClaude([
@@ -335,7 +354,7 @@ Available ingredients: ${ingredients.join(', ')}
 You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
 ${proteinConstraint}
 
-Generate exactly 7 recipes, one per day (Monday–Sunday). Each recipe must primarily use ingredients from the list above.
+Generate exactly 7 ${MEAL_LABEL[mealType]} recipes, one per day (Monday–Sunday). ${MEAL_DIRECTIVE[mealType]} Each recipe must primarily use ingredients from the list above.
 
 STRICT variety rules — follow these exactly:
 - Vary proteins across the week: no single protein source should appear more than twice.
@@ -356,5 +375,20 @@ ${RECIPE_SHAPE}`,
   ) {
     throw new Error(AI_PARSE_ERROR);
   }
-  return parsed.map(r => ({ ...r, nutrition: normalizeNutrition(r.nutrition) }));
+  return parsed.map(r => ({ ...r, mealType, nutrition: normalizeNutrition(r.nutrition) }));
+}
+
+export async function generateMealPlan(
+  ingredients: string[],
+  dietType: DietType = 'mediterranean',
+  glutenFree: boolean = false,
+  meals: MealType[] = ['dinner']
+): Promise<Recipe[]> {
+  // Only generate the meals the user asked for — one model call per meal type,
+  // run in parallel. A flat list of all (day × meal) recipes comes back.
+  const selected = meals.length > 0 ? meals : ['dinner'];
+  const perMeal = await Promise.all(
+    selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal))
+  );
+  return perMeal.flat();
 }

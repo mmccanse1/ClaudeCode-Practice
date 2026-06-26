@@ -16,7 +16,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, DietType } from '../types';
+import { RootStackParamList, DietType, MealType } from '../types';
+import { MEAL_TYPES } from '../constants/mealTypes';
 import {
   parseReceiptFromImage,
   generateMealPlan,
@@ -71,6 +72,12 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
+  // Which meals to build. Dinner on by default keeps the original one-tap flow.
+  const [meals, setMeals] = useState<Record<MealType, boolean>>({
+    breakfast: false,
+    lunch: false,
+    dinner: true,
+  });
   const [retryCountdown, setRetryCountdown] = useState(0);
   const [pantryCount, setPantryCount] = useState(0);
   const [progressStep, setProgressStep] = useState(0);
@@ -132,6 +139,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         setChecked({});
         setNewItem('');
         setGlutenFree(false);
+        setMeals({ breakfast: false, lunch: false, dinner: true });
         setRetryCountdown(0);
         if (countdownRef.current) clearInterval(countdownRef.current);
       }
@@ -285,7 +293,9 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
     try {
       const pantryItems = await getPantryItems();
       const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
-      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree);
+      const selectedMeals = MEAL_TYPES.filter(m => meals[m.id]).map(m => m.id);
+      const mealsToUse = selectedMeals.length > 0 ? selectedMeals : (['dinner'] as MealType[]);
+      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse);
 
       const settled = await Promise.allSettled(
         recipes.map(async recipe => ({
@@ -454,6 +464,35 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                 <TouchableOpacity style={styles.addBtn} onPress={addManualItem}>
                   <Text style={styles.addBtnText}>Add</Text>
                 </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Meal selection */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Which meals?</Text>
+              <Text style={styles.pantryHint}>
+                We’ll build 7 recipes — one per day — for each meal you pick.
+              </Text>
+              <View style={styles.mealChipRow}>
+                {MEAL_TYPES.map(m => {
+                  const on = meals[m.id];
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[
+                        styles.mealChip,
+                        on && { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color },
+                      ]}
+                      onPress={() => setMeals(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.mealChipEmoji}>{m.emoji}</Text>
+                      <Text style={[styles.mealChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}>
+                        {m.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
@@ -664,6 +703,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addBtnText: { color: 'white', fontWeight: '700', fontSize: 15 },
+
+  mealChipRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  mealChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: 'white',
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    gap: 4,
+  },
+  mealChipEmoji: { fontSize: 20 },
+  mealChipLabel: { fontSize: 13, color: '#888', fontWeight: '600' },
 
   glutenFreeRow: {
     flexDirection: 'row',

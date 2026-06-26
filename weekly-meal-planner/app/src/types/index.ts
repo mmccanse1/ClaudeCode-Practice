@@ -8,10 +8,14 @@ export interface Nutrition {
   sodium: number;
 }
 
+export type MealType = 'breakfast' | 'lunch' | 'dinner';
+
 export interface Recipe {
   name: string;
   description: string;
   day: string;
+  /** Optional — older saved recipes predate meal types; treat absence as dinner. */
+  mealType?: MealType;
   prepTime: string;
   cookTime: string;
   servings: number;
@@ -40,7 +44,8 @@ export type RootStackParamList = {
   ScanReceipt: { dietType: DietType };
   Pantry: undefined;
   PantryShelf: undefined;
-  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType; glutenFree?: boolean; pantrySavedCount?: number };
+  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType; glutenFree?: boolean; pantrySavedCount?: number; saved?: boolean };
+  Day: { day: string; recipes: Recipe[]; ingredients: string[]; dietType: DietType; glutenFree?: boolean; saved?: boolean };
   RecipeDetail: { recipe: Recipe; dietType?: DietType };
   SavedRecipes: undefined;
 };
