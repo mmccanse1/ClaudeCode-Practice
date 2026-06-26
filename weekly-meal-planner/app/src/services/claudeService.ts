@@ -6,9 +6,9 @@ export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
 const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-async function callGemini(parts: object[]): Promise<string> {
-  const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
-  if (!apiKey) throw new Error('EXPO_PUBLIC_GEMINI_API_KEY is not set');
+async function callClaude(parts: object[]): Promise<string> {
+  const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('EXPO_PUBLIC_ANTHROPIC_API_KEY is not set');
 
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
@@ -28,7 +28,7 @@ async function callGemini(parts: object[]): Promise<string> {
       throw new Error(RATE_LIMIT_ERROR);
     }
     const err = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${err}`);
+    throw new Error(`Claude API error ${response.status}: ${err}`);
   }
 
   const data = await response.json();
@@ -37,11 +37,37 @@ async function callGemini(parts: object[]): Promise<string> {
   return text;
 }
 
+const PROTEIN_KEYWORDS = [
+  'chicken', 'beef', 'pork', 'lamb', 'turkey', 'duck', 'venison', 'rabbit',
+  'salmon', 'tuna', 'cod', 'tilapia', 'halibut', 'shrimp', 'prawn', 'crab',
+  'lobster', 'scallop', 'sardine', 'anchovy', 'bass', 'trout', 'mahi', 'fish', 'seafood',
+  'egg', 'tofu', 'tempeh', 'seitan', 'edamame',
+  'lentil', 'chickpea', 'bean', 'legume', 'pea',
+  'sausage', 'bacon', 'ham', 'steak', 'ground beef', 'ground turkey', 'ground pork',
+  'mince', 'meat', 'poultry',
+];
+
+function extractProteins(ingredients: string[]): string[] {
+  return ingredients.filter(ing =>
+    PROTEIN_KEYWORDS.some(kw => ing.toLowerCase().includes(kw))
+  );
+}
+
+function buildProteinConstraint(ingredients: string[]): string {
+  const proteins = extractProteins(ingredients);
+  if (proteins.length > 0) {
+    return `PROTEINS AVAILABLE (the ONLY proteins you may use): ${proteins.join(', ')}
+Do NOT introduce any other meat, poultry, fish, seafood, eggs, tofu, or legumes — even if they would be a natural fit for this diet. If a protein is not in this list, it is not in the kitchen.`;
+  }
+  return `No animal proteins are in the pantry. Use only plant-based proteins visible in the ingredient list above (legumes, tofu, tempeh, edamame, nuts, seeds). Do not introduce any meat, poultry, or fish.`;
+}
+
 function extractJson<T>(text: string): T {
+  const stripped = text.replace(/^```(?:json)?\s*/m, '').replace(/```\s*$/m, '').trim();
   try {
-    return JSON.parse(text);
+    return JSON.parse(stripped);
   } catch {
-    const match = text.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+    const match = stripped.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
     if (match) return JSON.parse(match[0]);
     throw new Error(AI_PARSE_ERROR);
   }
@@ -152,9 +178,17 @@ Strict variety rules:
 }
 
 export async function parseReceiptFromImage(base64: string, mimeType: string = 'image/jpeg'): Promise<string[]> {
-  const text = await callGemini([
-    { inline_data: { mime_type: mimeType, data: base64 } },
+  const normalizedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mimeType)
+    ? mimeType
+    : 'image/jpeg';
+
+  const text = await callClaude([
     {
+      type: 'image',
+      source: { type: 'base64', media_type: normalizedMime, data: base64 },
+    },
+    {
+      type: 'text',
       text: 'This is a grocery receipt. Extract every food item and ingredient. Return ONLY a JSON array of strings. Example: ["chicken breast","olive oil","tomatoes"]. No extra text.',
     },
   ]);
@@ -175,19 +209,30 @@ export async function regenerateRecipe(
     .map(r => `${r.day}: ${r.name}`)
     .join(', ');
 
-  const text = await callGemini([
+  const salmonAlreadyUsed = existingRecipes
+    .filter(r => r.day !== dayToReplace)
+    .some(r => r.name.toLowerCase().includes('salmon') ||
+               r.ingredients?.some(i => i.toLowerCase().includes('salmon')));
+
+  const proteinConstraint = buildProteinConstraint(ingredients);
+
+  const text = await callClaude([
     {
+      type: 'text',
       text: `${systemPrompt}
 
 Available ingredients: ${ingredients.join(', ')}
-You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, spices).
+You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
+${proteinConstraint}
 
 Generate exactly 1 new recipe for ${dayToReplace}.
 
 The rest of the weekly menu is already set — do NOT duplicate any of these:
 ${otherRecipes}
 
-The new recipe must be completely different from all listed above.
+STRICT rules:
+- ${salmonAlreadyUsed ? 'Do NOT use salmon — it already appears elsewhere in the week.' : 'Salmon may appear only if it has not been used elsewhere this week.'}
+- Must be different from all the recipes listed above.
 
 Return ONLY a valid JSON object (not an array) with this exact shape:
 {
@@ -215,14 +260,22 @@ export async function generateMealPlan(
 ): Promise<Recipe[]> {
   const systemPrompt = buildSystemPrompt(dietType, glutenFree);
 
-  const text = await callGemini([
+  const proteinConstraint = buildProteinConstraint(ingredients);
+
+  const text = await callClaude([
     {
+      type: 'text',
       text: `${systemPrompt}
 
 Available ingredients: ${ingredients.join(', ')}
-You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, spices).
+You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
+${proteinConstraint}
 
-Generate exactly 7 recipes, one per day (Monday–Sunday). Each recipe must primarily use ingredients from the available list above.
+Generate exactly 7 recipes, one per day (Monday–Sunday). Each recipe must primarily use ingredients from the list above.
+
+STRICT variety rules — follow these exactly:
+- Vary proteins across the week: no single protein source should appear more than twice.
+- Each recipe must be distinct — no repeated dishes.
 
 Return ONLY a valid JSON array of 7 objects with this exact shape:
 ${RECIPE_SHAPE}`,

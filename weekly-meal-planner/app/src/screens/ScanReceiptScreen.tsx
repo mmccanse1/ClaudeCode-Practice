@@ -10,9 +10,11 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  Animated,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import {
@@ -25,6 +27,12 @@ import { getPantryItems, addPantryItems } from '../services/pantryService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES } from '../constants/dietTypes';
+
+const SAMPLE_PANTRY: string[] = [
+  'chicken breast', 'olive oil', 'garlic', 'cherry tomatoes',
+  'bell peppers', 'zucchini', 'lemon', 'pasta', 'canned chickpeas',
+  'baby spinach', 'red onion', 'eggs', 'canned diced tomatoes',
+];
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
@@ -40,14 +48,43 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
   const [retryCountdown, setRetryCountdown] = useState(0);
+  const [pantryCount, setPantryCount] = useState(0);
+  const [progressStep, setProgressStep] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flowCompletedRef = useRef(false);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  const PROGRESS_STEPS = [
+    'Analyzing your ingredients…',
+    `Building your ${dietConfig.label} menu…`,
+    'Finding balanced recipes…',
+    'Almost ready…',
+  ];
+
+  useEffect(() => {
+    getPantryItems().then(pantryItems => setPantryCount(pantryItems.length));
+  }, []);
 
   useEffect(() => {
     return () => {
       if (countdownRef.current) clearInterval(countdownRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!generating) {
+      setProgressStep(0);
+      fadeAnim.setValue(1);
+      return;
+    }
+    const interval = setInterval(() => {
+      Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+        setProgressStep(prev => Math.min(prev + 1, 3));
+        Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [generating]);
 
   useFocusEffect(
     useCallback(() => {
@@ -88,6 +125,10 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
     });
   }
 
+  function loadSamplePantry() {
+    mergeItems(SAMPLE_PANTRY);
+  }
+
   function toggleAll(value: boolean) {
     const next: Record<string, boolean> = {};
     items.forEach(item => { next[item] = value; });
@@ -111,17 +152,23 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
     if (result.canceled || !result.assets[0]) return;
 
-    const { uri, base64, mimeType } = result.assets[0];
+    const { uri } = result.assets[0];
     setReceiptUri(uri);
-
-    if (!base64) {
-      Alert.alert('Could not read receipt', 'Image data unavailable.');
-      return;
-    }
 
     setParsing(true);
     try {
-      const parsed = await parseReceiptFromImage(base64, mimeType || 'image/jpeg');
+      const converted = await ImageManipulator.manipulateAsync(
+        uri,
+        [],
+        { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      );
+
+      if (!converted.base64) {
+        Alert.alert('Could not read receipt', 'Image data unavailable.');
+        return;
+      }
+
+      const parsed = await parseReceiptFromImage(converted.base64, 'image/jpeg');
       mergeItems(parsed);
     } catch (e: any) {
       if (e.message.startsWith('No internet')) {
@@ -157,8 +204,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
   async function handleGenerate() {
     const checkedItems = items.filter(i => checked[i]);
-    if (checkedItems.length === 0) {
-      Alert.alert('No ingredients selected', 'Check at least one ingredient to generate a meal plan.');
+    if (checkedItems.length === 0 && pantryCount === 0) {
+      Alert.alert('No ingredients selected', 'Check at least one ingredient or add items to your pantry to generate a meal plan.');
       return;
     }
 
@@ -171,12 +218,14 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const withPhotos = await Promise.all(
         recipes.map(async recipe => ({
           ...recipe,
+          dietType,
           photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
         }))
       );
 
       // Write to pantry only after generation succeeds so a failed call doesn't mutate pantry
-      if (checkedItems.length > 0) await addPantryItems(checkedItems);
+      const toSave = checkedItems.filter(i => !pantryItems.includes(i));
+      if (toSave.length > 0) await addPantryItems(toSave);
       await saveCurrentMealPlan(withPhotos, allIngredients, dietType);
 
       flowCompletedRef.current = true;
@@ -185,6 +234,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         ingredients: allIngredients,
         dietType,
         glutenFree,
+        pantrySavedCount: toSave.length,
       });
     } catch (e: any) {
       if (e.message === RATE_LIMIT_ERROR) {
@@ -240,6 +290,10 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                 <Text style={styles.pickLabel}>Photo Library</Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry}>
+              <Text style={styles.sampleBtnText}>No receipt? Try a sample pantry →</Text>
+            </TouchableOpacity>
 
             {receiptUri && (
               <Image source={{ uri: receiptUri }} style={styles.receiptPreview} />
@@ -348,10 +402,10 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               style={[
                 styles.generateBtn,
                 { backgroundColor: dietConfig.color },
-                (generating || checkedCount === 0 || retryCountdown > 0) && styles.btnDisabled,
+                (generating || (checkedCount === 0 && pantryCount === 0) || retryCountdown > 0) && styles.btnDisabled,
               ]}
               onPress={handleGenerate}
-              disabled={generating || checkedCount === 0 || retryCountdown > 0}
+              disabled={generating || (checkedCount === 0 && pantryCount === 0) || retryCountdown > 0}
               activeOpacity={0.85}
             >
               {generating ? (
@@ -365,10 +419,16 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               )}
             </TouchableOpacity>
 
-            {generating && (
-              <Text style={styles.generatingNote}>
-                Creating your {dietConfig.label}{glutenFree ? ' gluten-free' : ''} meal plan… this may take 15–30 seconds.
+            {!generating && checkedCount === 0 && pantryCount === 0 && (
+              <Text style={styles.generateHint}>
+                Scan a receipt or add items above to get started
               </Text>
+            )}
+
+            {generating && (
+              <Animated.Text style={[styles.generatingNote, { opacity: fadeAnim }]}>
+                {PROGRESS_STEPS[progressStep]}
+              </Animated.Text>
             )}
           </>
         }
@@ -542,4 +602,8 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.5 },
   generateBtnText: { color: 'white', fontSize: 17, fontWeight: '700' },
   generatingNote: { textAlign: 'center', fontSize: 13, color: '#888', fontStyle: 'italic' },
+
+  sampleBtn: { alignItems: 'center', paddingVertical: 10, marginBottom: 8 },
+  sampleBtnText: { color: '#2e86ab', fontSize: 14, fontWeight: '600' },
+  generateHint: { textAlign: 'center', fontSize: 13, color: '#aaa', marginTop: 6 },
 });

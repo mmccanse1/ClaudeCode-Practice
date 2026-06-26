@@ -1,3 +1,3 @@
-// Replace with a real subscription status hook when backend is ready.
-// This single flag gates all premium features across the app.
-export const IS_PREMIUM = false;
+// Set to true to unlock all premium features for testing.
+// Replace with a real subscription check before public launch.
+export const IS_PREMIUM = true;
