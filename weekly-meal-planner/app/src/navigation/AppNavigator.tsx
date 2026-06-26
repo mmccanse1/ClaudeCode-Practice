@@ -48,7 +48,7 @@ export default function AppNavigator() {
         <Stack.Screen
           name="MealPlan"
           component={MealPlanScreen}
-          options={{ title: 'Meal Plan', headerBackTitle: 'Back' }}
+          options={{ title: 'Menu', headerBackTitle: 'Back' }}
         />
         <Stack.Screen
           name="RecipeDetail"

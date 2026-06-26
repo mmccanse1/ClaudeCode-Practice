@@ -42,7 +42,7 @@ export default function RecipeDetailScreen({ route }: Props) {
         Alert.alert('Saved!', `${recipe.name} added to your Saved Recipes folder.`);
       }
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      Alert.alert('Couldn’t save recipe', 'We couldn’t save this to your Saved Recipes. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -53,7 +53,7 @@ export default function RecipeDetailScreen({ route }: Props) {
     try {
       await saveAndShareRecipeCard(recipe, dietType);
     } catch (e: any) {
-      Alert.alert('Could not share card', e.message);
+      Alert.alert('Couldn’t create the share card', 'Something went wrong building your recipe card. Please try sharing again.');
     } finally {
       setSharing(false);
     }
@@ -151,11 +151,7 @@ export default function RecipeDetailScreen({ route }: Props) {
             )}
           </TouchableOpacity>
 
-          <Text style={styles.sourceNote}>
-            {dietType === 'mediterranean'
-              ? 'Recipes follow Mayo Clinic Mediterranean diet guidelines'
-              : `Recipes follow ${dietConfig.label} diet guidelines`}
-          </Text>
+          <Text style={styles.sourceNote}>{dietConfig.source}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

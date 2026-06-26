@@ -9,6 +9,8 @@ export interface DietConfig {
   accentColor: string;
   premium: boolean;
   benefits: string[];
+  /** Short credibility line shown on the recipe screen — every diet has one. */
+  source: string;
 }
 
 export const DIET_TYPES: DietConfig[] = [
@@ -21,6 +23,7 @@ export const DIET_TYPES: DietConfig[] = [
     accentColor: '#e3f3f8',
     premium: false,
     benefits: [],
+    source: 'Built on Mayo Clinic’s Mediterranean diet guidelines',
   },
   {
     id: 'keto',
@@ -35,6 +38,7 @@ export const DIET_TYPES: DietConfig[] = [
       'Every recipe keeps you under your carb target, automatically',
       'Hit your macros without tracking a single thing',
     ],
+    source: 'Follows widely recognized ketogenic diet principles',
   },
   {
     id: 'paleo',
@@ -49,6 +53,7 @@ export const DIET_TYPES: DietConfig[] = [
       'No grains, no processed junk — sorted for you',
       'A clean week of eating, planned in one scan',
     ],
+    source: 'Follows widely recognized paleo diet principles',
   },
   {
     id: 'vegetarian',
@@ -59,6 +64,7 @@ export const DIET_TYPES: DietConfig[] = [
     accentColor: '#edf7f1',
     premium: false,
     benefits: [],
+    source: 'Follows widely recognized vegetarian nutrition principles',
   },
   {
     id: 'vegan',
@@ -73,5 +79,6 @@ export const DIET_TYPES: DietConfig[] = [
       '7 different recipes so no week feels repetitive',
       'Balanced nutrition without the meal-planning headache',
     ],
+    source: 'Follows widely recognized vegan nutrition principles',
   },
 ];

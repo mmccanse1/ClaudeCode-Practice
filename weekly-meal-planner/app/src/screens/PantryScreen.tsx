@@ -78,7 +78,7 @@ export default function PantryScreen({ navigation }: Props) {
           )}
         </View>
         <Text style={styles.subtitle}>
-          Items here are added to every meal plan you generate.
+          Items here are added to every menu you generate.
         </Text>
 
         <View style={styles.instructions}>

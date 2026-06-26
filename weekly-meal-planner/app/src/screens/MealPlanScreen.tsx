@@ -108,7 +108,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         const proceed = await new Promise<boolean>(resolve => {
           Alert.alert(
             'Remind you to replan?',
-            'We can send one heads-up near the end of the week, when your plan is about to expire — so you can scan a new receipt and refresh your recipes. That’s the only reminder we’ll send.',
+            'We can send one heads-up near the end of the week, when your menu is about to expire — so you can scan a new receipt and refresh your recipes. That’s the only reminder we’ll send.',
             [
               { text: 'No thanks', style: 'cancel', onPress: () => resolve(false) },
               { text: 'Yes, remind me', onPress: () => resolve(true) },
@@ -127,10 +127,10 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   }
 
   function getMilestoneMessage(count: number): string {
-    if (count === 1) return 'First menu saved! 🎉';
-    if (count === 2) return "You're on a roll! 🔥";
-    if (count === 3) return 'Three menus planned! 🏆';
-    return `${count} menus saved and counting!`;
+    if (count === 1) return 'First menu saved!';
+    if (count === 2) return 'Two menus saved.';
+    if (count === 3) return 'Three menus saved.';
+    return `${count} menus saved.`;
   }
 
   async function handleRefreshRecipe(index: number) {
@@ -151,13 +151,13 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       setTimeout(() => setRefreshToast(false), 2500);
     } catch (e: any) {
       if (e.message === RATE_LIMIT_ERROR) {
-        Alert.alert('Too Many Requests', 'The AI service is busy right now. Please wait a minute and try again.');
+        Alert.alert('The kitchen’s backed up', 'Too many cooks right now. Give it a minute, then tap refresh to try again.');
       } else if (e.message === AI_PARSE_ERROR) {
-        Alert.alert('Unexpected Response', 'The AI returned an unexpected response. Please try refreshing this recipe again.');
+        Alert.alert('Let’s try that again', 'Something came back garbled — this recipe is unchanged. Tap refresh to give it another go.');
       } else if (e.message.startsWith('No internet')) {
-        Alert.alert('No Connection', e.message);
+        Alert.alert('Can’t reach the kitchen', e.message);
       } else {
-        Alert.alert('Could not refresh recipe', 'Something went wrong. Please try again.');
+        Alert.alert('Couldn’t refresh that recipe', 'We hit a snag — this recipe is unchanged. Tap refresh to try again.');
       }
     } finally {
       isRefreshing.current = false;
@@ -176,10 +176,10 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         if (!IS_PREMIUM) setShowUpsell(true);
       } else {
         setMenuSaved(true);
-        Alert.alert('Already Saved', 'This exact meal plan is already in your Menus folder.');
+        Alert.alert('Already saved', 'This exact menu is already in your Menus folder.');
       }
     } catch (e: any) {
-      Alert.alert('Error', 'Could not save your menu. Please try again.');
+      Alert.alert('Couldn’t save your menu', 'Something went wrong saving this. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -189,14 +189,14 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     <View style={styles.root}>
       {refreshToast && (
         <View style={styles.toast} pointerEvents="none">
-          <Text style={styles.toastText}>✓  Plan updated &amp; saved</Text>
+          <Text style={styles.toastText}>✓  Menu updated &amp; saved</Text>
         </View>
       )}
 
       {isFromFreshScan && !isFirstOfDiet && (
         <Animated.View style={[styles.celebrationBanner, { opacity: celebrationOpacity }]} pointerEvents="none">
           <Text style={styles.celebrationText}>
-            🎉 Your 7-day {dietConfig.label} plan is ready!
+            🎉 Your 7-day {dietConfig.label} menu is ready!
           </Text>
         </Animated.View>
       )}
@@ -219,7 +219,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         keyExtractor={item => item.day}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.title}>Your Week of Meals</Text>
+            <Text style={styles.title}>Your Weekly Menu</Text>
             <Text style={styles.subtitle}>
               7 {dietConfig.emoji} {dietConfig.label} recipes built from {ingredients.length} ingredients.
               Tap any recipe for the full card.

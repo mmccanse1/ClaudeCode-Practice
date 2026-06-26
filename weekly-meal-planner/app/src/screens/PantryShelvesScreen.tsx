@@ -155,7 +155,7 @@ export default function PantryShelvesScreen({}: Props) {
         <ActivityIndicator color="#2e86ab" size="large" style={styles.spinner} />
       ) : totalItems === 0 ? (
         <View style={styles.emptyWrap}>
-          <Text style={styles.emptyTitle}>Your pantry is empty</Text>
+          <Text style={styles.emptyTitle}>Your pantry is empty.</Text>
           <Text style={styles.emptyText}>
             Add ingredients on the My Pantry page — items will be automatically sorted into sections.
           </Text>
