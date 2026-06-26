@@ -6,9 +6,13 @@ export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 
-async function callClaude(parts: object[]): Promise<string> {
+async function callClaude(parts: object[], signal?: AbortSignal): Promise<string> {
   const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('EXPO_PUBLIC_ANTHROPIC_API_KEY is not set');
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20_000);
+  if (signal) signal.addEventListener('abort', () => controller.abort());
 
   let response: Response;
   try {
@@ -24,10 +28,16 @@ async function callClaude(parts: object[]): Promise<string> {
         max_tokens: 4096,
         messages: [{ role: 'user', content: parts }],
       }),
+      signal: controller.signal,
     });
-  } catch {
+  } catch (e: any) {
+    clearTimeout(timeoutId);
+    if (e?.name === 'AbortError') {
+      throw new Error('Request timed out. Please check your connection and try again.');
+    }
     throw new Error('No internet connection. Please check your connection and try again.');
   }
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     if (response.status === 429) {
@@ -180,6 +190,9 @@ Strict variety rules:
 - At least 2 tofu or tempeh dishes
 - Vary cuisine styles for interest across the week
 - No single protein source more than twice${gfNote}`;
+
+    default:
+      throw new Error(`Unknown diet type: ${dietType as string}`);
   }
 }
 
@@ -199,7 +212,9 @@ export async function parseReceiptFromImage(base64: string, mimeType: string = '
     },
   ]);
 
-  return extractJson<string[]>(text);
+  const result = extractJson<string[]>(text);
+  if (!Array.isArray(result)) throw new Error(AI_PARSE_ERROR);
+  return result.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 }
 
 export async function regenerateRecipe(
@@ -256,7 +271,11 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
     },
   ]);
 
-  return extractJson<Recipe>(text);
+  const recipe = extractJson<Recipe>(text);
+  if (!recipe || typeof recipe !== 'object' || !recipe.day || typeof recipe.day !== 'string' || !recipe.name) {
+    throw new Error(AI_PARSE_ERROR);
+  }
+  return recipe;
 }
 
 export async function generateMealPlan(

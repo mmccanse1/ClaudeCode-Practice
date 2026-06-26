@@ -63,6 +63,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const stepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flowCompletedRef = useRef(false);
   const isMountedRef = useRef(true);
+  const isGeneratingRef = useRef(false);
+  const isParsingRef = useRef(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -159,6 +161,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   }
 
   async function pickReceipt(useCamera: boolean) {
+    if (isParsingRef.current) return;
+
     const { status } = useCamera
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -175,14 +179,18 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
     if (result.canceled || !result.assets[0]) return;
 
-    const { uri } = result.assets[0];
+    isParsingRef.current = true;
+    const { uri, width = 0, height = 0 } = result.assets[0];
     setReceiptUri(uri);
 
     setParsing(true);
     try {
+      const maxDim = 1200;
       const converted = await ImageManipulator.manipulateAsync(
         uri,
-        [],
+        (width > maxDim || height > maxDim)
+          ? [width >= height ? { resize: { width: maxDim } } : { resize: { height: maxDim } }]
+          : [],
         { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG, base64: true }
       );
 
@@ -194,13 +202,14 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const parsed = await parseReceiptFromImage(converted.base64, 'image/jpeg');
       mergeItems(parsed);
     } catch (e: any) {
-      if (e.message.startsWith('No internet')) {
+      if (e.message.startsWith('No internet') || e.message.startsWith('Request timed out')) {
         Alert.alert('No Connection', e.message);
       } else {
         Alert.alert('Could not read receipt', 'The receipt scan failed. Try again or add items manually.');
       }
     } finally {
       setParsing(false);
+      isParsingRef.current = false;
     }
   }
 
@@ -226,12 +235,14 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   }
 
   async function handleGenerate() {
+    if (isGeneratingRef.current) return;
     const checkedItems = items.filter(i => checked[i]);
     if (checkedItems.length === 0 && pantryCount === 0) {
       Alert.alert('No ingredients selected', 'Check at least one ingredient or add items to your pantry to generate a meal plan.');
       return;
     }
 
+    isGeneratingRef.current = true;
     setGenerating(true);
     try {
       const pantryItems = await getPantryItems();
@@ -278,13 +289,14 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
           'Unexpected Response',
           'The AI returned something unexpected. Please tap "Generate" again to retry.'
         );
-      } else if (e.message.startsWith('No internet')) {
+      } else if (e.message.startsWith('No internet') || e.message.startsWith('Request timed out')) {
         Alert.alert('No Connection', e.message);
       } else {
         Alert.alert('Generation failed', 'Something went wrong. Please try again.');
       }
     } finally {
       setGenerating(false);
+      isGeneratingRef.current = false;
     }
   }
 

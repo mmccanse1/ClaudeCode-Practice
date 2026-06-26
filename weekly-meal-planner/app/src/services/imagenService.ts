@@ -5,6 +5,7 @@ const PHOTO_DIR = `${FileSystem.documentDirectory}recipe_photos/`;
 const INGREDIENT_DIR = `${FileSystem.documentDirectory}ingredient_photos/`;
 const INDEX_KEY = '@recipe_photo_index_v1';
 const INGREDIENT_INDEX_KEY = '@ingredient_photo_index_v1';
+const MAX_CACHE_ENTRIES = 100;
 const IMAGEN_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict';
 
@@ -24,7 +25,16 @@ async function getIndex(storageKey: string): Promise<Record<string, string>> {
 async function saveToIndex(storageKey: string, key: string, filePath: string): Promise<void> {
   try {
     const index = await getIndex(storageKey);
-    await AsyncStorage.setItem(storageKey, JSON.stringify({ ...index, [key]: filePath }));
+    const updated: Record<string, string> = { ...index, [key]: filePath };
+    const keys = Object.keys(updated);
+    if (keys.length > MAX_CACHE_ENTRIES) {
+      const toEvict = keys.slice(0, keys.length - MAX_CACHE_ENTRIES);
+      for (const k of toEvict) {
+        await FileSystem.deleteAsync(updated[k], { idempotent: true }).catch(() => {});
+        delete updated[k];
+      }
+    }
+    await AsyncStorage.setItem(storageKey, JSON.stringify(updated));
   } catch {}
 }
 

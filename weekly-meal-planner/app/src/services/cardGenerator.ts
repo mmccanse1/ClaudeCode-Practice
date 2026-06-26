@@ -3,18 +3,28 @@ import * as Sharing from 'expo-sharing';
 import { Recipe, DietType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
 
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function buildRecipeCardHtml(recipe: Recipe, dietType: DietType = 'mediterranean'): string {
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
+  const e = escapeHtml;
   const photoHtml = recipe.photoUrl
-    ? `<img src="${recipe.photoUrl}" alt="${recipe.name}" class="hero-photo" />`
+    ? `<img src="${recipe.photoUrl}" alt="${e(recipe.name)}" class="hero-photo" />`
     : `<div class="hero-placeholder"><span>🫒</span></div>`;
 
   const ingredientsHtml = recipe.ingredients
-    .map(i => `<li>${i}</li>`)
+    .map(i => `<li>${e(i)}</li>`)
     .join('\n');
 
   const stepsHtml = recipe.steps
-    .map((s, idx) => `<li><span class="step-num">${idx + 1}</span>${s}</li>`)
+    .map((s, idx) => `<li><span class="step-num">${idx + 1}</span>${e(s)}</li>`)
     .join('\n');
 
   return `<!DOCTYPE html>
@@ -22,7 +32,7 @@ function buildRecipeCardHtml(recipe: Recipe, dietType: DietType = 'mediterranean
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${recipe.name} — ${dietConfig.label} Recipe Card</title>
+  <title>${e(recipe.name)} — ${e(dietConfig.label)} Recipe Card</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -192,25 +202,25 @@ function buildRecipeCardHtml(recipe: Recipe, dietType: DietType = 'mediterranean
   </style>
 </head>
 <body>
-  <div class="day-badge">${recipe.day}</div>
-  <span class="diet-badge">${dietConfig.emoji} ${dietConfig.label} Diet</span>
-  <h1>${recipe.name}</h1>
-  <p class="description">${recipe.description}</p>
+  <div class="day-badge">${e(recipe.day)}</div>
+  <span class="diet-badge">${dietConfig.emoji} ${e(dietConfig.label)} Diet</span>
+  <h1>${e(recipe.name)}</h1>
+  <p class="description">${e(recipe.description)}</p>
 
   ${photoHtml}
 
   <div class="meta-row">
     <div class="meta-item">
       <span class="meta-label">Prep Time</span>
-      <span class="meta-value">${recipe.prepTime}</span>
+      <span class="meta-value">${e(recipe.prepTime)}</span>
     </div>
     <div class="meta-item">
       <span class="meta-label">Cook Time</span>
-      <span class="meta-value">${recipe.cookTime}</span>
+      <span class="meta-value">${e(recipe.cookTime)}</span>
     </div>
     <div class="meta-item">
       <span class="meta-label">Servings</span>
-      <span class="meta-value">${recipe.servings}</span>
+      <span class="meta-value">${e(String(recipe.servings))}</span>
     </div>
   </div>
 
@@ -226,7 +236,7 @@ function buildRecipeCardHtml(recipe: Recipe, dietType: DietType = 'mediterranean
 
   <div class="nutrition-note">
     <span>🌿</span>
-    <span>${recipe.nutritionNotes}</span>
+    <span>${e(recipe.nutritionNotes)}</span>
   </div>
 
   <div class="footer">
@@ -238,7 +248,8 @@ function buildRecipeCardHtml(recipe: Recipe, dietType: DietType = 'mediterranean
 
 export async function saveAndShareRecipeCard(recipe: Recipe, dietType: DietType = 'mediterranean'): Promise<string> {
   const html = buildRecipeCardHtml(recipe, dietType);
-  const filename = `${recipe.day}_${recipe.name.replace(/\s+/g, '_').toLowerCase()}.html`;
+  const safeName = recipe.name.replace(/[^a-z0-9]+/gi, '_').toLowerCase().slice(0, 60);
+  const filename = `${recipe.day}_${safeName}.html`;
   const path = `${FileSystem.documentDirectory}meal_plans/${filename}`;
 
   await FileSystem.makeDirectoryAsync(

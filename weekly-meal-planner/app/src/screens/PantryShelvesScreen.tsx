@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -46,6 +46,12 @@ export default function PantryShelvesScreen({}: Props) {
   const [pantry, setPantry] = useState<CategorizedPantry>({ refrigerated: [], spices: [], dry_goods: [] });
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -64,16 +70,29 @@ export default function PantryShelvesScreen({}: Props) {
   ];
 
   useEffect(() => {
-    allItems.forEach(item => {
-      if (!photos[item]) {
-        fetchIngredientPhoto(item).then(url => {
-          if (url) {
-            setPhotos(prev => ({ ...prev, [item]: url }));
-            setPantryPhoto(item, url);
-          }
-        });
+    const itemsToFetch = allItems.filter(item => !photos[item]);
+    if (itemsToFetch.length === 0) return;
+
+    let cancelled = false;
+
+    async function fetchInBatches() {
+      for (let i = 0; i < itemsToFetch.length; i += 4) {
+        if (cancelled || !isMountedRef.current) break;
+        const batch = itemsToFetch.slice(i, i + 4);
+        await Promise.allSettled(
+          batch.map(async item => {
+            const url = await fetchIngredientPhoto(item);
+            if (url && !cancelled && isMountedRef.current) {
+              setPhotos(prev => ({ ...prev, [item]: url }));
+              setPantryPhoto(item, url);
+            }
+          })
+        );
       }
-    });
+    }
+
+    fetchInBatches();
+    return () => { cancelled = true; };
   }, [pantry]);
 
   async function handleRemove(item: string) {
