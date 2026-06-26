@@ -28,7 +28,7 @@ export type RootStackParamList = {
   ScanReceipt: { dietType: DietType };
   Pantry: undefined;
   PantryShelf: undefined;
-  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType; pantrySavedCount?: number };
+  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType; glutenFree?: boolean; pantrySavedCount?: number };
   RecipeDetail: { recipe: Recipe; dietType?: DietType };
   SavedRecipes: undefined;
 };

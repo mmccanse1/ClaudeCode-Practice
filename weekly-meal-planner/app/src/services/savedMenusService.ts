@@ -26,8 +26,15 @@ export async function saveMenu(
   recipes: Recipe[],
   ingredients: string[],
   dietType: DietType = 'mediterranean'
-): Promise<void> {
+): Promise<boolean> {
   const existing = await getSavedMenus();
+
+  const incomingNames = recipes.map(r => r.name).sort().join('|');
+  const isDuplicate = existing.some(
+    menu => menu.recipes.map(r => r.name).sort().join('|') === incomingNames
+  );
+  if (isDuplicate) return false;
+
   const date = new Date().toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -43,6 +50,7 @@ export async function saveMenu(
     dietType,
   };
   await AsyncStorage.setItem(KEY, JSON.stringify([newMenu, ...existing]));
+  return true;
 }
 
 export async function deleteMenu(id: string): Promise<void> {

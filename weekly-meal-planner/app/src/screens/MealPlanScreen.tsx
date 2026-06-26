@@ -15,7 +15,7 @@ import { RootStackParamList, Recipe, DietType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
 import RecipeCard from '../components/RecipeCard';
 import { saveMenu, getSavedMenus } from '../services/savedMenusService';
-import { regenerateRecipe } from '../services/claudeService';
+import { regenerateRecipe, RATE_LIMIT_ERROR, AI_PARSE_ERROR } from '../services/claudeService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 import { IS_PREMIUM } from '../constants/subscription';
@@ -23,7 +23,9 @@ import { IS_PREMIUM } from '../constants/subscription';
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 
 export default function MealPlanScreen({ navigation, route }: Props) {
-  const { ingredients, pantrySavedCount, dietType = 'mediterranean' } = route.params;
+  const { ingredients, pantrySavedCount } = route.params;
+  const dietType: DietType = route.params.dietType ?? 'mediterranean';
+  const glutenFree = route.params.glutenFree ?? false;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
   const [saving, setSaving] = useState(false);
@@ -55,7 +57,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     const dayToReplace = recipes[index].day;
     setRefreshingDay(dayToReplace);
     try {
-      const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace, dietType);
+      const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace, dietType, glutenFree);
       const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
       const updated = recipes.map((r, i) =>
         i === index ? { ...newRecipe, photoUrl, dietType } : r
@@ -66,7 +68,15 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       setRefreshToast(true);
       setTimeout(() => setRefreshToast(false), 2500);
     } catch (e: any) {
-      Alert.alert('Could not refresh recipe', e.message);
+      if (e.message === RATE_LIMIT_ERROR) {
+        Alert.alert('Too Many Requests', 'The AI service is busy right now. Please wait a minute and try again.');
+      } else if (e.message === AI_PARSE_ERROR) {
+        Alert.alert('Unexpected Response', 'The AI returned an unexpected response. Please try refreshing this recipe again.');
+      } else if (e.message.startsWith('No internet')) {
+        Alert.alert('No Connection', e.message);
+      } else {
+        Alert.alert('Could not refresh recipe', 'Something went wrong. Please try again.');
+      }
     } finally {
       setRefreshingDay(null);
     }
@@ -75,13 +85,18 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   async function handleSaveMenu() {
     setSaving(true);
     try {
-      await saveMenu(recipes, ingredients, dietType);
-      const allMenus = await getSavedMenus();
-      setMilestoneMessage(getMilestoneMessage(allMenus.length));
-      setMenuSaved(true);
-      if (!IS_PREMIUM) setShowUpsell(true);
+      const saved = await saveMenu(recipes, ingredients, dietType);
+      if (saved) {
+        const allMenus = await getSavedMenus();
+        setMilestoneMessage(getMilestoneMessage(allMenus.length));
+        setMenuSaved(true);
+        if (!IS_PREMIUM) setShowUpsell(true);
+      } else {
+        setMenuSaved(true);
+        Alert.alert('Already Saved', 'This exact meal plan is already in your Menus folder.');
+      }
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      Alert.alert('Error', 'Could not save your menu. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -123,7 +138,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
             <TouchableOpacity
               style={[styles.saveMenuBtn, menuSaved && styles.saveMenuBtnSaved]}
               onPress={handleSaveMenu}
-              disabled={saving || menuSaved}
+              disabled={saving || menuSaved || refreshingDay !== null}
               activeOpacity={0.85}
             >
               {saving ? (

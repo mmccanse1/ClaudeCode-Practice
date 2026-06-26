@@ -1,36 +1,40 @@
 import { Recipe, DietType } from '../types';
 
-const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
-const CLAUDE_BASE = 'https://api.anthropic.com/v1/messages';
+export const RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR';
+export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
+
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 async function callClaude(parts: object[]): Promise<string> {
   const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('EXPO_PUBLIC_ANTHROPIC_API_KEY is not set');
 
-  const response = await fetch(CLAUDE_BASE, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: CLAUDE_MODEL,
-      max_tokens: 8192,
-      messages: [{ role: 'user', content: parts }],
-    }),
-  });
+  const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts }] }),
+    });
+  } catch {
+    throw new Error('No internet connection. Please check your connection and try again.');
+  }
 
   if (!response.ok) {
     if (response.status === 429) {
-      throw new Error('Rate limit reached. Please wait 60 seconds and try again.');
+      throw new Error(RATE_LIMIT_ERROR);
     }
     const err = await response.text();
     throw new Error(`Claude API error ${response.status}: ${err}`);
   }
 
   const data = await response.json();
-  return data.content[0].text as string;
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (typeof text !== 'string') throw new Error(AI_PARSE_ERROR);
+  return text;
 }
 
 const PROTEIN_KEYWORDS = [
@@ -65,7 +69,7 @@ function extractJson<T>(text: string): T {
   } catch {
     const match = stripped.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
     if (match) return JSON.parse(match[0]);
-    throw new Error('Could not parse JSON from Claude response');
+    throw new Error(AI_PARSE_ERROR);
   }
 }
 
