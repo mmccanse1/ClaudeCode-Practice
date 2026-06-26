@@ -16,7 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
+import { RootStackParamList, DietType } from '../types';
 import {
   parseReceiptFromImage,
   generateMealPlan,
@@ -28,11 +28,25 @@ import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES } from '../constants/dietTypes';
 
-const SAMPLE_PANTRY: string[] = [
-  'chicken breast', 'olive oil', 'garlic', 'cherry tomatoes',
-  'bell peppers', 'zucchini', 'lemon', 'pasta', 'canned chickpeas',
-  'baby spinach', 'red onion', 'eggs', 'canned diced tomatoes',
+// Shared produce/aromatics every sample pantry starts from — diet-neutral.
+const SAMPLE_BASE: string[] = [
+  'olive oil', 'garlic', 'cherry tomatoes', 'bell peppers',
+  'zucchini', 'lemon', 'baby spinach', 'red onion', 'canned diced tomatoes',
 ];
+
+// Diet-appropriate proteins/staples added on top of the base. A vegetarian or
+// vegan user must never be handed chicken/eggs in their "sample pantry".
+const SAMPLE_PROTEINS: Record<DietType, string[]> = {
+  mediterranean: ['chicken breast', 'eggs', 'canned chickpeas', 'pasta'],
+  keto:          ['chicken breast', 'eggs', 'avocado', 'shredded cheese'],
+  paleo:         ['chicken breast', 'eggs', 'sweet potato', 'almonds'],
+  vegetarian:    ['eggs', 'canned chickpeas', 'pasta', 'feta cheese'],
+  vegan:         ['firm tofu', 'canned chickpeas', 'red lentils', 'quinoa'],
+};
+
+function samplePantryFor(diet: DietType): string[] {
+  return [...SAMPLE_BASE, ...(SAMPLE_PROTEINS[diet] ?? SAMPLE_PROTEINS.mediterranean)];
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
@@ -153,7 +167,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   }
 
   function loadSamplePantry() {
-    mergeItems(SAMPLE_PANTRY);
+    mergeItems(samplePantryFor(dietType));
   }
 
   function toggleAll(value: boolean) {
