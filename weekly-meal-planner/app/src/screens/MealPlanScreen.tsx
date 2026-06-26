@@ -12,13 +12,17 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Recipe, DietType } from '../types';
+import { RootStackParamList, Recipe, DietType, MealType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
 import { sortByMeal, mealMeta } from '../constants/mealTypes';
+import RecipeCard from '../components/RecipeCard';
 import ConfettiBurst from '../components/ConfettiBurst';
 import { saveMenu, getSavedMenus } from '../services/savedMenusService';
+import { regenerateRecipe, RATE_LIMIT_ERROR, AI_PARSE_ERROR } from '../services/claudeService';
+import { fetchFoodPhoto } from '../services/unsplashService';
 import {
   getCurrentMealPlan,
+  saveCurrentMealPlan,
   hasCelebratedDiet,
   markDietCelebrated,
 } from '../services/currentMealPlanService';
@@ -48,8 +52,11 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const [showUpsell, setShowUpsell] = useState(false);
   const [isFirstOfDiet, setIsFirstOfDiet] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
+  const [refreshToast, setRefreshToast] = useState(false);
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
   const celebrationScale = useRef(new Animated.Value(0.3)).current;
+  const isRefreshing = useRef(false);
   const isFromFreshScan = pantrySavedCount != null;
 
   // For the active plan, re-read storage whenever the screen regains focus so
@@ -166,16 +173,118 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     }
   }
 
-  // Group the flat recipe list into days (in calendar order), each day's meals
-  // sorted breakfast → lunch → dinner. Days with no recipes are dropped.
+  // Single-meal menus (e.g. dinner only) swap a recipe right here, since there
+  // is no Day screen to hop into. Mirrors DayScreen's refresh for the grouped case.
+  async function handleRefreshRecipe(target: Recipe) {
+    if (isRefreshing.current || isSavedView) return;
+    isRefreshing.current = true;
+    const mealType: MealType = target.mealType ?? 'dinner';
+    setRefreshingDay(target.day);
+    try {
+      const newRecipe = await regenerateRecipe(ingredients, recipes, target.day, dietType, glutenFree, mealType);
+      const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
+      const updated = recipes.map(r =>
+        r.day === target.day && (r.mealType ?? 'dinner') === mealType
+          ? { ...newRecipe, photoUrl, dietType, mealType }
+          : r
+      );
+      setRecipes(updated);
+      setMenuSaved(false);
+      await saveCurrentMealPlan(updated, ingredients, dietType);
+      setRefreshToast(true);
+      setTimeout(() => setRefreshToast(false), 2500);
+    } catch (e: any) {
+      if (e.message === RATE_LIMIT_ERROR) {
+        Alert.alert('The kitchen’s backed up', 'Too many cooks right now. Give it a minute, then tap refresh to try again.');
+      } else if (e.message === AI_PARSE_ERROR) {
+        Alert.alert('Let’s try that again', 'Something came back garbled — this recipe is unchanged. Tap refresh to give it another go.');
+      } else if (e.message.startsWith('No internet') || e.message.startsWith('Request timed out')) {
+        Alert.alert('Can’t reach the kitchen', e.message);
+      } else {
+        Alert.alert('Couldn’t refresh that recipe', 'We hit a snag — this recipe is unchanged. Tap refresh to try again.');
+      }
+    } finally {
+      isRefreshing.current = false;
+      setRefreshingDay(null);
+    }
+  }
+
+  // One card per meal type present tells us whether to group by day at all.
+  const mealTypeCount = new Set(recipes.map(r => r.mealType ?? 'dinner')).size;
+  const isSingleMeal = mealTypeCount <= 1;
+
+  // Single-meal: a flat list of recipes in calendar order.
+  const singleMealRecipes = [...recipes].sort(
+    (a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day)
+  );
+
+  // Multi-meal: group into days, each day's meals sorted breakfast→lunch→dinner.
   const daysWithMeals = DAY_ORDER
     .map(day => ({ day, meals: sortByMeal(recipes.filter(r => r.day === day)) }))
     .filter(d => d.meals.length > 0);
 
-  const mealTypeCount = new Set(recipes.map(r => r.mealType ?? 'dinner')).size;
+  const Header = (
+    <View style={styles.header}>
+      <Text style={styles.title}>Your Weekly Menu</Text>
+      <Text style={styles.subtitle}>
+        {dietConfig.label} · {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+        {!isSingleMeal ? ` across ${mealTypeCount} meals` : ''}.
+        {isSingleMeal ? ' Tap any recipe for the full card.' : ' Tap a day to see its recipes.'}
+      </Text>
+      {pantrySavedCount != null && pantrySavedCount > 0 && (
+        <View style={styles.pantryBanner}>
+          <Text style={styles.pantryBannerText}>
+            🧺  {pantrySavedCount} item{pantrySavedCount !== 1 ? 's' : ''} saved to your pantry
+          </Text>
+        </View>
+      )}
+      <TouchableOpacity
+        style={[styles.saveMenuBtn, menuSaved && styles.saveMenuBtnSaved]}
+        onPress={handleSaveMenu}
+        disabled={saving || menuSaved || refreshingDay !== null}
+        activeOpacity={0.85}
+      >
+        {saving ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.saveMenuBtnText}>
+            {menuSaved ? '✓  Menu Saved' : '💾  Save This Menu'}
+          </Text>
+        )}
+      </TouchableOpacity>
+
+      {menuSaved && milestoneMessage !== '' && (
+        <Text style={styles.milestoneText}>{milestoneMessage}</Text>
+      )}
+
+      {showUpsell && (
+        <View style={styles.upsellBanner}>
+          <Text style={styles.upsellText}>
+            Love this? Unlock Keto, Paleo & Vegan for $2.99/mo
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  const Footer = (
+    <TouchableOpacity
+      style={styles.replanBtn}
+      onPress={() => navigation.navigate('Home')}
+      activeOpacity={0.85}
+    >
+      <Text style={styles.replanBtnText}>Plan Another Week →</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.root}>
+      {refreshToast && (
+        <View style={styles.toast} pointerEvents="none">
+          <Text style={styles.toastText}>✓  Menu updated &amp; saved</Text>
+        </View>
+      )}
+
       {isFromFreshScan && !isFirstOfDiet && (
         <Animated.View style={[styles.celebrationBanner, { opacity: celebrationOpacity }]} pointerEvents="none">
           <Text style={styles.celebrationText}>
@@ -197,95 +306,65 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       )}
 
       <SafeAreaView style={styles.safe}>
-        <FlatList
-          data={daysWithMeals}
-          keyExtractor={item => item.day}
-          ListHeaderComponent={
-            <View style={styles.header}>
-              <Text style={styles.title}>Your Weekly Menu</Text>
-              <Text style={styles.subtitle}>
-                {dietConfig.label} · {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
-                {mealTypeCount > 1 ? ` across ${mealTypeCount} meals` : ''}.
-                Tap a day to see its recipes.
-              </Text>
-              {pantrySavedCount != null && pantrySavedCount > 0 && (
-                <View style={styles.pantryBanner}>
-                  <Text style={styles.pantryBannerText}>
-                    🧺  {pantrySavedCount} item{pantrySavedCount !== 1 ? 's' : ''} saved to your pantry
-                  </Text>
-                </View>
-              )}
+        {isSingleMeal ? (
+          <FlatList
+            data={singleMealRecipes}
+            keyExtractor={item => `${item.day}-${item.mealType ?? 'dinner'}`}
+            ListHeaderComponent={Header}
+            renderItem={({ item }) => (
+              <RecipeCard
+                recipe={item}
+                onPress={() => navigation.navigate('RecipeDetail', { recipe: item, dietType })}
+                onRefresh={isSavedView ? undefined : () => handleRefreshRecipe(item)}
+                refreshing={refreshingDay === item.day}
+                refreshDisabled={refreshingDay !== null && refreshingDay !== item.day}
+              />
+            )}
+            ListFooterComponent={Footer}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <FlatList
+            data={daysWithMeals}
+            keyExtractor={item => item.day}
+            ListHeaderComponent={Header}
+            renderItem={({ item }) => (
               <TouchableOpacity
-                style={[styles.saveMenuBtn, menuSaved && styles.saveMenuBtnSaved]}
-                onPress={handleSaveMenu}
-                disabled={saving || menuSaved}
-                activeOpacity={0.85}
+                style={styles.dayRow}
+                onPress={() =>
+                  navigation.navigate('Day', {
+                    day: item.day,
+                    recipes,
+                    ingredients,
+                    dietType,
+                    glutenFree,
+                    saved: isSavedView,
+                  })
+                }
+                activeOpacity={0.8}
               >
-                {saving ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.saveMenuBtnText}>
-                    {menuSaved ? '✓  Menu Saved' : '💾  Save This Menu'}
-                  </Text>
-                )}
+                <View style={styles.dayRowLeft}>
+                  <Text style={styles.dayName}>{item.day}</Text>
+                  <View style={styles.mealTagRow}>
+                    {item.meals.map(r => {
+                      const meta = mealMeta(r.mealType);
+                      return (
+                        <View key={`${r.day}-${r.mealType ?? 'dinner'}`} style={styles.mealTag}>
+                          <Text style={styles.mealTagText}>{meta.emoji} {meta.label}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+                <Text style={[styles.dayArrow, { color: dietConfig.color }]}>›</Text>
               </TouchableOpacity>
-
-              {menuSaved && milestoneMessage !== '' && (
-                <Text style={styles.milestoneText}>{milestoneMessage}</Text>
-              )}
-
-              {showUpsell && (
-                <View style={styles.upsellBanner}>
-                  <Text style={styles.upsellText}>
-                    Love this? Unlock Keto, Paleo & Vegan for $2.99/mo
-                  </Text>
-                </View>
-              )}
-            </View>
-          }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.dayRow}
-              onPress={() =>
-                navigation.navigate('Day', {
-                  day: item.day,
-                  recipes,
-                  ingredients,
-                  dietType,
-                  glutenFree,
-                  saved: isSavedView,
-                })
-              }
-              activeOpacity={0.8}
-            >
-              <View style={styles.dayRowLeft}>
-                <Text style={styles.dayName}>{item.day}</Text>
-                <View style={styles.mealTagRow}>
-                  {item.meals.map(r => {
-                    const meta = mealMeta(r.mealType);
-                    return (
-                      <View key={`${r.day}-${r.mealType ?? 'dinner'}`} style={styles.mealTag}>
-                        <Text style={styles.mealTagText}>{meta.emoji} {meta.label}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-              <Text style={[styles.dayArrow, { color: dietConfig.color }]}>›</Text>
-            </TouchableOpacity>
-          )}
-          ListFooterComponent={
-            <TouchableOpacity
-              style={styles.replanBtn}
-              onPress={() => navigation.navigate('Home')}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.replanBtnText}>Plan Another Week →</Text>
-            </TouchableOpacity>
-          }
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        />
+            )}
+            ListFooterComponent={Footer}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
       </SafeAreaView>
 
       {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
@@ -344,6 +423,23 @@ const styles = StyleSheet.create({
   },
   mealTagText: { fontSize: 12, color: '#666', fontWeight: '600' },
   dayArrow: { fontSize: 30, fontWeight: '300', marginLeft: 10 },
+
+  toast: {
+    position: 'absolute',
+    bottom: 32,
+    alignSelf: 'center',
+    backgroundColor: '#1d5c63',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    zIndex: 99,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  toastText: { color: 'white', fontSize: 14, fontWeight: '700' },
 
   celebrationBanner: {
     position: 'absolute',
