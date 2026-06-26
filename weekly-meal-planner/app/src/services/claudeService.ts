@@ -116,14 +116,19 @@ const RECIPE_SHAPE = `[
 // Returns undefined if the data is missing/garbage so the recipe still renders.
 function normalizeNutrition(raw: any): Recipe['nutrition'] {
   if (!raw || typeof raw !== 'object') return undefined;
-  const keys = ['calories', 'protein', 'carbs', 'sugar', 'sodium'] as const;
-  const out: Record<string, number> = {};
-  for (const k of keys) {
-    const n = Number(raw[k]);
-    if (!Number.isFinite(n) || n < 0) return undefined;
-    out[k] = Math.round(n);
+  const num = (v: any): number | null => {
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+  };
+  const calories = num(raw.calories);
+  const protein = num(raw.protein);
+  const carbs = num(raw.carbs);
+  const sugar = num(raw.sugar);
+  const sodium = num(raw.sodium);
+  if (calories === null || protein === null || carbs === null || sugar === null || sodium === null) {
+    return undefined;
   }
-  return out as Recipe['nutrition'];
+  return { calories, protein, carbs, sugar, sodium };
 }
 
 function buildSystemPrompt(dietType: DietType, glutenFree: boolean): string {
