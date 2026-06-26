@@ -16,7 +16,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
+import { RootStackParamList, DietType, MealType } from '../types';
+import { MEAL_TYPES } from '../constants/mealTypes';
 import {
   parseReceiptFromImage,
   generateMealPlan,
@@ -28,11 +29,25 @@ import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES } from '../constants/dietTypes';
 
-const SAMPLE_PANTRY: string[] = [
-  'chicken breast', 'olive oil', 'garlic', 'cherry tomatoes',
-  'bell peppers', 'zucchini', 'lemon', 'pasta', 'canned chickpeas',
-  'baby spinach', 'red onion', 'eggs', 'canned diced tomatoes',
+// Shared produce/aromatics every sample pantry starts from — diet-neutral.
+const SAMPLE_BASE: string[] = [
+  'olive oil', 'garlic', 'cherry tomatoes', 'bell peppers',
+  'zucchini', 'lemon', 'baby spinach', 'red onion', 'canned diced tomatoes',
 ];
+
+// Diet-appropriate proteins/staples added on top of the base. A vegetarian or
+// vegan user must never be handed chicken/eggs in their "sample pantry".
+const SAMPLE_PROTEINS: Record<DietType, string[]> = {
+  mediterranean: ['chicken breast', 'eggs', 'canned chickpeas', 'pasta'],
+  keto:          ['chicken breast', 'eggs', 'avocado', 'shredded cheese'],
+  paleo:         ['chicken breast', 'eggs', 'sweet potato', 'almonds'],
+  vegetarian:    ['eggs', 'canned chickpeas', 'pasta', 'feta cheese'],
+  vegan:         ['firm tofu', 'canned chickpeas', 'red lentils', 'quinoa'],
+};
+
+function samplePantryFor(diet: DietType): string[] {
+  return [...SAMPLE_BASE, ...(SAMPLE_PROTEINS[diet] ?? SAMPLE_PROTEINS.mediterranean)];
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
@@ -57,6 +72,12 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
+  // Which meals to build. Dinner on by default keeps the original one-tap flow.
+  const [meals, setMeals] = useState<Record<MealType, boolean>>({
+    breakfast: false,
+    lunch: false,
+    dinner: true,
+  });
   const [retryCountdown, setRetryCountdown] = useState(0);
   const [pantryCount, setPantryCount] = useState(0);
   const [progressStep, setProgressStep] = useState(0);
@@ -118,6 +139,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         setChecked({});
         setNewItem('');
         setGlutenFree(false);
+        setMeals({ breakfast: false, lunch: false, dinner: true });
         setRetryCountdown(0);
         if (countdownRef.current) clearInterval(countdownRef.current);
       }
@@ -153,7 +175,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   }
 
   function loadSamplePantry() {
-    mergeItems(SAMPLE_PANTRY);
+    mergeItems(samplePantryFor(dietType));
   }
 
   function toggleAll(value: boolean) {
@@ -271,7 +293,9 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
     try {
       const pantryItems = await getPantryItems();
       const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
-      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree);
+      const selectedMeals = MEAL_TYPES.filter(m => meals[m.id]).map(m => m.id);
+      const mealsToUse = selectedMeals.length > 0 ? selectedMeals : (['dinner'] as MealType[]);
+      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse);
 
       const settled = await Promise.allSettled(
         recipes.map(async recipe => ({
@@ -335,12 +359,6 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         contentContainerStyle={styles.container}
         ListHeaderComponent={
           <>
-            {/* Diet type badge */}
-            <View style={[styles.dietBadge, { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color }]}>
-              <Text style={styles.dietBadgeEmoji}>{dietConfig.emoji}</Text>
-              <Text style={[styles.dietBadgeLabel, { color: dietConfig.color }]}>{dietConfig.label} Menu</Text>
-            </View>
-
             <Text style={styles.title}>Scan Your Receipt</Text>
             <Text style={styles.subtitle}>
               Photograph your grocery receipt and we'll extract the ingredients automatically.
@@ -365,10 +383,6 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
             <TouchableOpacity style={styles.cameraBtn} onPress={() => pickReceipt(true)} activeOpacity={0.85}>
               <Text style={styles.cameraBtnIcon}>📷</Text>
               <Text style={styles.cameraBtnLabel}>Scan with Camera</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.libraryBtn} onPress={() => pickReceipt(false)} activeOpacity={0.85}>
-              <Text style={styles.libraryBtnLabel}>🖼  Choose from Photo Library</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry} activeOpacity={0.85}>
@@ -440,6 +454,35 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                 <TouchableOpacity style={styles.addBtn} onPress={addManualItem}>
                   <Text style={styles.addBtnText}>Add</Text>
                 </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Meal selection */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Which meals?</Text>
+              <Text style={styles.pantryHint}>
+                We’ll build 7 recipes — one per day — for each meal you pick.
+              </Text>
+              <View style={styles.mealChipRow}>
+                {MEAL_TYPES.map(m => {
+                  const on = meals[m.id];
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[
+                        styles.mealChip,
+                        on && { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color },
+                      ]}
+                      onPress={() => setMeals(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.mealChipEmoji}>{m.emoji}</Text>
+                      <Text style={[styles.mealChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}>
+                        {m.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
@@ -529,20 +572,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
   container: { padding: 24, paddingBottom: 24 },
 
-  dietBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    alignSelf: 'flex-start',
-    borderWidth: 1.5,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginBottom: 10,
-  },
-  dietBadgeEmoji: { fontSize: 18 },
-  dietBadgeLabel: { fontSize: 14, fontWeight: '700' },
-
   title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
   subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 14 },
   miniSteps: {
@@ -571,16 +600,6 @@ const styles = StyleSheet.create({
   },
   cameraBtnIcon: { fontSize: 24 },
   cameraBtnLabel: { color: 'white', fontSize: 17, fontWeight: '700' },
-  libraryBtn: {
-    backgroundColor: 'white',
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#a8dadc',
-    marginBottom: 10,
-  },
-  libraryBtnLabel: { fontSize: 15, fontWeight: '600', color: '#2e86ab' },
   receiptPreview: {
     width: '100%',
     height: 200,
@@ -650,6 +669,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   addBtnText: { color: 'white', fontWeight: '700', fontSize: 15 },
+
+  mealChipRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  mealChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: 'white',
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    gap: 4,
+  },
+  mealChipEmoji: { fontSize: 20 },
+  mealChipLabel: { fontSize: 13, color: '#888', fontWeight: '600' },
 
   glutenFreeRow: {
     flexDirection: 'row',

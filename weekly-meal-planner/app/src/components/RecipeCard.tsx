@@ -35,7 +35,7 @@ export default function RecipeCard({ recipe, onPress, onRefresh, refreshing, ref
             <Text style={styles.dayText}>{recipe.day}</Text>
           </View>
           <View style={styles.dietBadge}>
-            <Text style={styles.dietText}>{dietConfig.emoji} {dietConfig.label}</Text>
+            <Text style={styles.dietText}>{dietConfig.label}</Text>
           </View>
         </View>
         <Text style={styles.name}>{recipe.name}</Text>

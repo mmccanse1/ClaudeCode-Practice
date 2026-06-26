@@ -7,6 +7,7 @@ import ScanReceiptScreen from '../screens/ScanReceiptScreen';
 import PantryScreen from '../screens/PantryScreen';
 import PantryShelvesScreen from '../screens/PantryShelvesScreen';
 import MealPlanScreen from '../screens/MealPlanScreen';
+import DayScreen from '../screens/DayScreen';
 import RecipeDetailScreen from '../screens/RecipeDetailScreen';
 import SavedRecipesScreen from '../screens/SavedRecipesScreen';
 
@@ -49,6 +50,14 @@ export default function AppNavigator() {
           name="MealPlan"
           component={MealPlanScreen}
           options={{ title: 'Menu', headerBackTitle: 'Back' }}
+        />
+        <Stack.Screen
+          name="Day"
+          component={DayScreen}
+          options={({ route }) => ({
+            title: route.params.day,
+            headerBackTitle: 'Menu',
+          })}
         />
         <Stack.Screen
           name="RecipeDetail"

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,18 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Recipe, DietType } from '../types';
+import { RootStackParamList, Recipe, DietType, MealType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
+import { sortByMeal, mealMeta } from '../constants/mealTypes';
 import RecipeCard from '../components/RecipeCard';
 import ConfettiBurst from '../components/ConfettiBurst';
 import { saveMenu, getSavedMenus } from '../services/savedMenusService';
 import { regenerateRecipe, RATE_LIMIT_ERROR, AI_PARSE_ERROR } from '../services/claudeService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import {
+  getCurrentMealPlan,
   saveCurrentMealPlan,
   hasCelebratedDiet,
   markDietCelebrated,
@@ -34,24 +37,41 @@ import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 
+const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 export default function MealPlanScreen({ navigation, route }: Props) {
   const { ingredients, pantrySavedCount } = route.params;
   const dietType: DietType = route.params.dietType ?? 'mediterranean';
   const glutenFree = route.params.glutenFree ?? false;
+  const isSavedView = route.params.saved ?? false;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
   const [saving, setSaving] = useState(false);
   const [menuSaved, setMenuSaved] = useState(false);
   const [milestoneMessage, setMilestoneMessage] = useState('');
   const [showUpsell, setShowUpsell] = useState(false);
-  const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
-  const [refreshToast, setRefreshToast] = useState(false);
   const [isFirstOfDiet, setIsFirstOfDiet] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
+  const [refreshToast, setRefreshToast] = useState(false);
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
   const celebrationScale = useRef(new Animated.Value(0.3)).current;
   const isRefreshing = useRef(false);
   const isFromFreshScan = pantrySavedCount != null;
+
+  // For the active plan, re-read storage whenever the screen regains focus so
+  // a recipe swapped on the Day screen is reflected here (e.g. for Save Menu).
+  // Saved menus are read-only snapshots and must never be overwritten this way.
+  useFocusEffect(
+    useCallback(() => {
+      if (isSavedView) return;
+      let active = true;
+      getCurrentMealPlan(dietType).then(plan => {
+        if (active && plan) setRecipes(plan.recipes);
+      });
+      return () => { active = false; };
+    }, [isSavedView, dietType])
+  );
 
   useEffect(() => {
     if (!isFromFreshScan) return;
@@ -133,38 +153,6 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     return `${count} menus saved.`;
   }
 
-  async function handleRefreshRecipe(index: number) {
-    if (isRefreshing.current) return;
-    isRefreshing.current = true;
-    const dayToReplace = recipes[index].day;
-    setRefreshingDay(dayToReplace);
-    try {
-      const newRecipe = await regenerateRecipe(ingredients, recipes, dayToReplace, dietType, glutenFree);
-      const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
-      const updated = recipes.map((r, i) =>
-        i === index ? { ...newRecipe, photoUrl, dietType } : r
-      );
-      setRecipes(updated);
-      setMenuSaved(false);
-      await saveCurrentMealPlan(updated, ingredients, dietType);
-      setRefreshToast(true);
-      setTimeout(() => setRefreshToast(false), 2500);
-    } catch (e: any) {
-      if (e.message === RATE_LIMIT_ERROR) {
-        Alert.alert('The kitchen’s backed up', 'Too many cooks right now. Give it a minute, then tap refresh to try again.');
-      } else if (e.message === AI_PARSE_ERROR) {
-        Alert.alert('Let’s try that again', 'Something came back garbled — this recipe is unchanged. Tap refresh to give it another go.');
-      } else if (e.message.startsWith('No internet')) {
-        Alert.alert('Can’t reach the kitchen', e.message);
-      } else {
-        Alert.alert('Couldn’t refresh that recipe', 'We hit a snag — this recipe is unchanged. Tap refresh to try again.');
-      }
-    } finally {
-      isRefreshing.current = false;
-      setRefreshingDay(null);
-    }
-  }
-
   async function handleSaveMenu() {
     setSaving(true);
     try {
@@ -185,6 +173,110 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     }
   }
 
+  // Single-meal menus (e.g. dinner only) swap a recipe right here, since there
+  // is no Day screen to hop into. Mirrors DayScreen's refresh for the grouped case.
+  async function handleRefreshRecipe(target: Recipe) {
+    if (isRefreshing.current || isSavedView) return;
+    isRefreshing.current = true;
+    const mealType: MealType = target.mealType ?? 'dinner';
+    setRefreshingDay(target.day);
+    try {
+      const newRecipe = await regenerateRecipe(ingredients, recipes, target.day, dietType, glutenFree, mealType);
+      const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
+      const updated = recipes.map(r =>
+        r.day === target.day && (r.mealType ?? 'dinner') === mealType
+          ? { ...newRecipe, photoUrl, dietType, mealType }
+          : r
+      );
+      setRecipes(updated);
+      setMenuSaved(false);
+      await saveCurrentMealPlan(updated, ingredients, dietType);
+      setRefreshToast(true);
+      setTimeout(() => setRefreshToast(false), 2500);
+    } catch (e: any) {
+      if (e.message === RATE_LIMIT_ERROR) {
+        Alert.alert('The kitchen’s backed up', 'Too many cooks right now. Give it a minute, then tap refresh to try again.');
+      } else if (e.message === AI_PARSE_ERROR) {
+        Alert.alert('Let’s try that again', 'Something came back garbled — this recipe is unchanged. Tap refresh to give it another go.');
+      } else if (e.message.startsWith('No internet') || e.message.startsWith('Request timed out')) {
+        Alert.alert('Can’t reach the kitchen', e.message);
+      } else {
+        Alert.alert('Couldn’t refresh that recipe', 'We hit a snag — this recipe is unchanged. Tap refresh to try again.');
+      }
+    } finally {
+      isRefreshing.current = false;
+      setRefreshingDay(null);
+    }
+  }
+
+  // One card per meal type present tells us whether to group by day at all.
+  const mealTypeCount = new Set(recipes.map(r => r.mealType ?? 'dinner')).size;
+  const isSingleMeal = mealTypeCount <= 1;
+
+  // Single-meal: a flat list of recipes in calendar order.
+  const singleMealRecipes = [...recipes].sort(
+    (a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day)
+  );
+
+  // Multi-meal: group into days, each day's meals sorted breakfast→lunch→dinner.
+  const daysWithMeals = DAY_ORDER
+    .map(day => ({ day, meals: sortByMeal(recipes.filter(r => r.day === day)) }))
+    .filter(d => d.meals.length > 0);
+
+  const Header = (
+    <View style={styles.header}>
+      <Text style={styles.title}>Your Weekly Menu</Text>
+      <Text style={styles.subtitle}>
+        {dietConfig.label} · {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}
+        {!isSingleMeal ? ` across ${mealTypeCount} meals` : ''}.
+        {isSingleMeal ? ' Tap any recipe for the full card.' : ' Tap a day to see its recipes.'}
+      </Text>
+      {pantrySavedCount != null && pantrySavedCount > 0 && (
+        <View style={styles.pantryBanner}>
+          <Text style={styles.pantryBannerText}>
+            🧺  {pantrySavedCount} item{pantrySavedCount !== 1 ? 's' : ''} saved to your pantry
+          </Text>
+        </View>
+      )}
+      <TouchableOpacity
+        style={[styles.saveMenuBtn, menuSaved && styles.saveMenuBtnSaved]}
+        onPress={handleSaveMenu}
+        disabled={saving || menuSaved || refreshingDay !== null}
+        activeOpacity={0.85}
+      >
+        {saving ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text style={styles.saveMenuBtnText}>
+            {menuSaved ? '✓  Menu Saved' : '💾  Save This Menu'}
+          </Text>
+        )}
+      </TouchableOpacity>
+
+      {menuSaved && milestoneMessage !== '' && (
+        <Text style={styles.milestoneText}>{milestoneMessage}</Text>
+      )}
+
+      {showUpsell && (
+        <View style={styles.upsellBanner}>
+          <Text style={styles.upsellText}>
+            Love this? Unlock Keto, Paleo & Vegan for $2.99/mo
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  const Footer = (
+    <TouchableOpacity
+      style={styles.replanBtn}
+      onPress={() => navigation.navigate('Home')}
+      activeOpacity={0.85}
+    >
+      <Text style={styles.replanBtnText}>Plan Another Week →</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.root}>
       {refreshToast && (
@@ -196,7 +288,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       {isFromFreshScan && !isFirstOfDiet && (
         <Animated.View style={[styles.celebrationBanner, { opacity: celebrationOpacity }]} pointerEvents="none">
           <Text style={styles.celebrationText}>
-            🎉 Your 7-day {dietConfig.label} menu is ready!
+            🎉 Your {dietConfig.label} menu is ready!
           </Text>
         </Animated.View>
       )}
@@ -214,73 +306,66 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       )}
 
       <SafeAreaView style={styles.safe}>
-      <FlatList
-        data={recipes}
-        keyExtractor={item => item.day}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.title}>Your Weekly Menu</Text>
-            <Text style={styles.subtitle}>
-              7 {dietConfig.emoji} {dietConfig.label} recipes built from {ingredients.length} ingredients.
-              Tap any recipe for the full card.
-            </Text>
-            {pantrySavedCount != null && pantrySavedCount > 0 && (
-              <View style={styles.pantryBanner}>
-                <Text style={styles.pantryBannerText}>
-                  🧺  {pantrySavedCount} item{pantrySavedCount !== 1 ? 's' : ''} saved to your pantry
-                </Text>
-              </View>
+        {isSingleMeal ? (
+          <FlatList
+            data={singleMealRecipes}
+            keyExtractor={item => `${item.day}-${item.mealType ?? 'dinner'}`}
+            ListHeaderComponent={Header}
+            renderItem={({ item }) => (
+              <RecipeCard
+                recipe={item}
+                onPress={() => navigation.navigate('RecipeDetail', { recipe: item, dietType })}
+                onRefresh={isSavedView ? undefined : () => handleRefreshRecipe(item)}
+                refreshing={refreshingDay === item.day}
+                refreshDisabled={refreshingDay !== null && refreshingDay !== item.day}
+              />
             )}
-            <TouchableOpacity
-              style={[styles.saveMenuBtn, menuSaved && styles.saveMenuBtnSaved]}
-              onPress={handleSaveMenu}
-              disabled={saving || menuSaved || refreshingDay !== null}
-              activeOpacity={0.85}
-            >
-              {saving ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.saveMenuBtnText}>
-                  {menuSaved ? '✓  Menu Saved' : '💾  Save This Menu'}
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            {menuSaved && milestoneMessage !== '' && (
-              <Text style={styles.milestoneText}>{milestoneMessage}</Text>
+            ListFooterComponent={Footer}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <FlatList
+            data={daysWithMeals}
+            keyExtractor={item => item.day}
+            ListHeaderComponent={Header}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.dayRow}
+                onPress={() =>
+                  navigation.navigate('Day', {
+                    day: item.day,
+                    recipes,
+                    ingredients,
+                    dietType,
+                    glutenFree,
+                    saved: isSavedView,
+                  })
+                }
+                activeOpacity={0.8}
+              >
+                <View style={styles.dayRowLeft}>
+                  <Text style={styles.dayName}>{item.day}</Text>
+                  <View style={styles.mealTagRow}>
+                    {item.meals.map(r => {
+                      const meta = mealMeta(r.mealType);
+                      return (
+                        <View key={`${r.day}-${r.mealType ?? 'dinner'}`} style={styles.mealTag}>
+                          <Text style={styles.mealTagText}>{meta.emoji} {meta.label}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+                <Text style={[styles.dayArrow, { color: dietConfig.color }]}>›</Text>
+              </TouchableOpacity>
             )}
-
-            {showUpsell && (
-              <View style={styles.upsellBanner}>
-                <Text style={styles.upsellText}>
-                  Love this? Unlock Keto, Paleo & Vegan for $2.99/mo
-                </Text>
-              </View>
-            )}
-          </View>
-        }
-        renderItem={({ item, index }) => (
-          <RecipeCard
-            recipe={item}
-            onPress={() => navigation.navigate('RecipeDetail', { recipe: item, dietType })}
-            onRefresh={() => handleRefreshRecipe(index)}
-            refreshing={refreshingDay === item.day}
-            refreshDisabled={refreshingDay !== null && refreshingDay !== item.day}
+            ListFooterComponent={Footer}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
           />
         )}
-        ListFooterComponent={
-          <TouchableOpacity
-            style={styles.replanBtn}
-            onPress={() => navigation.navigate('Home')}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.replanBtnText}>Plan Another Week →</Text>
-          </TouchableOpacity>
-        }
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
+      </SafeAreaView>
 
       {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
     </View>
@@ -289,25 +374,9 @@ export default function MealPlanScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  toast: {
-    position: 'absolute',
-    bottom: 32,
-    alignSelf: 'center',
-    backgroundColor: '#1d5c63',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    zIndex: 99,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  toastText: { color: 'white', fontSize: 14, fontWeight: '700' },
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
   list: { padding: 20, paddingBottom: 40 },
-  header: { marginBottom: 20 },
+  header: { marginBottom: 8 },
   title: { fontSize: 26, fontWeight: '800', color: '#1a1a1a', marginBottom: 8 },
   subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 16 },
   saveMenuBtn: {
@@ -328,6 +397,49 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pantryBannerText: { fontSize: 13, color: '#1d5c63', fontWeight: '600' },
+
+  dayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginTop: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  dayRowLeft: { flex: 1 },
+  dayName: { fontSize: 17, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
+  mealTagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  mealTag: {
+    backgroundColor: '#f5f0e8',
+    borderRadius: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  mealTagText: { fontSize: 12, color: '#666', fontWeight: '600' },
+  dayArrow: { fontSize: 30, fontWeight: '300', marginLeft: 10 },
+
+  toast: {
+    position: 'absolute',
+    bottom: 32,
+    alignSelf: 'center',
+    backgroundColor: '#1d5c63',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    zIndex: 99,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  toastText: { color: 'white', fontSize: 14, fontWeight: '700' },
 
   celebrationBanner: {
     position: 'absolute',
@@ -401,7 +513,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 20,
     marginBottom: 8,
     borderWidth: 1.5,
     borderColor: '#2e86ab',

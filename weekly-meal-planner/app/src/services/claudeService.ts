@@ -1,4 +1,4 @@
-import { Recipe, DietType } from '../types';
+import { Recipe, DietType, MealType } from '../types';
 
 export const RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR';
 export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
@@ -6,12 +6,21 @@ export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 
-async function callClaude(parts: object[], signal?: AbortSignal): Promise<string> {
+interface CallOpts {
+  signal?: AbortSignal;
+  /** Wall-clock cap before aborting. Defaults to 20s (fine for short calls). */
+  timeoutMs?: number;
+  /** Max output tokens. Defaults to 4096. */
+  maxTokens?: number;
+}
+
+async function callClaude(parts: object[], opts: CallOpts = {}): Promise<string> {
+  const { signal, timeoutMs = 20_000, maxTokens = 4096 } = opts;
   const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('EXPO_PUBLIC_ANTHROPIC_API_KEY is not set');
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20_000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   if (signal) signal.addEventListener('abort', () => controller.abort());
 
   let response: Response;
@@ -25,7 +34,7 @@ async function callClaude(parts: object[], signal?: AbortSignal): Promise<string
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 4096,
+        max_tokens: maxTokens,
         messages: [{ role: 'user', content: parts }],
       }),
       signal: controller.signal,
@@ -89,6 +98,26 @@ function extractJson<T>(text: string): T {
   }
 }
 
+// Per-serving nutrition estimate. Units are fixed so the UI can label them.
+const NUTRITION_INSTRUCTION = `For "nutrition", give realistic PER-SERVING estimates as integers:
+- calories in kcal, protein/carbs/sugar in grams, sodium in milligrams.
+These are estimates for general guidance only — they do not need lab precision, but should be plausible for the ingredients and serving size.`;
+
+const NUTRITION_SHAPE = `"nutrition": { "calories": 520, "protein": 32, "carbs": 18, "sugar": 6, "sodium": 640 }`;
+
+// Frames a 7-recipe generation as a specific meal of the day.
+const MEAL_DIRECTIVE: Record<MealType, string> = {
+  breakfast: 'These are BREAKFAST recipes — breakfast-appropriate dishes (eggs, oats, smoothies, yoghurt bowls, savoury breakfasts, etc.) that still fit the diet.',
+  lunch: 'These are LUNCH recipes — lighter midday meals (salads, grain bowls, wraps, soups, etc.) that still fit the diet.',
+  dinner: 'These are DINNER recipes — satisfying evening main dishes that fit the diet.',
+};
+
+const MEAL_LABEL: Record<MealType, string> = {
+  breakfast: 'breakfast',
+  lunch: 'lunch',
+  dinner: 'dinner',
+};
+
 const RECIPE_SHAPE = `[
   {
     "name": "string",
@@ -100,9 +129,29 @@ const RECIPE_SHAPE = `[
     "ingredients": ["quantity + ingredient"],
     "steps": ["Full sentence step."],
     "nutritionNotes": "string (1 sentence about why this recipe fits the diet)",
+    ${NUTRITION_SHAPE},
     "searchQuery": "concise food photo search term"
   }
 ]`;
+
+// Coerce a model-supplied nutrition object to clean integers, or drop it.
+// Returns undefined if the data is missing/garbage so the recipe still renders.
+function normalizeNutrition(raw: any): Recipe['nutrition'] {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const num = (v: any): number | null => {
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
+  };
+  const calories = num(raw.calories);
+  const protein = num(raw.protein);
+  const carbs = num(raw.carbs);
+  const sugar = num(raw.sugar);
+  const sodium = num(raw.sodium);
+  if (calories === null || protein === null || carbs === null || sugar === null || sodium === null) {
+    return undefined;
+  }
+  return { calories, protein, carbs, sugar, sodium };
+}
 
 function buildSystemPrompt(dietType: DietType, glutenFree: boolean): string {
   const gfNote = glutenFree
@@ -222,18 +271,23 @@ export async function regenerateRecipe(
   existingRecipes: Recipe[],
   dayToReplace: string,
   dietType: DietType = 'mediterranean',
-  glutenFree: boolean = false
+  glutenFree: boolean = false,
+  mealType: MealType = 'dinner'
 ): Promise<Recipe> {
   const systemPrompt = buildSystemPrompt(dietType, glutenFree);
-  const otherRecipes = existingRecipes
-    .filter(r => r.day !== dayToReplace)
-    .map(r => `${r.day}: ${r.name}`)
+  // The recipe being replaced is the one matching BOTH day and meal type.
+  const isTarget = (r: Recipe) =>
+    r.day === dayToReplace && (r.mealType ?? 'dinner') === mealType;
+  const others = existingRecipes.filter(r => !isTarget(r));
+
+  const otherRecipes = others
+    .map(r => `${r.day} ${MEAL_LABEL[r.mealType ?? 'dinner']}: ${r.name}`)
     .join(', ');
 
-  const salmonAlreadyUsed = existingRecipes
-    .filter(r => r.day !== dayToReplace)
-    .some(r => r.name.toLowerCase().includes('salmon') ||
-               r.ingredients?.some(i => i.toLowerCase().includes('salmon')));
+  const salmonAlreadyUsed = others.some(
+    r => r.name.toLowerCase().includes('salmon') ||
+         r.ingredients?.some(i => i.toLowerCase().includes('salmon'))
+  );
 
   const proteinConstraint = buildProteinConstraint(ingredients);
 
@@ -246,7 +300,7 @@ Available ingredients: ${ingredients.join(', ')}
 You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
 ${proteinConstraint}
 
-Generate exactly 1 new recipe for ${dayToReplace}.
+Generate exactly 1 new ${MEAL_LABEL[mealType]} recipe for ${dayToReplace}. ${MEAL_DIRECTIVE[mealType]}
 
 The rest of the weekly menu is already set — do NOT duplicate any of these:
 ${otherRecipes}
@@ -254,6 +308,8 @@ ${otherRecipes}
 STRICT rules:
 - ${salmonAlreadyUsed ? 'Do NOT use salmon — it already appears elsewhere in the week.' : 'Salmon may appear only if it has not been used elsewhere this week.'}
 - Must be different from all the recipes listed above.
+
+${NUTRITION_INSTRUCTION}
 
 Return ONLY a valid JSON object (not an array) with this exact shape:
 {
@@ -266,25 +322,27 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
   "ingredients": ["quantity + ingredient"],
   "steps": ["Full sentence step."],
   "nutritionNotes": "string (1 sentence diet benefit)",
+  ${NUTRITION_SHAPE},
   "searchQuery": "concise food photo search term"
 }`,
     },
-  ]);
+  ], { timeoutMs: 45_000 });
 
   const recipe = extractJson<Recipe>(text);
   if (!recipe || typeof recipe !== 'object' || !recipe.day || typeof recipe.day !== 'string' || !recipe.name) {
     throw new Error(AI_PARSE_ERROR);
   }
-  return recipe;
+  return { ...recipe, mealType, nutrition: normalizeNutrition(recipe.nutrition) };
 }
 
-export async function generateMealPlan(
+// Generates the 7 day-recipes for a single meal type, tagged with that meal.
+async function generateMealForType(
   ingredients: string[],
-  dietType: DietType = 'mediterranean',
-  glutenFree: boolean = false
+  dietType: DietType,
+  glutenFree: boolean,
+  mealType: MealType
 ): Promise<Recipe[]> {
   const systemPrompt = buildSystemPrompt(dietType, glutenFree);
-
   const proteinConstraint = buildProteinConstraint(ingredients);
 
   const text = await callClaude([
@@ -296,16 +354,18 @@ Available ingredients: ${ingredients.join(', ')}
 You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
 ${proteinConstraint}
 
-Generate exactly 7 recipes, one per day (Monday–Sunday). Each recipe must primarily use ingredients from the list above.
+Generate exactly 7 ${MEAL_LABEL[mealType]} recipes, one per day (Monday–Sunday). ${MEAL_DIRECTIVE[mealType]} Each recipe must primarily use ingredients from the list above.
 
 STRICT variety rules — follow these exactly:
 - Vary proteins across the week: no single protein source should appear more than twice.
 - Each recipe must be distinct — no repeated dishes.
 
+${NUTRITION_INSTRUCTION}
+
 Return ONLY a valid JSON array of 7 objects with this exact shape:
 ${RECIPE_SHAPE}`,
     },
-  ]);
+  ], { timeoutMs: 60_000, maxTokens: 8192 });
 
   const parsed = extractJson<Recipe[]>(text);
   if (
@@ -315,5 +375,20 @@ ${RECIPE_SHAPE}`,
   ) {
     throw new Error(AI_PARSE_ERROR);
   }
-  return parsed;
+  return parsed.map(r => ({ ...r, mealType, nutrition: normalizeNutrition(r.nutrition) }));
+}
+
+export async function generateMealPlan(
+  ingredients: string[],
+  dietType: DietType = 'mediterranean',
+  glutenFree: boolean = false,
+  meals: MealType[] = ['dinner']
+): Promise<Recipe[]> {
+  // Only generate the meals the user asked for — one model call per meal type,
+  // run in parallel. A flat list of all (day × meal) recipes comes back.
+  const selected: MealType[] = meals.length > 0 ? meals : ['dinner'];
+  const perMeal = await Promise.all(
+    selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal))
+  );
+  return perMeal.flat();
 }

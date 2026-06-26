@@ -104,6 +104,7 @@ export default function SavedRecipesScreen({ navigation }: Props) {
                   recipes: item.recipes,
                   ingredients: item.ingredients,
                   dietType: item.dietType,
+                  saved: true,
                 })
               }
               activeOpacity={0.85}

@@ -115,7 +115,6 @@ export default function HomeScreen({ navigation }: Props) {
               activeOpacity={0.65}
             >
               <View style={styles.featuredCardInner}>
-                <Text style={styles.featuredEmoji}>{diet.emoji}</Text>
                 <View style={styles.featuredText}>
                   <View style={styles.featuredLabelRow}>
                     <Text style={[styles.featuredLabel, { color: diet.color }]}>{diet.label}</Text>
@@ -151,7 +150,6 @@ export default function HomeScreen({ navigation }: Props) {
                     <View style={styles.lockBadge}>
                       <Text style={styles.lockIcon}>🔒</Text>
                     </View>
-                    <Text style={styles.dietEmoji}>{diet.emoji}</Text>
                     <Text style={[styles.dietLabel, { color: diet.color }]}>{diet.label}</Text>
                     <Text style={styles.dietTagline}>{diet.tagline}</Text>
                   </TouchableOpacity>
@@ -190,7 +188,7 @@ export default function HomeScreen({ navigation }: Props) {
                     activeOpacity={0.85}
                   >
                     <Text style={styles.currentPlanTitle}>
-                      {cfg.emoji}  {cfg.label} Menu
+                      {cfg.label} Menu
                     </Text>
                     <Text style={styles.currentPlanDays}>
                       {expiringSoon
@@ -261,7 +259,6 @@ export default function HomeScreen({ navigation }: Props) {
               <Text style={styles.sheetCloseText}>✕</Text>
             </TouchableOpacity>
 
-            <Text style={styles.sheetEmoji}>{upgradeModalDiet?.emoji}</Text>
             <Text style={[styles.sheetDietName, { color: upgradeModalDiet?.color }]}>
               {upgradeModalDiet?.label}
             </Text>
