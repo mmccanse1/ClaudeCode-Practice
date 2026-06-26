@@ -3,21 +3,27 @@ import { Recipe, DietType } from '../types';
 export const RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR';
 export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
+const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 
 async function callClaude(parts: object[]): Promise<string> {
   const apiKey = process.env.EXPO_PUBLIC_ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('EXPO_PUBLIC_ANTHROPIC_API_KEY is not set');
 
-  const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetch(CLAUDE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts }] }),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: parts }],
+      }),
     });
   } catch {
     throw new Error('No internet connection. Please check your connection and try again.');
@@ -32,7 +38,7 @@ async function callClaude(parts: object[]): Promise<string> {
   }
 
   const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = data?.content?.[0]?.text;
   if (typeof text !== 'string') throw new Error(AI_PARSE_ERROR);
   return text;
 }
