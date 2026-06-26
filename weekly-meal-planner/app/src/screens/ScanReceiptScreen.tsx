@@ -391,10 +391,6 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               <Text style={styles.cameraBtnLabel}>Scan with Camera</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.libraryBtn} onPress={() => pickReceipt(false)} activeOpacity={0.85}>
-              <Text style={styles.libraryBtnLabel}>🖼  Choose from Photo Library</Text>
-            </TouchableOpacity>
-
             <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry} activeOpacity={0.85}>
               <Text style={styles.sampleBtnText}>🥗  Start with a sample pantry →</Text>
             </TouchableOpacity>
@@ -624,16 +620,6 @@ const styles = StyleSheet.create({
   },
   cameraBtnIcon: { fontSize: 24 },
   cameraBtnLabel: { color: 'white', fontSize: 17, fontWeight: '700' },
-  libraryBtn: {
-    backgroundColor: 'white',
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#a8dadc',
-    marginBottom: 10,
-  },
-  libraryBtnLabel: { fontSize: 15, fontWeight: '600', color: '#2e86ab' },
   receiptPreview: {
     width: '100%',
     height: 200,
