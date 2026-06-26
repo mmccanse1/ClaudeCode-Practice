@@ -92,7 +92,7 @@ export default function SavedRecipesScreen({ navigation }: Props) {
             <View style={styles.empty}>
               <Text style={styles.emptyIcon}>📋</Text>
               <Text style={styles.emptyText}>
-                Open any meal plan and tap Save This Menu to save it here.
+                Open a menu and tap Save This Menu to keep it here.
               </Text>
             </View>
           }

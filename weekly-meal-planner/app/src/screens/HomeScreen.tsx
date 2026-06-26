@@ -63,7 +63,7 @@ export default function HomeScreen({ navigation }: Props) {
   const HeaderContent = (
     <View style={styles.headerOverlay}>
       <Text style={styles.title}>Weekly Meal Planner</Text>
-      <Text style={styles.subtitle}>Scan a receipt. Get a full week of recipes.</Text>
+      <Text style={styles.subtitle}>Scan a receipt. Get a full week of recipes — no sign-up.</Text>
     </View>
   );
 
@@ -85,10 +85,10 @@ export default function HomeScreen({ navigation }: Props) {
           <View style={styles.howItWorks}>
             <Text style={styles.howTitle}>How it works</Text>
             {[
-              ['1', 'Choose your diet plan'],
+              ['1', 'Choose your diet'],
               ['2', 'Photograph your grocery receipt or add pantry items'],
-              ['3', 'Get 7 AI-generated recipes tailored to your diet and pantry'],
-              ['4', 'Save and share beautifully formatted recipe cards'],
+              ['3', 'Get 7 recipes built from the groceries you already have'],
+              ['4', 'Save and share your recipe cards'],
             ].map(([num, text]) => (
               <View key={num} style={styles.step}>
                 <View style={styles.stepNum}>
@@ -101,7 +101,7 @@ export default function HomeScreen({ navigation }: Props) {
 
           {/* Free plans */}
           <View style={styles.tierHeader}>
-            <Text style={styles.sectionLabel}>Free plans</Text>
+            <Text style={styles.sectionLabel}>Free diets</Text>
             <View style={styles.freePill}>
               <Text style={styles.freePillText}>ALWAYS FREE</Text>
             </View>
@@ -134,7 +134,7 @@ export default function HomeScreen({ navigation }: Props) {
           {hasActivated && (
             <>
               <View style={[styles.tierHeader, { marginTop: 24 }]}>
-                <Text style={styles.sectionLabel}>Plan</Text>
+                <Text style={styles.sectionLabel}>Premium</Text>
                 <TouchableOpacity onPress={() => handleDietSelect(PREMIUM_DIETS[0])}>
                   <Text style={styles.premiumPillText}>Unlock all · $2.99/mo →</Text>
                 </TouchableOpacity>
@@ -164,7 +164,7 @@ export default function HomeScreen({ navigation }: Props) {
           {isNewUser && (
             <View style={styles.newUserCta}>
               <Text style={styles.newUserCtaText}>
-                👆 Tap a plan above to build your first week of meals
+                Pick a diet above to build your first week of meals
               </Text>
             </View>
           )}
@@ -172,7 +172,7 @@ export default function HomeScreen({ navigation }: Props) {
           {/* Active plans */}
           {activePlans.length > 0 && (
             <View style={styles.activePlansSection}>
-              <Text style={[styles.sectionLabel, { marginBottom: 12 }]}>Active plans</Text>
+              <Text style={[styles.sectionLabel, { marginBottom: 12 }]}>Active menus</Text>
               {activePlans.map(plan => {
                 const cfg = getDietConfig(plan.dietType);
                 const expiringSoon = plan.daysRemaining <= 2;
@@ -190,7 +190,7 @@ export default function HomeScreen({ navigation }: Props) {
                     activeOpacity={0.85}
                   >
                     <Text style={styles.currentPlanTitle}>
-                      {cfg.emoji}  {cfg.label} Meal Plan
+                      {cfg.emoji}  {cfg.label} Menu
                     </Text>
                     <Text style={styles.currentPlanDays}>
                       {expiringSoon
@@ -224,7 +224,7 @@ export default function HomeScreen({ navigation }: Props) {
           )}
 
           <Text style={styles.source}>
-            Mediterranean recipes follow Mayo Clinic diet guidelines
+            AI-generated recipes for general guidance, not medical advice
           </Text>
 
           <View style={styles.legalFooter}>
@@ -309,8 +309,8 @@ export default function HomeScreen({ navigation }: Props) {
 
             <Text style={styles.sheetPrice}>
               {billingPeriod === 'annual'
-                ? 'Just $2.08/month · less than a cup of coffee'
-                : 'Less than a cup of coffee per month'}
+                ? 'Just $2.08/month, billed annually'
+                : 'Billed monthly'}
             </Text>
 
             <TouchableOpacity

@@ -103,8 +103,8 @@ export async function scheduleReplanReminder(dietType: DietType): Promise<void> 
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
-      title: `Your ${cfg.label} plan expires tomorrow`,
-      body: 'Scan this week’s receipt and get a fresh 7 recipes.',
+      title: `Your ${cfg.label} menu expires tomorrow`,
+      body: 'Scan this week’s receipt and get 7 fresh recipes.',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,

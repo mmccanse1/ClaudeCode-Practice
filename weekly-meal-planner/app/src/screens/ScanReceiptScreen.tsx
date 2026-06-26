@@ -219,7 +219,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       );
 
       if (!converted.base64) {
-        Alert.alert('Could not read receipt', 'Image data unavailable.');
+        Alert.alert('Couldn’t read that photo', 'We couldn’t process that image. Try another photo, or add items by hand below.');
         return;
       }
 
@@ -227,9 +227,9 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       mergeItems(parsed);
     } catch (e: any) {
       if (e.message.startsWith('No internet') || e.message.startsWith('Request timed out')) {
-        Alert.alert('No Connection', e.message);
+        Alert.alert('Can’t reach the kitchen', e.message);
       } else {
-        Alert.alert('Could not read receipt', 'The receipt scan failed. Try again or add items manually.');
+        Alert.alert('Couldn’t read that receipt', 'The photo may be too blurry or dark. Try again in better light, or add items by hand below.');
       }
     } finally {
       setParsing(false);
@@ -262,7 +262,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
     if (isGeneratingRef.current) return;
     const checkedItems = items.filter(i => checked[i]);
     if (checkedItems.length === 0 && pantryCount === 0) {
-      Alert.alert('No ingredients selected', 'Check at least one ingredient or add items to your pantry to generate a meal plan.');
+      Alert.alert('Add some ingredients first', 'Check at least one ingredient above, or add items to your pantry — we need something to cook with.');
       return;
     }
 
@@ -305,18 +305,18 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       if (e.message === RATE_LIMIT_ERROR) {
         startRetryCountdown(60);
         Alert.alert(
-          'Too Many Requests',
-          'The AI service is busy. Please wait 60 seconds, then tap Generate to try again.'
+          'The kitchen’s backed up',
+          'Too many cooks right now. Give it 60 seconds, then tap Generate to try again.'
         );
       } else if (e.message === AI_PARSE_ERROR) {
         Alert.alert(
-          'Unexpected Response',
-          'The AI returned something unexpected. Please tap "Generate" again to retry.'
+          'Let’s try that again',
+          'Something came back garbled — your ingredients are safe. Tap Generate to give it another go.'
         );
       } else if (e.message.startsWith('No internet') || e.message.startsWith('Request timed out')) {
-        Alert.alert('No Connection', e.message);
+        Alert.alert('Can’t reach the kitchen', e.message);
       } else {
-        Alert.alert('Generation failed', 'Something went wrong. Please try again.');
+        Alert.alert('Couldn’t build your menu', 'We hit a snag — your ingredients are safe. Tap Generate to try again.');
       }
     } finally {
       setGenerating(false);
@@ -338,7 +338,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
             {/* Diet type badge */}
             <View style={[styles.dietBadge, { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color }]}>
               <Text style={styles.dietBadgeEmoji}>{dietConfig.emoji}</Text>
-              <Text style={[styles.dietBadgeLabel, { color: dietConfig.color }]}>{dietConfig.label} Plan</Text>
+              <Text style={[styles.dietBadgeLabel, { color: dietConfig.color }]}>{dietConfig.label} Menu</Text>
             </View>
 
             <Text style={styles.title}>Scan Your Receipt</Text>
@@ -389,9 +389,9 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
             {items.length > 0 && (
               <View style={styles.sectionHeader}>
                 <View>
-                  <Text style={styles.sectionTitle}>Your Ingredients ({items.length})</Text>
+                  <Text style={styles.sectionTitle}>Your ingredients ({items.length})</Text>
                   <Text style={styles.pantryHint}>
-                    Checked items are included in your meal plan and saved to your pantry.
+                    Checked items go into your menu and are saved to your pantry.
                   </Text>
                 </View>
                 <View style={styles.toggleRow}>
@@ -473,7 +473,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               <View style={styles.countdownBox}>
                 <ActivityIndicator color="#f4a261" size="small" />
                 <Text style={styles.countdownText}>
-                  AI service busy — retrying in {retryCountdown}s
+                  Kitchen’s slammed — trying again in {retryCountdown}s
                 </Text>
               </View>
             )}
@@ -507,8 +507,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               ) : (
                 <Text style={styles.generateBtnText}>
                   {checkedCount > 0
-                    ? `Generate ${dietConfig.label} Plan (${checkedCount} items) →`
-                    : `Generate ${dietConfig.label} Plan →`}
+                    ? `Generate ${dietConfig.label} Menu (${checkedCount} items) →`
+                    : `Generate ${dietConfig.label} Menu →`}
                 </Text>
               )}
             </TouchableOpacity>
