@@ -62,10 +62,13 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flowCompletedRef = useRef(false);
+  const isMountedRef = useRef(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    isMountedRef.current = true;
     getPantryItems().then(pantryItems => setPantryCount(pantryItems.length));
+    return () => { isMountedRef.current = false; };
   }, []);
 
   useEffect(() => {
@@ -133,9 +136,13 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
 
   function mergeItems(newItems: string[]) {
     const deduped = [...new Set(newItems.map(i => i.trim().toLowerCase()))];
-    setItems(prev => [...new Set([...prev, ...deduped])]);
+    setItems(prev => {
+      const normalizedPrev = prev.map(i => i.trim().toLowerCase());
+      return [...new Set([...normalizedPrev, ...deduped])];
+    });
     setChecked(prev => {
-      const next = { ...prev };
+      const next: Record<string, boolean> = {};
+      Object.entries(prev).forEach(([k, v]) => { next[k.trim().toLowerCase()] = v; });
       deduped.forEach(i => { if (!(i in next)) next[i] = true; });
       return next;
     });
@@ -231,13 +238,20 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
       const recipes = await generateMealPlan(allIngredients, dietType, glutenFree);
 
-      const withPhotos = await Promise.all(
+      const settled = await Promise.allSettled(
         recipes.map(async recipe => ({
           ...recipe,
           dietType,
           photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
         }))
       );
+      const withPhotos = settled.map((result, i) =>
+        result.status === 'fulfilled'
+          ? result.value
+          : { ...recipes[i], dietType, photoUrl: undefined }
+      );
+
+      if (!isMountedRef.current) return;
 
       // Write to pantry only after generation succeeds so a failed call doesn't mutate pantry
       const toSave = checkedItems.filter(i => !pantryItems.includes(i));

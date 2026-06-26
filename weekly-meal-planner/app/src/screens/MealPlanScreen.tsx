@@ -35,6 +35,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
   const [refreshToast, setRefreshToast] = useState(false);
   const celebrationOpacity = useRef(new Animated.Value(0)).current;
+  const isRefreshing = useRef(false);
   const isFromFreshScan = pantrySavedCount != null;
 
   useEffect(() => {
@@ -54,6 +55,8 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   }
 
   async function handleRefreshRecipe(index: number) {
+    if (isRefreshing.current) return;
+    isRefreshing.current = true;
     const dayToReplace = recipes[index].day;
     setRefreshingDay(dayToReplace);
     try {
@@ -78,6 +81,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         Alert.alert('Could not refresh recipe', 'Something went wrong. Please try again.');
       }
     } finally {
+      isRefreshing.current = false;
       setRefreshingDay(null);
     }
   }

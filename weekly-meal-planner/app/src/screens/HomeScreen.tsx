@@ -7,7 +7,6 @@ import {
   ScrollView,
   Linking,
   Modal,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -27,8 +26,6 @@ const PREMIUM_DIETS = DIET_TYPES.filter(d => d.premium);
 export default function HomeScreen({ navigation }: Props) {
   const [activePlans, setActivePlans] = useState<CurrentPlan[]>([]);
   const [upgradeModalDiet, setUpgradeModalDiet] = useState<DietConfig | null>(null);
-  const [waitlistEmail, setWaitlistEmail] = useState('');
-  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 
   useFocusEffect(
@@ -40,8 +37,6 @@ export default function HomeScreen({ navigation }: Props) {
   function handleDietSelect(diet: DietConfig) {
     if (diet.premium && !IS_PREMIUM) {
       setUpgradeModalDiet(diet);
-      setWaitlistEmail('');
-      setWaitlistSubmitted(false);
       setBillingPeriod('monthly');
       return;
     }
@@ -50,13 +45,6 @@ export default function HomeScreen({ navigation }: Props) {
 
   function closeUpgradeModal() {
     setUpgradeModalDiet(null);
-    setWaitlistEmail('');
-    setWaitlistSubmitted(false);
-  }
-
-  function handleWaitlistSubmit() {
-    if (!waitlistEmail.trim() || !waitlistEmail.includes('@')) return;
-    setWaitlistSubmitted(true);
   }
 
   function getDietConfig(dietType: DietType): DietConfig {
@@ -307,38 +295,13 @@ export default function HomeScreen({ navigation }: Props) {
                 : 'Less than a cup of coffee per month'}
             </Text>
 
-            {waitlistSubmitted ? (
-              <View style={styles.sheetSuccess}>
-                <Text style={styles.sheetSuccessText}>
-                  You're on the list! We'll send you 7 days free when {upgradeModalDiet?.label} launches.
-                </Text>
-              </View>
-            ) : (
-              <>
-                <TextInput
-                  style={styles.sheetEmailInput}
-                  value={waitlistEmail}
-                  onChangeText={setWaitlistEmail}
-                  placeholder="Your email address"
-                  placeholderTextColor="#bbb"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                <TouchableOpacity
-                  style={[
-                    styles.sheetJoinBtn,
-                    { backgroundColor: upgradeModalDiet?.color },
-                    (!waitlistEmail.trim() || !waitlistEmail.includes('@')) && styles.sheetBtnDisabled,
-                  ]}
-                  onPress={handleWaitlistSubmit}
-                  disabled={!waitlistEmail.trim() || !waitlistEmail.includes('@')}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.sheetJoinBtnText}>Join Waitlist · 7 days free at launch</Text>
-                </TouchableOpacity>
-              </>
-            )}
+            <TouchableOpacity
+              style={[styles.sheetJoinBtn, { backgroundColor: upgradeModalDiet?.color }]}
+              onPress={closeUpgradeModal}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.sheetJoinBtnText}>Subscribe · {billingPeriod === 'annual' ? '$24.99/yr' : '$2.99/mo'}</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.sheetFreeBtn}
@@ -597,22 +560,8 @@ const styles = StyleSheet.create({
   bestValueText: { fontSize: 9, fontWeight: '800', color: 'white', letterSpacing: 0.5 },
 
   sheetPrice: { fontSize: 13, color: '#888', textAlign: 'center', marginBottom: 16, fontStyle: 'italic' },
-  sheetEmailInput: {
-    backgroundColor: '#f8f8f8',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: '#1a1a1a',
-    borderWidth: 1.5,
-    borderColor: '#eee',
-    marginBottom: 12,
-  },
   sheetJoinBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 16 },
-  sheetBtnDisabled: { opacity: 0.4 },
   sheetJoinBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  sheetSuccess: { backgroundColor: '#edf7f1', borderRadius: 12, padding: 16, marginBottom: 16 },
-  sheetSuccessText: { fontSize: 15, color: '#2d6a4f', lineHeight: 22, fontWeight: '600' },
   sheetFreeBtn: { alignItems: 'center', paddingVertical: 8 },
   sheetFreeBtnText: { color: '#2e86ab', fontSize: 15, fontWeight: '600' },
 });

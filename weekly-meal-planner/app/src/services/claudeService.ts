@@ -288,5 +288,13 @@ ${RECIPE_SHAPE}`,
     },
   ]);
 
-  return extractJson<Recipe[]>(text);
+  const parsed = extractJson<Recipe[]>(text);
+  if (
+    !Array.isArray(parsed) ||
+    parsed.length !== 7 ||
+    parsed.some(r => !r.day || typeof r.day !== 'string')
+  ) {
+    throw new Error(AI_PARSE_ERROR);
+  }
+  return parsed;
 }
