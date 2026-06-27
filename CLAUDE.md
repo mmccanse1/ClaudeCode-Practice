@@ -21,6 +21,27 @@ There are two local clones of the same GitHub repo (`mmccanse1/ClaudeCode-Practi
 cd C:\Users\thoma\ClaudeCode_Practice\ClaudeCode-Practice\weekly-meal-planner\app
 ```
 
+## Pending Adjustments — Pre-Stress-Test Fixes
+
+These items were flagged by the owner and should be addressed before or alongside the next review pipeline run.
+
+### UI / Layout
+- **Diet type selector**: Replace current display with a dropdown labeled "Choose a Diet"
+- **Current Menus**: Add a dropdown for "Current Menus" that allows filtering/selection by diet type
+- **How It Works section**: Keep the button where it is, but shrink the entire section by 10% proportionately — reduce scroll length on the menu page
+- **YourWeeklyMenu**: Tighten layout to fit screen size; Day buttons can be shrunk to reclaim space
+- **CSS / Color**: Replace grey with light blue throughout
+
+### Bugs
+- **Recipe card images not generating** — images fail to load even after opening the recipe detail view
+- **New Recipe button times out** — investigate and fix the timeout on recipe regeneration
+
+### Logic / Content Rules
+- **Dinner protein rule**: Dinners must include a meat protein when the selected diet type permits it — eggs are explicitly excluded from dinner protein
+- **Macros missing**: Numerical macro values (calories, protein, carbs, fat) are not displaying — this is likely an unintended consequence of the Phase 8 legal copy changes. Numerical values are fine to show; only health *claim* language was removed. Restore macros.
+
+---
+
 ## Next Session — Planned Review Pipeline
 
 Run in this order:
