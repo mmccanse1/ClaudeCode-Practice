@@ -17,6 +17,9 @@ import { DIET_TYPES } from '../constants/dietTypes';
 import { sortByMeal, mealMeta } from '../constants/mealTypes';
 import RecipeCard from '../components/RecipeCard';
 import ConfettiBurst from '../components/ConfettiBurst';
+import WeekShareCard from '../components/WeekShareCard';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 import { saveMenu, getSavedMenus } from '../services/savedMenusService';
 import { regenerateRecipe, RATE_LIMIT_ERROR, AI_PARSE_ERROR } from '../services/claudeService';
 import { fetchFoodPhoto } from '../services/unsplashService';
@@ -58,6 +61,8 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const celebrationScale = useRef(new Animated.Value(0.3)).current;
   const isRefreshing = useRef(false);
   const isFromFreshScan = pantrySavedCount != null;
+  const shareRef = useRef<View>(null);
+  const [sharingWeek, setSharingWeek] = useState(false);
 
   // For the active plan, re-read storage whenever the screen regains focus so
   // a recipe swapped on the Day screen is reflected here (e.g. for Save Menu).
@@ -173,6 +178,24 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     }
   }
 
+  // Capture the off-screen WeekShareCard to a PNG and open the share sheet, so
+  // the shared asset is a real social image (not an HTML file) carrying app
+  // branding + a Google Play CTA. Works for both fresh and saved menus.
+  async function handleShareWeek() {
+    if (sharingWeek) return;
+    setSharingWeek(true);
+    try {
+      const uri = await captureRef(shareRef, { format: 'png', quality: 1, result: 'tmpfile' });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your week' });
+      }
+    } catch (e: any) {
+      Alert.alert('Couldn’t create your share card', 'Something went wrong building the image. Please try again.');
+    } finally {
+      setSharingWeek(false);
+    }
+  }
+
   // Single-meal menus (e.g. dinner only) swap a recipe right here, since there
   // is no Day screen to hop into. Mirrors DayScreen's refresh for the grouped case.
   async function handleRefreshRecipe(target: Recipe) {
@@ -250,6 +273,19 @@ export default function MealPlanScreen({ navigation, route }: Props) {
           <Text style={styles.saveMenuBtnText}>
             {menuSaved ? '✓  Menu Saved' : '💾  Save This Menu'}
           </Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.shareWeekBtn}
+        onPress={handleShareWeek}
+        disabled={sharingWeek || refreshingDay !== null}
+        activeOpacity={0.85}
+      >
+        {sharingWeek ? (
+          <ActivityIndicator color={dietConfig.color} />
+        ) : (
+          <Text style={[styles.shareWeekBtnText, { color: dietConfig.color }]}>📤  Share My Week</Text>
         )}
       </TouchableOpacity>
 
@@ -368,6 +404,13 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       </SafeAreaView>
 
       {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
+
+      {/* Off-screen render target captured to a PNG for the shareable week image. */}
+      <View style={styles.offscreen} pointerEvents="none">
+        <View ref={shareRef} collapsable={false}>
+          <WeekShareCard recipes={recipes} dietType={dietType} ingredientCount={ingredients.length} />
+        </View>
+      </View>
     </View>
   );
 }
@@ -387,6 +430,17 @@ const styles = StyleSheet.create({
   },
   saveMenuBtnSaved: { backgroundColor: '#1d5c63' },
   saveMenuBtnText: { color: 'white', fontSize: 15, fontWeight: '700' },
+  shareWeekBtn: {
+    backgroundColor: 'white',
+    borderWidth: 1.5,
+    borderColor: '#e2dcce',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  shareWeekBtnText: { fontSize: 15, fontWeight: '700' },
+  offscreen: { position: 'absolute', left: -10000, top: 0 },
   pantryBanner: {
     backgroundColor: '#e8f5e9',
     borderWidth: 1,
