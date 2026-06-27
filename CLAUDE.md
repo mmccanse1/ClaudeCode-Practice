@@ -20,3 +20,10 @@ There are two local clones of the same GitHub repo (`mmccanse1/ClaudeCode-Practi
 ```
 cd C:\Users\thoma\ClaudeCode_Practice\ClaudeCode-Practice\weekly-meal-planner\app
 ```
+
+## Next Session — Planned Review Pipeline
+
+Run in this order:
+1. `/stress-test` — stress test the current app state
+2. `/dev-team-review` — dev team review
+3. `/user-panel-review` — **targeted trust check**: we removed health-based statements from the app (legal de-risking, Phase 8). Need to gauge how real users react to the shift in trust signals now that those claims are gone.
