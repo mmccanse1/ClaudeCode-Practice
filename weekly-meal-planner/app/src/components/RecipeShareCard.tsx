@@ -79,7 +79,7 @@ export default function RecipeShareCard({ recipe, dietType }: Props) {
 
         {recipe.nutrition && (
           <View style={styles.macrosCard}>
-            <Text style={styles.macrosTitle}>Nutrition · per serving</Text>
+            <Text style={styles.macrosTitle}>Estimated nutrition · per serving</Text>
             <View style={styles.macrosRow}>
               {([
                 ['CAL', `${recipe.nutrition.calories}`],
