@@ -55,6 +55,16 @@ These items were flagged by the owner and should be addressed before or alongsid
 
 ---
 
+## Handoff Note — Next Session Startup
+
+1. Pull from branch `claude/git-pull-obhxu4`
+2. Read this file in full — all pending adjustments, implementation guidance, and priority order are documented here
+3. The dev team (previous session) produced detailed implementation specs for every item on the pending adjustments list — exact code changes, file locations, and QA checklists are all captured above
+4. Run `/dev-team-review` to implement all pending adjustments before stress testing
+5. Do NOT start with stress test — dev team implements first
+
+---
+
 ## Next Session — Planned Review Pipeline
 
 Run in this order:
