@@ -39,6 +39,7 @@ These items were flagged by the owner and should be addressed before or alongsid
 ### Logic / Content Rules
 - **Dinner protein rule**: Dinners must include a meat protein when the selected diet type permits it — eggs are explicitly excluded from dinner protein
 - **Macros missing**: Numerical macro values (calories, protein, carbs, fat) are not displaying — this is likely an unintended consequence of the Phase 8 legal copy changes. Numerical values are fine to show; only health *claim* language was removed. Restore macros.
+- **Pantry deduplication (storage fix)**: When a receipt is scanned, recurring items (e.g. milk, eggs) must be matched against existing pantry entries and quantities updated — not added as new entries. Accumulating duplicate entries also bloats cached image/data storage over time. Add a catch-guard on receipt scan: if item already exists in pantry, increment quantity; do not create a duplicate.
 
 ---
 
