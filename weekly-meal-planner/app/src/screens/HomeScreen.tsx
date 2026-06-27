@@ -6,9 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Linking,
-  Modal,
-  KeyboardAvoidingView,
-  Platform,
   ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,18 +14,15 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, DietType } from '../types';
 import { getAllCurrentPlans, hasEverGeneratedPlan, CurrentPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES, DietConfig } from '../constants/dietTypes';
-import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
+// All diets are free; this is simply every diet, kept as a named list.
 const FREE_DIETS = DIET_TYPES.filter(d => !d.premium);
-const PREMIUM_DIETS = DIET_TYPES.filter(d => d.premium);
 
 export default function HomeScreen({ navigation }: Props) {
   const [activePlans, setActivePlans] = useState<CurrentPlan[]>([]);
   const [hasMadePlan, setHasMadePlan] = useState(false);
-  const [upgradeModalDiet, setUpgradeModalDiet] = useState<DietConfig | null>(null);
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
 
   useFocusEffect(
     useCallback(() => {
@@ -38,16 +32,7 @@ export default function HomeScreen({ navigation }: Props) {
   );
 
   function handleDietSelect(diet: DietConfig) {
-    if (diet.premium && !IS_PREMIUM) {
-      setUpgradeModalDiet(diet);
-      setBillingPeriod('monthly');
-      return;
-    }
     navigation.navigate('ScanReceipt', { dietType: diet.id });
-  }
-
-  function closeUpgradeModal() {
-    setUpgradeModalDiet(null);
   }
 
   function getDietConfig(dietType: DietType): DietConfig {
@@ -99,12 +84,9 @@ export default function HomeScreen({ navigation }: Props) {
             ))}
           </View>
 
-          {/* Free plans */}
+          {/* Diet picker — all diets are free */}
           <View style={styles.tierHeader}>
-            <Text style={styles.sectionLabel}>Free diets</Text>
-            <View style={styles.freePill}>
-              <Text style={styles.freePillText}>ALWAYS FREE</Text>
-            </View>
+            <Text style={styles.sectionLabel}>Choose your diet</Text>
           </View>
 
           {FREE_DIETS.map(diet => (
@@ -128,35 +110,6 @@ export default function HomeScreen({ navigation }: Props) {
               </View>
             </TouchableOpacity>
           ))}
-
-          {/* Plan (premium) — deferred until the user has completed their first plan */}
-          {hasActivated && (
-            <>
-              <View style={[styles.tierHeader, { marginTop: 24 }]}>
-                <Text style={styles.sectionLabel}>Premium</Text>
-                <TouchableOpacity onPress={() => handleDietSelect(PREMIUM_DIETS[0])}>
-                  <Text style={styles.premiumPillText}>Unlock all · $2.99/mo →</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.dietGrid}>
-                {PREMIUM_DIETS.map(diet => (
-                  <TouchableOpacity
-                    key={diet.id}
-                    style={[styles.dietCard, { backgroundColor: diet.accentColor }]}
-                    onPress={() => handleDietSelect(diet)}
-                    activeOpacity={0.65}
-                  >
-                    <View style={styles.lockBadge}>
-                      <Text style={styles.lockIcon}>🔒</Text>
-                    </View>
-                    <Text style={[styles.dietLabel, { color: diet.color }]}>{diet.label}</Text>
-                    <Text style={styles.dietTagline}>{diet.tagline}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
 
           {/* New-user directed CTA */}
           {isNewUser && (
@@ -242,94 +195,6 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
         </View>
       </ScrollView>
-
-      <Modal
-        visible={upgradeModalDiet !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={closeUpgradeModal}
-      >
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={closeUpgradeModal} />
-          <View style={styles.upgradeSheet}>
-            <TouchableOpacity style={styles.sheetClose} onPress={closeUpgradeModal}>
-              <Text style={styles.sheetCloseText}>✕</Text>
-            </TouchableOpacity>
-
-            <Text style={[styles.sheetDietName, { color: upgradeModalDiet?.color }]}>
-              {upgradeModalDiet?.label}
-            </Text>
-            <Text style={styles.sheetTaglineText}>{upgradeModalDiet?.tagline}</Text>
-
-            <View style={styles.sheetBenefits}>
-              {upgradeModalDiet?.benefits.map((benefit, i) => (
-                <View key={i} style={styles.sheetBenefitRow}>
-                  <Text style={[styles.sheetBenefitCheck, { color: upgradeModalDiet.color }]}>✓</Text>
-                  <Text style={styles.sheetBenefitText}>{benefit}</Text>
-                </View>
-              ))}
-            </View>
-
-            <View style={styles.sheetDivider} />
-
-            {/* Billing toggle */}
-            <View style={styles.billingToggle}>
-              <TouchableOpacity
-                style={[styles.billingOption, billingPeriod === 'monthly' && styles.billingOptionActive]}
-                onPress={() => setBillingPeriod('monthly')}
-              >
-                <Text style={[styles.billingOptionLabel, billingPeriod === 'monthly' && styles.billingOptionLabelActive]}>
-                  Monthly
-                </Text>
-                <Text style={[styles.billingOptionPrice, billingPeriod === 'monthly' && styles.billingOptionPriceActive]}>
-                  $2.99/mo
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.billingOption, billingPeriod === 'annual' && styles.billingOptionActive]}
-                onPress={() => setBillingPeriod('annual')}
-              >
-                <View style={styles.bestValueBadge}>
-                  <Text style={styles.bestValueText}>2 MONTHS FREE</Text>
-                </View>
-                <Text style={[styles.billingOptionLabel, billingPeriod === 'annual' && styles.billingOptionLabelActive]}>
-                  Annual
-                </Text>
-                <Text style={[styles.billingOptionPrice, billingPeriod === 'annual' && styles.billingOptionPriceActive]}>
-                  $24.99/yr
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.sheetPrice}>
-              {billingPeriod === 'annual'
-                ? 'Just $2.08/month, billed annually'
-                : 'Billed monthly'}
-            </Text>
-
-            <TouchableOpacity
-              style={[styles.sheetJoinBtn, { backgroundColor: upgradeModalDiet?.color }]}
-              onPress={closeUpgradeModal}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.sheetJoinBtnText}>Subscribe · {billingPeriod === 'annual' ? '$24.99/yr' : '$2.99/mo'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.sheetFreeBtn}
-              onPress={() => {
-                closeUpgradeModal();
-                navigation.navigate('ScanReceipt', { dietType: 'mediterranean' });
-              }}
-            >
-              <Text style={styles.sheetFreeBtnText}>Start with Mediterranean — it's free →</Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }

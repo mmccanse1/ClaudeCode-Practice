@@ -29,7 +29,7 @@ export const DIET_TYPES: DietConfig[] = [
     tagline: 'Low-carb · High-fat',
     color: '#c0392b',
     accentColor: '#fdf0ef',
-    premium: true,
+    premium: false,
     benefits: [
       'Use what’s already in your fridge — no special keto shopping',
       'Every recipe keeps you under your carb target, automatically',
@@ -43,7 +43,7 @@ export const DIET_TYPES: DietConfig[] = [
     tagline: 'Whole foods · No grains',
     color: '#7B4A1E',
     accentColor: '#faf0e6',
-    premium: true,
+    premium: false,
     benefits: [
       'Whole-food dinners from the groceries you already bought',
       'No grains, no processed junk — sorted for you',
@@ -67,7 +67,7 @@ export const DIET_TYPES: DietConfig[] = [
     tagline: 'Fully plant-based',
     color: '#40916c',
     accentColor: '#edf7f1',
-    premium: true,
+    premium: false,
     benefits: [
       'Fully plant-based dinners from what’s in your kitchen',
       '7 different recipes so no week feels repetitive',

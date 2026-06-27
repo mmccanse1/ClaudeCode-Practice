@@ -36,7 +36,6 @@ import {
   markNotificationAsked,
   scheduleReplanReminder,
 } from '../services/notificationService';
-import { IS_PREMIUM } from '../constants/subscription';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 
@@ -52,7 +51,6 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const [saving, setSaving] = useState(false);
   const [menuSaved, setMenuSaved] = useState(false);
   const [milestoneMessage, setMilestoneMessage] = useState('');
-  const [showUpsell, setShowUpsell] = useState(false);
   const [isFirstOfDiet, setIsFirstOfDiet] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [refreshingDay, setRefreshingDay] = useState<string | null>(null);
@@ -166,7 +164,6 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         const allMenus = await getSavedMenus();
         setMilestoneMessage(getMilestoneMessage(allMenus.length));
         setMenuSaved(true);
-        if (!IS_PREMIUM) setShowUpsell(true);
       } else {
         setMenuSaved(true);
         Alert.alert('Already saved', 'This exact menu is already in your Menus folder.');
@@ -293,13 +290,6 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         <Text style={styles.milestoneText}>{milestoneMessage}</Text>
       )}
 
-      {showUpsell && (
-        <View style={styles.upsellBanner}>
-          <Text style={styles.upsellText}>
-            Love this? Unlock Keto, Paleo & Vegan for $2.99/mo
-          </Text>
-        </View>
-      )}
     </View>
   );
 
