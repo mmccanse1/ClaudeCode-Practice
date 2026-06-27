@@ -53,8 +53,10 @@ async function generateAndCache(
   let b64: string | null = null;
   // Bound each attempt with an abort timeout so a hung image request can't stall
   // recipe (re)generation — the "New recipe" button used to spin indefinitely
-  // when Imagen was slow. Two attempts keep the worst-case wait predictable.
-  for (let attempt = 0; attempt < 2; attempt++) {
+  // when Imagen was slow. A burst of recipe photos can also trip Imagen's rate
+  // limit; on 429 we back off and retry (was: give up immediately) so cards
+  // don't end up stuck on the placeholder when a few requests get throttled.
+  for (let attempt = 0; attempt < 3; attempt++) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15_000);
     try {
@@ -67,12 +69,17 @@ async function generateAndCache(
         }),
         signal: controller.signal,
       });
+      if (res.status === 429) {
+        // Rate limited — exponential-ish backoff, then retry.
+        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+        continue;
+      }
       if (!res.ok) break;
       const data = await res.json();
       b64 = data.predictions?.[0]?.bytesBase64Encoded ?? null;
       if (b64) break;
     } catch {
-      // transient error or timeout — retry once
+      // transient error or timeout — retry
     } finally {
       clearTimeout(timeoutId);
     }

@@ -297,18 +297,28 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const mealsToUse = selectedMeals.length > 0 ? selectedMeals : (['dinner'] as MealType[]);
       const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse);
 
-      const settled = await Promise.allSettled(
-        recipes.map(async recipe => ({
-          ...recipe,
-          dietType,
-          photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
-        }))
-      );
-      const withPhotos = settled.map((result, i) =>
-        result.status === 'fulfilled'
-          ? result.value
-          : { ...recipes[i], dietType, photoUrl: undefined }
-      );
+      // Fetch photos in small batches rather than all 7–21 at once. Bursting the
+      // whole menu at Imagen trips its rate limit and leaves some cards stuck on
+      // the placeholder; capped concurrency keeps the hit-rate high.
+      const PHOTO_BATCH = 3;
+      const withPhotos: typeof recipes = [];
+      for (let i = 0; i < recipes.length; i += PHOTO_BATCH) {
+        const slice = recipes.slice(i, i + PHOTO_BATCH);
+        const settled = await Promise.allSettled(
+          slice.map(async recipe => ({
+            ...recipe,
+            dietType,
+            photoUrl: (await fetchFoodPhoto(recipe.searchQuery)) ?? undefined,
+          }))
+        );
+        settled.forEach((result, j) => {
+          withPhotos.push(
+            result.status === 'fulfilled'
+              ? result.value
+              : { ...slice[j], dietType, photoUrl: undefined }
+          );
+        });
+      }
 
       if (!isMountedRef.current) return;
 

@@ -118,6 +118,16 @@ const MEAL_LABEL: Record<MealType, string> = {
   dinner: 'dinner',
 };
 
+// Weekly ingredient-variety limits for a 7-recipe menu. Deliberately SOFT: the
+// app cooks from what the user already bought, so a sparse pantry must still
+// generate a full week rather than fail trying to force variety. Tune the
+// numeric caps (2 / 3) here — they are the single source of truth.
+const WEEKLY_VARIETY_RULES = `STRICT variety rules — apply across the whole week, but NEVER invent ingredients that are not in the available list above:
+- No single main protein may headline more than 2 of the 7 recipes.
+- No single main vegetable, and no single starch base (rice, potato, pasta, bread, tortilla, etc.), may be the centerpiece of more than 3 of the 7 recipes.
+- Every recipe must be a distinct dish — no repeats — and vary the cooking method and cuisine style from day to day.
+- If the available ingredients are too limited to satisfy these caps, prioritise keeping the "only use available ingredients" rule and instead make each day feel different through different preparations, sauces, spices, and supporting vegetables.`;
+
 const RECIPE_SHAPE = `[
   {
     "name": "string",
@@ -312,6 +322,7 @@ ${otherRecipes}
 STRICT rules:
 - ${salmonAlreadyUsed ? 'Do NOT use salmon — it already appears elsewhere in the week.' : 'Salmon may appear only if it has not been used elsewhere this week.'}
 - Must be different from all the recipes listed above.
+- Favor a main protein and centerpiece ingredients that are UNDER-used in the rest of the week — do not pick a protein that already headlines two or more of the recipes listed above, unless the available ingredients leave no alternative.
 
 ${NUTRITION_INSTRUCTION}
 
@@ -360,9 +371,7 @@ ${proteinConstraint}
 
 Generate exactly 7 ${MEAL_LABEL[mealType]} recipes, one per day (Monday–Sunday). ${MEAL_DIRECTIVE[mealType]} Each recipe must primarily use ingredients from the list above.
 
-STRICT variety rules — follow these exactly:
-- Vary proteins across the week: no single protein source should appear more than twice.
-- Each recipe must be distinct — no repeated dishes.
+${WEEKLY_VARIETY_RULES}
 
 ${NUTRITION_INSTRUCTION}
 
