@@ -63,7 +63,7 @@ export default function HomeScreen({ navigation }: Props) {
   const HeaderContent = (
     <View style={styles.headerOverlay}>
       <Text style={styles.title}>Weekly Meal Planner</Text>
-      <Text style={styles.subtitle}>Scan a receipt. Get a full week of recipes — no sign-up.</Text>
+      <Text style={styles.subtitle}>What did you buy this week? Snap your receipt and our chefs plan 7 dinners from it — no sign-up.</Text>
     </View>
   );
 
