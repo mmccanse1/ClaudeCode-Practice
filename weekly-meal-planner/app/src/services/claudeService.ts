@@ -160,7 +160,7 @@ function buildSystemPrompt(dietType: DietType, glutenFree: boolean): string {
 
   switch (dietType) {
     case 'mediterranean':
-      return `You are a Mediterranean diet nutritionist following Mayo Clinic guidelines.
+      return `You are a Mediterranean diet nutritionist following widely recognized Mediterranean diet principles.
 
 Diet principles:
 - Emphasise vegetables, fruits, whole grains, legumes, nuts

@@ -16,12 +16,12 @@ export const DIET_TYPES: DietConfig[] = [
   {
     id: 'mediterranean',
     label: 'Mediterranean',
-    tagline: 'Heart-healthy · Olive oil & fish',
+    tagline: 'Olive oil, fish & fresh produce',
     color: '#2e86ab',
     accentColor: '#e3f3f8',
     premium: false,
     benefits: [],
-    source: 'Built on Mayo Clinic’s Mediterranean diet guidelines',
+    source: 'Follows widely recognized Mediterranean diet principles',
   },
   {
     id: 'keto',
