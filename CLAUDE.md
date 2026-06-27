@@ -46,6 +46,7 @@ These items were flagged by the owner and should be addressed before or alongsid
 ## Next Session — Planned Review Pipeline
 
 Run in this order:
-1. `/stress-test` — stress test the current app state
-2. `/dev-team-review` — dev team review
-3. `/user-panel-review` — **targeted trust check**: we removed health-based statements from the app (legal de-risking, Phase 8). Need to gauge how real users react to the shift in trust signals now that those claims are gone.
+1. `/dev-team-review` — implement all pending adjustments listed above before any testing
+2. `/stress-test` — hammer the fixed build
+3. `/dev-team-review` — catch anything the stress test surfaces
+4. `/user-panel-review` — **targeted trust check**: we removed health-based statements from the app (legal de-risking, Phase 8). Need to gauge how real users react to the shift in trust signals now that those claims are gone.
