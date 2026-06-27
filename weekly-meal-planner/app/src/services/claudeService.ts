@@ -121,12 +121,11 @@ const MEAL_LABEL: Record<MealType, string> = {
 // Weekly ingredient-variety limits for a 7-recipe menu. Deliberately SOFT: the
 // app cooks from what the user already bought, so a sparse pantry must still
 // generate a full week rather than fail trying to force variety. Tune the
-// numeric caps (2 / 3) here — they are the single source of truth.
+// numeric cap (2 of 7) here — it is the single source of truth.
 const WEEKLY_VARIETY_RULES = `STRICT variety rules — apply across the whole week, but NEVER invent ingredients that are not in the available list above:
-- No single main protein may headline more than 2 of the 7 recipes.
-- No single main vegetable, and no single starch base (rice, potato, pasta, bread, tortilla, etc.), may be the centerpiece of more than 3 of the 7 recipes.
+- No single main ingredient — whether a protein, a main vegetable, or a starch base (rice, potato, pasta, bread, tortilla, etc.) — may headline or be the centerpiece of more than 2 of the 7 recipes.
 - Every recipe must be a distinct dish — no repeats — and vary the cooking method and cuisine style from day to day.
-- If the available ingredients are too limited to satisfy these caps, prioritise keeping the "only use available ingredients" rule and instead make each day feel different through different preparations, sauces, spices, and supporting vegetables.`;
+- If the available ingredients are too limited to satisfy this cap, prioritise keeping the "only use available ingredients" rule and instead make each day feel different through different preparations, sauces, spices, and supporting vegetables.`;
 
 const RECIPE_SHAPE = `[
   {
