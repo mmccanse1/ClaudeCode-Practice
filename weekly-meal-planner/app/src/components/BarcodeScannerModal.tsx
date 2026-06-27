@@ -150,7 +150,7 @@ export default function BarcodeScannerModal({ visible, onClose, onAdd }: Props) 
                     value={manualInput}
                     onChangeText={setManualInput}
                     placeholder="e.g. pasta roni"
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor="#9bb4c2"
                     autoFocus
                     returnKeyType="done"
                     onSubmitEditing={handleManualAdd}

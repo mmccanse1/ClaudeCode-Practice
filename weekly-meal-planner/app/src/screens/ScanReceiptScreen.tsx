@@ -447,7 +447,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                   value={newItem}
                   onChangeText={setNewItem}
                   placeholder="e.g. canned chickpeas"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor="#9bb4c2"
                   returnKeyType="done"
                   onSubmitEditing={addManualItem}
                 />
@@ -457,52 +457,59 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               </View>
             </View>
 
-            {/* Meal selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Which meals?</Text>
-              <Text style={styles.pantryHint}>
-                We’ll build 7 recipes — one per day — for each meal you pick.
-              </Text>
-              <View style={styles.mealChipRow}>
-                {MEAL_TYPES.map(m => {
-                  const on = meals[m.id];
-                  return (
-                    <TouchableOpacity
-                      key={m.id}
-                      style={[
-                        styles.mealChip,
-                        on && { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color },
-                      ]}
-                      onPress={() => setMeals(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.mealChipEmoji}>{m.emoji}</Text>
-                      <Text style={[styles.mealChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}>
-                        {m.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </View>
+            {/* Meal selection + dietary options are revealed only once there are
+                ingredients to plan from — keeps the first-run screen focused on
+                the single next action (scan / add) instead of every control. */}
+            {items.length > 0 && (
+              <>
+                {/* Meal selection */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Which meals?</Text>
+                  <Text style={styles.pantryHint}>
+                    We’ll build 7 recipes — one per day — for each meal you pick.
+                  </Text>
+                  <View style={styles.mealChipRow}>
+                    {MEAL_TYPES.map(m => {
+                      const on = meals[m.id];
+                      return (
+                        <TouchableOpacity
+                          key={m.id}
+                          style={[
+                            styles.mealChip,
+                            on && { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color },
+                          ]}
+                          onPress={() => setMeals(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.mealChipEmoji}>{m.emoji}</Text>
+                          <Text style={[styles.mealChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}>
+                            {m.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
 
-            {/* Gluten-free toggle */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Dietary options</Text>
-              <TouchableOpacity
-                style={styles.glutenFreeRow}
-                onPress={() => setGlutenFree(prev => !prev)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.toggle, glutenFree && styles.toggleOn]}>
-                  <View style={[styles.toggleThumb, glutenFree && styles.toggleThumbOn]} />
+                {/* Gluten-free toggle */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Dietary options</Text>
+                  <TouchableOpacity
+                    style={styles.glutenFreeRow}
+                    onPress={() => setGlutenFree(prev => !prev)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.toggle, glutenFree && styles.toggleOn]}>
+                      <View style={[styles.toggleThumb, glutenFree && styles.toggleThumbOn]} />
+                    </View>
+                    <View style={styles.glutenFreeText}>
+                      <Text style={styles.glutenFreeLabel}>Gluten-Free</Text>
+                      <Text style={styles.glutenFreeHint}>All recipes will avoid gluten-containing ingredients</Text>
+                    </View>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.glutenFreeText}>
-                  <Text style={styles.glutenFreeLabel}>Gluten-Free</Text>
-                  <Text style={styles.glutenFreeHint}>All recipes will avoid gluten-containing ingredients</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+              </>
+            )}
 
             {/* Start Over */}
             {items.length > 0 && (
@@ -573,7 +580,7 @@ const styles = StyleSheet.create({
   container: { padding: 24, paddingBottom: 24 },
 
   title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
-  subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 14 },
+  subtitle: { fontSize: 14, color: '#5b7a8c', lineHeight: 20, marginBottom: 14 },
   miniSteps: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -586,8 +593,8 @@ const styles = StyleSheet.create({
   },
   miniStep: { alignItems: 'center', flex: 1 },
   miniStepIcon: { fontSize: 22, marginBottom: 4 },
-  miniStepLabel: { fontSize: 11, color: '#555', fontWeight: '600', textAlign: 'center', lineHeight: 14 },
-  miniStepArrow: { fontSize: 20, color: '#ccc', fontWeight: '300', marginBottom: 14 },
+  miniStepLabel: { fontSize: 11, color: '#3a5663', fontWeight: '600', textAlign: 'center', lineHeight: 14 },
+  miniStepArrow: { fontSize: 20, color: '#c2d3dd', fontWeight: '300', marginBottom: 14 },
   cameraBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -606,7 +613,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     resizeMode: 'contain',
-    backgroundColor: '#eee',
+    backgroundColor: '#eef4f8',
   },
   statusBox: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
   statusText: { color: '#2e86ab', fontWeight: '600' },
@@ -619,10 +626,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 },
-  pantryHint: { fontSize: 12, color: '#888', fontStyle: 'italic' },
+  pantryHint: { fontSize: 12, color: '#5b7a8c', fontStyle: 'italic' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   toggleLink: { fontSize: 13, color: '#2e86ab', fontWeight: '600' },
-  toggleSep: { fontSize: 13, color: '#bbb' },
+  toggleSep: { fontSize: 13, color: '#9bb4c2' },
 
   itemRow: {
     flexDirection: 'row',
@@ -639,7 +646,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#ccc',
+    borderColor: '#c2d3dd',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'white',
@@ -647,7 +654,7 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: '#2e86ab', borderColor: '#2e86ab' },
   checkmark: { color: 'white', fontSize: 13, fontWeight: '800' },
   itemText: { flex: 1, fontSize: 14, color: '#333', textTransform: 'capitalize' },
-  removeBtn: { color: '#bbb', fontWeight: '700', fontSize: 14 },
+  removeBtn: { color: '#9bb4c2', fontWeight: '700', fontSize: 14 },
 
   section: { marginBottom: 14, marginTop: 4 },
   addRow: { flexDirection: 'row', gap: 10 },
@@ -660,7 +667,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1a1a1a',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#dbe9f0',
   },
   addBtn: {
     backgroundColor: '#f4a261',
@@ -678,11 +685,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'white',
     borderWidth: 1.5,
-    borderColor: '#e0e0e0',
+    borderColor: '#dbe9f0',
     gap: 4,
   },
   mealChipEmoji: { fontSize: 20 },
-  mealChipLabel: { fontSize: 13, color: '#888', fontWeight: '600' },
+  mealChipLabel: { fontSize: 13, color: '#5b7a8c', fontWeight: '600' },
 
   glutenFreeRow: {
     flexDirection: 'row',
@@ -696,7 +703,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#ddd',
+    backgroundColor: '#dbe9f0',
     padding: 2,
     justifyContent: 'center',
   },
@@ -715,7 +722,7 @@ const styles = StyleSheet.create({
   toggleThumbOn: { alignSelf: 'flex-end' },
   glutenFreeText: { flex: 1 },
   glutenFreeLabel: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
-  glutenFreeHint: { fontSize: 12, color: '#888', marginTop: 2 },
+  glutenFreeHint: { fontSize: 12, color: '#5b7a8c', marginTop: 2 },
 
   startOverBtn: {
     alignSelf: 'center',
@@ -723,7 +730,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 16,
   },
-  startOverText: { color: '#888', fontSize: 14, textDecorationLine: 'underline' },
+  startOverText: { color: '#5b7a8c', fontSize: 14, textDecorationLine: 'underline' },
 
   countdownBox: {
     flexDirection: 'row',
@@ -749,7 +756,7 @@ const styles = StyleSheet.create({
   progressContainer: { marginTop: 4, marginBottom: 8 },
   progressTrack: {
     height: 6,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#dbe9f0',
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 10,
@@ -777,5 +784,5 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sampleBtnText: { color: '#d97b34', fontSize: 15, fontWeight: '600' },
-  generateHint: { textAlign: 'center', fontSize: 13, color: '#aaa', marginTop: 6 },
+  generateHint: { textAlign: 'center', fontSize: 13, color: '#9bb4c2', marginTop: 6 },
 });

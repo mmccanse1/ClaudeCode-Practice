@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
   scroll: { padding: 20, paddingBottom: 40 },
   title: { fontSize: 26, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
-  subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 16 },
+  subtitle: { fontSize: 14, color: '#5b7a8c', lineHeight: 20, marginBottom: 16 },
 
   mealHeader: { marginBottom: 8, marginTop: 4 },
   mealHeaderText: { fontSize: 15, fontWeight: '800', color: '#1d5c63', letterSpacing: 0.3 },

@@ -142,7 +142,12 @@ async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
 
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
   const { generateFoodPhoto } = await import('./imagenService');
-  return generateFoodPhoto(query);
+  const generated = await generateFoodPhoto(query);
+  if (generated) return generated;
+  // Fallback when image generation is unavailable (missing key, quota, or a
+  // transient failure): TheMealDB has free recipe thumbnails keyed by dish name.
+  // Without this, a failed generation left recipe cards with no photo at all.
+  return fetchMealDBRecipePhoto(query);
 }
 
 export async function fetchSceneryPhoto(query: string): Promise<string | null> {

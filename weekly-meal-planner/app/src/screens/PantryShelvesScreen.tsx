@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
 
   emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1a1a1a', marginBottom: 10 },
-  emptyText: { fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 22 },
+  emptyText: { fontSize: 14, color: '#5b7a8c', textAlign: 'center', lineHeight: 22 },
 
   scrollContent: { padding: H_PAD, paddingBottom: 40 },
 
@@ -224,13 +224,13 @@ const styles = StyleSheet.create({
   sectionEmoji: { fontSize: 22 },
   sectionHeaderText: { flex: 1 },
   sectionLabel: { fontSize: 15, fontWeight: '800' },
-  sectionCount: { fontSize: 12, color: '#999', marginTop: 1 },
+  sectionCount: { fontSize: 12, color: '#5b7a8c', marginTop: 1 },
 
   emptySectionRow: {
     paddingVertical: 16,
     paddingHorizontal: 14,
   },
-  emptySectionText: { fontSize: 13, color: '#bbb', fontStyle: 'italic' },
+  emptySectionText: { fontSize: 13, color: '#9bb4c2', fontStyle: 'italic' },
 
   gridWrap: { padding: 10, paddingTop: 4 },
 
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   placeholderEmoji: { fontSize: 24 },
   tileLabel: {
     fontSize: 12,
-    color: '#555',
+    color: '#3a5663',
     textAlign: 'center',
     marginTop: 4,
     fontWeight: '600',

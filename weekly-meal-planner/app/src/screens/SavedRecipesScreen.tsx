@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   list: { padding: 20, paddingBottom: 40 },
   header: { marginBottom: 20 },
   title: { fontSize: 26, fontWeight: '800', color: '#1a1a1a', marginBottom: 16 },
-  subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginTop: 12 },
+  subtitle: { fontSize: 14, color: '#5b7a8c', lineHeight: 20, marginTop: 12 },
 
   tabBar: {
     flexDirection: 'row',
@@ -198,14 +198,14 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   tabBtnActive: { backgroundColor: '#2e86ab' },
-  tabBtnText: { fontSize: 14, fontWeight: '600', color: '#888' },
+  tabBtnText: { fontSize: 14, fontWeight: '600', color: '#5b7a8c' },
   tabBtnTextActive: { color: 'white' },
 
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyIcon: { fontSize: 60, marginBottom: 16 },
   emptyText: {
     fontSize: 15,
-    color: '#888',
+    color: '#5b7a8c',
     textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 24,
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   menuCardBody: { flex: 1 },
   menuName: { fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 4 },
   menuMeta: { fontSize: 13, color: '#2e86ab', fontWeight: '600', marginBottom: 2 },
-  menuDate: { fontSize: 12, color: '#aaa' },
+  menuDate: { fontSize: 12, color: '#9bb4c2' },
   deleteBtn: { padding: 6 },
-  deleteBtnText: { color: '#ccc', fontSize: 16, fontWeight: '700' },
+  deleteBtnText: { color: '#c2d3dd', fontSize: 16, fontWeight: '700' },
 });

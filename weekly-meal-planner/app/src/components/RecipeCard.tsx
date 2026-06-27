@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    color: '#666',
+    color: '#5b7a8c',
     lineHeight: 20,
     marginBottom: 12,
     fontStyle: 'italic',
@@ -150,12 +150,12 @@ const styles = StyleSheet.create({
   },
   meta: {
     fontSize: 12,
-    color: '#888',
+    color: '#5b7a8c',
     fontWeight: '500',
   },
   refreshRow: {
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: '#eef4f8',
     marginTop: 12,
     paddingTop: 10,
     alignItems: 'flex-end',

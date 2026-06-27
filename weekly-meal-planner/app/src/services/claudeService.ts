@@ -109,7 +109,7 @@ const NUTRITION_SHAPE = `"nutrition": { "calories": 520, "protein": 32, "carbs":
 const MEAL_DIRECTIVE: Record<MealType, string> = {
   breakfast: 'These are BREAKFAST recipes — breakfast-appropriate dishes (eggs, oats, smoothies, yoghurt bowls, savoury breakfasts, etc.) that still fit the diet.',
   lunch: 'These are LUNCH recipes — lighter midday meals (salads, grain bowls, wraps, soups, etc.) that still fit the diet.',
-  dinner: 'These are DINNER recipes — satisfying evening main dishes that fit the diet.',
+  dinner: 'These are DINNER recipes — satisfying evening main dishes that fit the diet. Dinners should generally include a meat or seafood protein when the diet allows — aim for most of the week. Eggs are NOT acceptable as the primary dinner protein.',
 };
 
 const MEAL_LABEL: Record<MealType, string> = {
@@ -145,11 +145,15 @@ function normalizeNutrition(raw: any): Recipe['nutrition'] {
   const calories = num(raw.calories);
   const protein = num(raw.protein);
   const carbs = num(raw.carbs);
-  const sugar = num(raw.sugar);
-  const sodium = num(raw.sodium);
-  if (calories === null || protein === null || carbs === null || sugar === null || sodium === null) {
+  // Core macros (calories, protein, carbs) must be present for the panel to be
+  // meaningful. Sugar and sodium are secondary: if the model omits one, default
+  // it to 0 rather than discarding the whole nutrition object — a single missing
+  // field should never hide the macros (regression observed after Phase 8).
+  if (calories === null || protein === null || carbs === null) {
     return undefined;
   }
+  const sugar = num(raw.sugar) ?? 0;
+  const sodium = num(raw.sodium) ?? 0;
   return { calories, protein, carbs, sugar, sodium };
 }
 

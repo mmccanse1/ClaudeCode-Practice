@@ -408,14 +408,14 @@ export default function MealPlanScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
-  list: { padding: 20, paddingBottom: 40 },
-  header: { marginBottom: 8 },
-  title: { fontSize: 26, fontWeight: '800', color: '#1a1a1a', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 16 },
+  list: { padding: 16, paddingBottom: 36 },
+  header: { marginBottom: 6 },
+  title: { fontSize: 22, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
+  subtitle: { fontSize: 13, color: '#5b7a8c', lineHeight: 19, marginBottom: 12 },
   saveMenuBtn: {
     backgroundColor: '#f4a261',
     borderRadius: 12,
-    paddingVertical: 13,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   saveMenuBtnSaved: { backgroundColor: '#1d5c63' },
@@ -446,10 +446,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    marginTop: 12,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 8,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 6,
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   dayRowLeft: { flex: 1 },
-  dayName: { fontSize: 17, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
+  dayName: { fontSize: 16, fontWeight: '800', color: '#1a1a1a', marginBottom: 4 },
   mealTagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   mealTag: {
     backgroundColor: '#f5f0e8',
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 8,
   },
-  mealTagText: { fontSize: 12, color: '#666', fontWeight: '600' },
+  mealTagText: { fontSize: 12, color: '#5b7a8c', fontWeight: '600' },
   dayArrow: { fontSize: 30, fontWeight: '300', marginLeft: 10 },
 
   toast: {
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#f4a261',
   },
-  upsellText: { fontSize: 14, color: '#555', fontWeight: '500', lineHeight: 20 },
+  upsellText: { fontSize: 14, color: '#3a5663', fontWeight: '500', lineHeight: 20 },
 
   replanBtn: {
     backgroundColor: 'white',

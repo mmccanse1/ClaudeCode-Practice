@@ -51,7 +51,12 @@ async function generateAndCache(
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => {});
 
   let b64: string | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // Bound each attempt with an abort timeout so a hung image request can't stall
+  // recipe (re)generation — the "New recipe" button used to spin indefinitely
+  // when Imagen was slow. Two attempts keep the worst-case wait predictable.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
     try {
       const res = await fetch(`${IMAGEN_URL}?key=${apiKey}`, {
         method: 'POST',
@@ -60,13 +65,16 @@ async function generateAndCache(
           instances: [{ prompt }],
           parameters: { sampleCount: 1, aspectRatio: '1:1' },
         }),
+        signal: controller.signal,
       });
       if (!res.ok) break;
       const data = await res.json();
       b64 = data.predictions?.[0]?.bytesBase64Encoded ?? null;
       if (b64) break;
     } catch {
-      // transient error — retry
+      // transient error or timeout — retry once
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
   if (!b64) return null;

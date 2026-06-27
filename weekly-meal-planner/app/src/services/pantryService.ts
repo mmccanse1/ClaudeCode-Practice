@@ -92,12 +92,25 @@ export async function getPantryItems(): Promise<string[]> {
   return toFlat(await readPantry());
 }
 
+// True if the (already normalized) item is present in ANY pantry section.
+// Checking across all sections — not just the one categorizeItem would pick —
+// guards against duplicate entries when a recurring item (milk, eggs) is scanned
+// again, or when categorization shifts between app versions. Duplicate entries
+// also bloat the cached photo index over time, so this is the single choke point.
+function existsInPantry(pantry: CategorizedPantry, item: string): boolean {
+  return (
+    pantry.refrigerated.includes(item) ||
+    pantry.spices.includes(item) ||
+    pantry.dry_goods.includes(item)
+  );
+}
+
 export async function addPantryItem(item: string): Promise<string[]> {
   const trimmed = item.trim().toLowerCase();
   if (!trimmed) return getPantryItems();
   const pantry = await readPantry();
-  const section = categorizeItem(trimmed);
-  if (!pantry[section].includes(trimmed)) {
+  if (!existsInPantry(pantry, trimmed)) {
+    const section = categorizeItem(trimmed);
     pantry[section] = [...pantry[section], trimmed].sort();
     await writePantry(pantry);
   }
@@ -108,8 +121,9 @@ export async function addPantryItems(newItems: string[]): Promise<string[]> {
   const pantry = await readPantry();
   const cleaned = newItems.map(i => i.trim().toLowerCase()).filter(Boolean);
   cleaned.forEach(item => {
-    const section = categorizeItem(item);
-    if (!pantry[section].includes(item)) pantry[section].push(item);
+    if (!existsInPantry(pantry, item)) {
+      pantry[categorizeItem(item)].push(item);
+    }
   });
   Object.values(pantry).forEach(arr => arr.sort());
   await writePantry(pantry);
