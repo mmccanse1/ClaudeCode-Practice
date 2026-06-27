@@ -100,9 +100,6 @@ export default function HomeScreen({ navigation }: Props) {
                 <View style={styles.featuredText}>
                   <View style={styles.featuredLabelRow}>
                     <Text style={[styles.featuredLabel, { color: diet.color }]}>{diet.label}</Text>
-                    <View style={styles.freeBadge}>
-                      <Text style={styles.freeBadgeText}>FREE</Text>
-                    </View>
                   </View>
                   <Text style={styles.featuredTagline}>{diet.tagline}</Text>
                 </View>
