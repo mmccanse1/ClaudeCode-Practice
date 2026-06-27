@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import { saveAndShareRecipeCard } from '../services/cardGenerator';
 import { saveRecipe, unsaveRecipe, isRecipeSaved } from '../services/savedRecipesService';
 import { DIET_TYPES } from '../constants/dietTypes';
+import RecipeShareCard from '../components/RecipeShareCard';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RecipeDetail'>;
 
@@ -24,6 +26,7 @@ export default function RecipeDetailScreen({ route }: Props) {
   const [sharing, setSharing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const shareRef = useRef<View>(null);
 
   useEffect(() => {
     isRecipeSaved(recipe).then(setSaved);
@@ -51,7 +54,13 @@ export default function RecipeDetailScreen({ route }: Props) {
   async function handleShare() {
     setSharing(true);
     try {
-      await saveAndShareRecipeCard(recipe, dietType);
+      // The off-screen card's hero is a local file already shown above, so it's
+      // warm in the image cache; a short settle keeps capture from racing layout.
+      if (recipe.photoUrl) await new Promise(r => setTimeout(r, 200));
+      const uri = await captureRef(shareRef, { format: 'png', quality: 1, result: 'tmpfile' });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: recipe.name });
+      }
     } catch (e: any) {
       Alert.alert('Couldn’t create the share card', 'Something went wrong building your recipe card. Please try sharing again.');
     } finally {
@@ -177,12 +186,20 @@ export default function RecipeDetailScreen({ route }: Props) {
           <Text style={styles.sourceNote}>{dietConfig.source}</Text>
         </View>
       </ScrollView>
+
+      {/* Off-screen render target captured to a PNG for sharing. */}
+      <View style={styles.offscreen} pointerEvents="none">
+        <View ref={shareRef} collapsable={false}>
+          <RecipeShareCard recipe={recipe} dietType={dietType} />
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
+  offscreen: { position: 'absolute', left: -10000, top: 0 },
   hero: { width: '100%', height: 280, resizeMode: 'cover' },
   heroPlaceholder: {
     width: '100%',
