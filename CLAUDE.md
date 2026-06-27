@@ -26,10 +26,14 @@ cd C:\Users\thoma\ClaudeCode_Practice\ClaudeCode-Practice\weekly-meal-planner\ap
 These items were flagged by the owner and should be addressed before or alongside the next review pipeline run.
 
 ### UI / Layout
+- **Home screen**: Scale all proportions so the home screen fits on a single screen — no scrolling required. Achievable given the other layout changes already planned.
 - **Diet type selector**: Replace current display with a dropdown labeled "Choose a Diet"
 - **Current Menus**: Add a dropdown for "Current Menus" that allows filtering/selection by diet type
 - **How It Works section**: Keep the button where it is, but shrink the entire section by 10% proportionately — reduce scroll length on the menu page
 - **YourWeeklyMenu**: Tighten layout to fit screen size; Day buttons can be shrunk to reclaim space
+- **Pantry photo**: Re-scale to appropriate proportions
+- **My Pantry subline**: Remove the "Items here" subline under the My Pantry heading
+- **ScanReceipt page**: Too busy for first-time users — simplify and reduce cognitive load on initial use
 - **CSS / Color**: Replace grey with light blue throughout
 
 ### Bugs
@@ -40,6 +44,9 @@ These items were flagged by the owner and should be addressed before or alongsid
 - **Dinner protein rule**: Dinners must include a meat protein when the selected diet type permits it — eggs are explicitly excluded from dinner protein
 - **Macros missing**: Numerical macro values (calories, protein, carbs, fat) are not displaying — this is likely an unintended consequence of the Phase 8 legal copy changes. Numerical values are fine to show; only health *claim* language was removed. Restore macros.
 - **Pantry deduplication (storage fix)**: When a receipt is scanned, recurring items (e.g. milk, eggs) must be matched against existing pantry entries and quantities updated — not added as new entries. Accumulating duplicate entries also bloats cached image/data storage over time. Add a catch-guard on receipt scan: if item already exists in pantry, increment quantity; do not create a duplicate.
+
+### Future Considerations (Deferred)
+- **User Accounts + Allergy Profiles**: Allow users to create accounts and input dietary allergies so the app can filter recipes and meal plans accordingly. Deferred — revisit if/when pursuing formal health advice legitimization.
 
 ---
 
