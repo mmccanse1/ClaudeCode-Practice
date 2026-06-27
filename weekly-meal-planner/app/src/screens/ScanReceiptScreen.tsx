@@ -457,10 +457,12 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               </View>
             </View>
 
-            {/* Meal selection + dietary options are revealed only once there are
-                ingredients to plan from — keeps the first-run screen focused on
-                the single next action (scan / add) instead of every control. */}
-            {items.length > 0 && (
+            {/* Meal selection + dietary options are revealed once there is
+                anything to plan from — scanned/added items OR a stocked pantry.
+                A genuine first-timer (empty pantry, nothing scanned) gets the
+                clean screen; a returning user with a pantry keeps full control
+                (and can still generate pantry-only, so the controls must show). */}
+            {(items.length > 0 || pantryCount > 0) && (
               <>
                 {/* Meal selection */}
                 <View style={styles.section}>

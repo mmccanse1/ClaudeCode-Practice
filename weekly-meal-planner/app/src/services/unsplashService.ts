@@ -128,15 +128,21 @@ export async function fetchIngredientPhoto(query: string): Promise<string | null
 }
 
 async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
+  // Bounded with an abort timeout: this runs in the awaited recipe-refresh path
+  // as the Imagen fallback, so an unresponsive request must not stall the swap.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8_000);
   try {
     const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) return null;
     const data = await res.json();
     const meals: any[] = data.meals ?? [];
     return meals[0]?.strMealThumb ?? null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
