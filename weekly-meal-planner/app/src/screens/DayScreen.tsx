@@ -27,6 +27,7 @@ export default function DayScreen({ navigation, route }: Props) {
   const dietType: DietType = route.params.dietType;
   const glutenFree = route.params.glutenFree ?? false;
   const lowSalt = route.params.lowSalt ?? false;
+  const diabetic = route.params.diabetic ?? false;
   const isSavedView = route.params.saved ?? false;
 
   // Hold the full week so a refresh can persist the whole updated plan.
@@ -43,7 +44,7 @@ export default function DayScreen({ navigation, route }: Props) {
     const mealType: MealType = target.mealType ?? 'dinner';
     setRefreshingKey(recipeKey(target));
     try {
-      const newRecipe = await regenerateRecipe(ingredients, recipes, day, dietType, glutenFree, mealType, lowSalt);
+      const newRecipe = await regenerateRecipe(ingredients, recipes, day, dietType, glutenFree, mealType, lowSalt, diabetic);
       const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
       const replacement = { ...newRecipe, photoUrl, dietType, mealType };
       const updated = recipes.map(r =>

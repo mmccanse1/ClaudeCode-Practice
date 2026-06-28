@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { Recipe, DietType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
 import { sortByMeal, mealMeta } from '../constants/mealTypes';
@@ -18,9 +18,12 @@ interface Props {
   dietType: DietType;
   /** How many pantry/receipt ingredients this week was built from (for the stat line). */
   ingredientCount?: number;
+  /** A local food-photo URI (from a recipe with an image) shown as the card's
+   *  hero band, so the shared week looks like food, not a to-do list. */
+  heroPhotoUrl?: string;
 }
 
-export default function WeekShareCard({ recipes, dietType, ingredientCount }: Props) {
+export default function WeekShareCard({ recipes, dietType, ingredientCount, heroPhotoUrl }: Props) {
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const accent = dietConfig.color;
 
@@ -38,6 +41,9 @@ export default function WeekShareCard({ recipes, dietType, ingredientCount }: Pr
         <Text style={styles.brandName}>Weekly Meal Planner</Text>
         <Text style={styles.brandTag}>Cook what you already bought</Text>
       </View>
+
+      {/* One real food photo so the shared week reads as food, not a checklist. */}
+      {heroPhotoUrl ? <Image source={{ uri: heroPhotoUrl }} style={styles.hero} /> : null}
 
       <View style={styles.body}>
         <Text style={[styles.dietLabel, { color: accent }]}>{dietConfig.label} week</Text>
@@ -95,6 +101,7 @@ const styles = StyleSheet.create({
   },
   brandName: { color: 'white', fontSize: 22, fontWeight: '800', letterSpacing: 0.3 },
   brandTag: { color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: '600', marginTop: 2 },
+  hero: { width: '100%', height: 150, resizeMode: 'cover' },
   body: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 8 },
   dietLabel: {
     fontSize: 12,

@@ -1,9 +1,10 @@
 /** Estimated per-serving nutrition. All values are numbers in fixed units:
- *  calories = kcal, protein/carbs/sugar = grams, sodium = milligrams. */
+ *  calories = kcal, protein/carbs/fat/sugar = grams, sodium = milligrams. */
 export interface Nutrition {
   calories: number;
   protein: number;
   carbs: number;
+  fat: number;
   sugar: number;
   sodium: number;
 }
@@ -41,11 +42,11 @@ export type DietType = 'mediterranean' | 'keto' | 'paleo' | 'vegetarian' | 'vega
 
 export type RootStackParamList = {
   Home: undefined;
-  ScanReceipt: { dietType: DietType };
+  ScanReceipt: { dietType: DietType; fromPantry?: boolean };
   Pantry: undefined;
   PantryShelf: undefined;
-  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType; glutenFree?: boolean; lowSalt?: boolean; pantrySavedCount?: number; saved?: boolean };
-  Day: { day: string; recipes: Recipe[]; ingredients: string[]; dietType: DietType; glutenFree?: boolean; lowSalt?: boolean; saved?: boolean };
+  MealPlan: { recipes: Recipe[]; ingredients: string[]; dietType?: DietType; glutenFree?: boolean; lowSalt?: boolean; diabetic?: boolean; pantrySavedCount?: number; saved?: boolean };
+  Day: { day: string; recipes: Recipe[]; ingredients: string[]; dietType: DietType; glutenFree?: boolean; lowSalt?: boolean; diabetic?: boolean; saved?: boolean };
   RecipeDetail: { recipe: Recipe; dietType?: DietType };
   SavedRecipes: undefined;
 };

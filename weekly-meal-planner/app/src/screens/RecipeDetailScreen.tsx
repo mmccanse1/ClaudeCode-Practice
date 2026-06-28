@@ -216,6 +216,7 @@ export default function RecipeDetailScreen({ route }: Props) {
                   ['CAL', `${recipe.nutrition.calories}`],
                   ['PROTEIN', `${recipe.nutrition.protein}g`],
                   ['CARBS', `${recipe.nutrition.carbs}g`],
+                  ['FAT', `${recipe.nutrition.fat ?? 0}g`],
                   ['SUGAR', `${recipe.nutrition.sugar}g`],
                   ['SODIUM', `${recipe.nutrition.sodium}mg`],
                 ] as const).map(([label, value]) => (

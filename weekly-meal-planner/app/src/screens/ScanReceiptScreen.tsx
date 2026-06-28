@@ -62,7 +62,7 @@ const GENERATING_STEPS = [
 ];
 
 export default function ScanReceiptScreen({ navigation, route }: Props) {
-  const { dietType } = route.params;
+  const { dietType, fromPantry } = route.params;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
 
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
@@ -73,6 +73,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
   const [lowSalt, setLowSalt] = useState(false);
+  const [diabetic, setDiabetic] = useState(false);
   // Which meals to build. Dinner on by default keeps the original one-tap flow.
   const [meals, setMeals] = useState<Record<MealType, boolean>>({
     breakfast: false,
@@ -141,6 +142,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         setNewItem('');
         setGlutenFree(false);
         setLowSalt(false);
+        setDiabetic(false);
         setMeals({ breakfast: false, lunch: false, dinner: true });
         setRetryCountdown(0);
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -297,7 +299,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
       const selectedMeals = MEAL_TYPES.filter(m => meals[m.id]).map(m => m.id);
       const mealsToUse = selectedMeals.length > 0 ? selectedMeals : (['dinner'] as MealType[]);
-      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse, lowSalt);
+      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse, lowSalt, diabetic);
 
       // Fetch photos in small batches rather than all 7–21 at once. Bursting the
       // whole menu at Imagen trips its rate limit and leaves some cards stuck on
@@ -336,6 +338,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         dietType,
         glutenFree,
         lowSalt,
+        diabetic,
         pantrySavedCount: toSave.length,
       });
     } catch (e: any) {
@@ -372,9 +375,11 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         contentContainerStyle={styles.container}
         ListHeaderComponent={
           <>
-            <Text style={styles.title}>Scan Your Receipt</Text>
+            <Text style={styles.title}>{fromPantry ? 'Cook From Your Pantry' : 'Scan Your Receipt'}</Text>
             <Text style={styles.subtitle}>
-              Photograph your grocery receipt and we'll extract the ingredients automatically.
+              {fromPantry
+                ? "No receipt needed — we'll build your menu from your saved pantry. Adjust the options below, then generate."
+                : "Photograph your grocery receipt and we'll extract the ingredients automatically."}
             </Text>
 
             <View style={styles.miniSteps}>
@@ -401,6 +406,22 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
             <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry} activeOpacity={0.85}>
               <Text style={styles.sampleBtnText}>🥗  Start with a sample pantry →</Text>
             </TouchableOpacity>
+
+            {/* Discoverability: a returning user with a stocked pantry can skip the
+                receipt entirely and cook from what's already saved. Shown only when
+                nothing's been scanned yet so it doesn't compete with the item list. */}
+            {items.length === 0 && pantryCount > 0 && (
+              <TouchableOpacity
+                style={[styles.pantryCookBtn, { borderColor: dietConfig.color }]}
+                onPress={handleGenerate}
+                disabled={generating || retryCountdown > 0}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.pantryCookBtnText, { color: dietConfig.color }]}>
+                  🥫  Skip scanning — cook from my {pantryCount} pantry item{pantryCount !== 1 ? 's' : ''} →
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {receiptUri && (
               <Image source={{ uri: receiptUri }} style={styles.receiptPreview} />
@@ -506,34 +527,36 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                   </View>
                 </View>
 
-                {/* Dietary options — two equal, side-by-side toggle buttons */}
+                {/* Dietary options — compact chips on a single horizontal row so
+                    adding a third (Diabetic) keeps the screen to one view. */}
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Dietary options</Text>
-                  <View style={styles.dietOptionRow}>
-                    <TouchableOpacity
-                      style={styles.dietOptionCard}
-                      onPress={() => setGlutenFree(prev => !prev)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.toggle, glutenFree && styles.toggleOn]}>
-                        <View style={[styles.toggleThumb, glutenFree && styles.toggleThumbOn]} />
-                      </View>
-                      <Text style={[styles.dietOptionLabel, glutenFree && styles.dietOptionLabelOn]}>
-                        Gluten-Free
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.dietOptionCard}
-                      onPress={() => setLowSalt(prev => !prev)}
-                      activeOpacity={0.7}
-                    >
-                      <View style={[styles.toggle, lowSalt && styles.toggleOn]}>
-                        <View style={[styles.toggleThumb, lowSalt && styles.toggleThumbOn]} />
-                      </View>
-                      <Text style={[styles.dietOptionLabel, lowSalt && styles.dietOptionLabelOn]}>
-                        Low Salt
-                      </Text>
-                    </TouchableOpacity>
+                  <View style={styles.dietChipRow}>
+                    {([
+                      ['Gluten-Free', glutenFree, () => setGlutenFree(prev => !prev)],
+                      ['Low Salt', lowSalt, () => setLowSalt(prev => !prev)],
+                      ['Diabetic', diabetic, () => setDiabetic(prev => !prev)],
+                    ] as const).map(([label, on, toggle]) => (
+                      <TouchableOpacity
+                        key={label}
+                        style={[
+                          styles.dietChip,
+                          on && { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color },
+                        ]}
+                        onPress={toggle}
+                        activeOpacity={0.7}
+                      >
+                        <View style={[styles.dietChipCheck, on && { backgroundColor: dietConfig.color, borderColor: dietConfig.color }]}>
+                          {on && <Text style={styles.dietChipCheckMark}>✓</Text>}
+                        </View>
+                        <Text
+                          style={[styles.dietChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}
+                          numberOfLines={1}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                 </View>
               </>
@@ -718,6 +741,44 @@ const styles = StyleSheet.create({
   },
   mealChipEmoji: { fontSize: 20 },
   mealChipLabel: { fontSize: 13, color: '#5b7a8c', fontWeight: '600' },
+
+  dietChipRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  dietChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderWidth: 1.5,
+    borderColor: '#dbe9f0',
+  },
+  dietChipCheck: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#c2d3dd',
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dietChipCheckMark: { color: 'white', fontSize: 11, fontWeight: '800' },
+  dietChipLabel: { fontSize: 12.5, fontWeight: '600', color: '#5b7a8c', flexShrink: 1 },
+
+  pantryCookBtn: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    marginBottom: 14,
+  },
+  pantryCookBtnText: { fontSize: 15, fontWeight: '700', textAlign: 'center' },
 
   dietOptionRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   dietOptionCard: {
