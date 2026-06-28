@@ -21,6 +21,28 @@ The original idea list below is kept for reference.
 
 ---
 
+## 🥔🍰 Stand-Alone Sides & Desserts (toggle: paired vs. solo)
+
+**The insight (owner, 2026-06-28):** *"If someone wants to just make a week's worth of side dishes, go ahead and let them. Maybe they came up with a main on their own. I'm certainly not one to limit a home cook!"* — same applies to desserts.
+
+**Current behavior (Build 3a — sides):** Sides are a *dependent* course. They generate only as an add-on alongside mains, and the app forces a dinner when no main is picked, so sides are always paired to a dinner and carry a `pairingNote`. There is no way to ask for *just* 5 sides (or, later, *just* 3 desserts) on their own. Desserts (Build 3b) will inherit the same paired-only assumption unless this is addressed.
+
+**The idea:** Let sides and desserts be generated **stand-alone** — a full short course with no main required — for cooks who've already planned their own entrées.
+
+**Proposed UX:** a small toggle on the Add-ons control, e.g. **"Pair to my dinners" ⇄ "Make on their own"** (default = paired). When "on their own":
+- Don't force a dinner just to satisfy pairing.
+- Skip the pairing pass entirely; `buildSidePairing([])` already has the standalone fallback (varied sides, `pairingNote` becomes a generic serving suggestion). Decide whether to drop `pairingNote` entirely in solo mode or keep it as a loose suggestion.
+- Allow generating sides and/or desserts as the *only* output of a generation (no breakfast/lunch/dinner selected).
+
+**Implementation notes (low effort — the seams already exist):**
+- `generateMealPlan` already accepts `includeSides` and runs sides as a separate pass; the empty-dinners fallback in `buildSidePairing(dinners)` already handles "no mains." The main work is *UI*: stop forcing dinner in `ScanReceiptScreen.handleGenerate` when only add-ons are selected, and add the paired/solo toggle state.
+- Desserts (Build 3b) should be built with this toggle in mind from the start so it doesn't need retrofitting — mirror whatever sides land on.
+- Edge: a solo-sides week is `mealTypeCount === 1` → renders as the single-meal flat list (5 cards). Confirm that reads well (it should — same path as a dinner-only week).
+
+**Files to touch:** `ScanReceiptScreen.tsx` (toggle + don't-force-dinner logic), `claudeService.ts` (`generateSides`/future `generateDesserts` already standalone-capable; maybe a `paired: boolean` param to drop the pairing note cleanly).
+
+---
+
 ## 📊 Macro Breakdown on Recipe Cards
 
 **The insight (from focus group):**

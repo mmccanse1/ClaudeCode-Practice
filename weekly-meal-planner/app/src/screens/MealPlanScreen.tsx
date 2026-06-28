@@ -15,15 +15,16 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Recipe, DietType, MealType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
-import { sortByMeal, mealMeta } from '../constants/mealTypes';
+import { sortByMeal } from '../constants/mealTypes';
 import RecipeCard from '../components/RecipeCard';
+import DayCard from '../components/DayCard';
 import ConfettiBurst from '../components/ConfettiBurst';
 import WeekShareCard from '../components/WeekShareCard';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import { saveMenu, getSavedMenus } from '../services/savedMenusService';
 import { regenerateRecipe, RATE_LIMIT_ERROR, AI_PARSE_ERROR } from '../services/claudeService';
-import { fetchFoodPhoto } from '../services/unsplashService';
+import { fetchFoodPhoto, fetchDayScenePhoto } from '../services/unsplashService';
 import {
   getCurrentMealPlan,
   saveCurrentMealPlan,
@@ -41,6 +42,11 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'MealPlan'>;
 
 const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+// How long to wait before retrying day-scene images that were rate-limited. Sits
+// just past the image service's ~20s client cooldown so the retry actually fires
+// against a cleared limit rather than the cooldown.
+const IMAGEN_COOLDOWN_RETRY_MS = 22_000;
 
 export default function MealPlanScreen({ navigation, route }: Props) {
   const { ingredients, pantrySavedCount } = route.params;
@@ -64,6 +70,10 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const isFromFreshScan = pantrySavedCount != null;
   const shareRef = useRef<View>(null);
   const [sharingWeek, setSharingWeek] = useState(false);
+  // Generated "served on a table" scene per multi-dish day (e.g. dinner + side),
+  // keyed by day name. Falls back to the main dish's own photo until/if a scene
+  // is available. Single-dish days don't use this — they show their recipe photo.
+  const [scenePhotos, setScenePhotos] = useState<Record<string, string>>({});
 
   // For the active plan, re-read storage whenever the screen regains focus so
   // a recipe swapped on the Day screen is reflected here (e.g. for Save Menu).
@@ -249,6 +259,70 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     .map(day => ({ day, meals: sortByMeal(recipes.filter(r => r.day === day)) }))
     .filter(d => d.meals.length > 0);
 
+  // The dinner (or first dish) of a day, and a photo to show before any scene
+  // image resolves.
+  const mainOf = (meals: Recipe[]) =>
+    meals.find(m => (m.mealType ?? 'dinner') === 'dinner') ?? meals[0];
+  const fallbackPhotoOf = (meals: Recipe[]) =>
+    mainOf(meals)?.photoUrl ?? meals.find(m => m.photoUrl)?.photoUrl;
+
+  // For each day that plates more than one dish, generate a served-meal scene
+  // (dinner + side together). These run AFTER the menu's 12 dish photos, so to
+  // avoid bursting Imagen's per-minute limit they're spaced out; a card shows the
+  // dinner photo immediately and upgrades to the scene when it lands. Any scene
+  // that gets rate-limited is retried once after the cooldown clears, so a
+  // white-plate fallback doesn't stick.
+  useEffect(() => {
+    if (isSingleMeal) return;
+    let cancelled = false;
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const sceneQuery = (meals: Recipe[]) => {
+      const main = mainOf(meals);
+      const side = meals.find(m => m.mealType === 'side');
+      return side && main ? `${main.name} with ${side.name}` : main?.name ?? '';
+    };
+
+    (async () => {
+      const sceneDays = daysWithMeals.filter(d => d.meals.length >= 2);
+      const pending: { day: string; meals: Recipe[] }[] = [];
+
+      for (const { day, meals } of sceneDays) {
+        if (cancelled) return;
+        const query = sceneQuery(meals);
+        if (!query) continue;
+        let uri: string | undefined;
+        try { uri = (await fetchDayScenePhoto(query)) ?? undefined; } catch { uri = undefined; }
+        if (cancelled) return;
+        if (uri) {
+          const got = uri;
+          setScenePhotos(prev => ({ ...prev, [day]: got }));
+        } else {
+          // Show the dinner photo for now; queue a retry once limits clear.
+          const fb = fallbackPhotoOf(meals);
+          if (fb) setScenePhotos(prev => ({ ...prev, [day]: prev[day] ?? fb }));
+          pending.push({ day, meals });
+        }
+        await sleep(900);
+      }
+
+      if (pending.length === 0 || cancelled) return;
+      await sleep(IMAGEN_COOLDOWN_RETRY_MS);
+      for (const { day, meals } of pending) {
+        if (cancelled) return;
+        const query = sceneQuery(meals);
+        let uri: string | undefined;
+        try { uri = (await fetchDayScenePhoto(query)) ?? undefined; } catch { uri = undefined; }
+        if (cancelled) return;
+        if (uri) {
+          const got = uri;
+          setScenePhotos(prev => ({ ...prev, [day]: got }));
+        }
+        await sleep(900);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [recipes, isSingleMeal]);
+
   const Header = (
     <View style={styles.header}>
       <Text style={styles.title}>Your Weekly Menu</Text>
@@ -365,8 +439,10 @@ export default function MealPlanScreen({ navigation, route }: Props) {
             keyExtractor={item => item.day}
             ListHeaderComponent={Header}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.dayRow}
+              <DayCard
+                day={item.day}
+                photoUrl={scenePhotos[item.day] ?? fallbackPhotoOf(item.meals)}
+                loading={item.meals.length >= 2 && !scenePhotos[item.day] && !fallbackPhotoOf(item.meals)}
                 onPress={() =>
                   navigation.navigate('Day', {
                     day: item.day,
@@ -379,23 +455,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
                     saved: isSavedView,
                   })
                 }
-                activeOpacity={0.8}
-              >
-                <View style={styles.dayRowLeft}>
-                  <Text style={styles.dayName}>{item.day}</Text>
-                  <View style={styles.mealTagRow}>
-                    {item.meals.map(r => {
-                      const meta = mealMeta(r.mealType);
-                      return (
-                        <View key={`${r.day}-${r.mealType ?? 'dinner'}`} style={styles.mealTag}>
-                          <Text style={styles.mealTagText}>{meta.emoji} {meta.label}</Text>
-                        </View>
-                      );
-                    })}
-                  </View>
-                </View>
-                <Text style={[styles.dayArrow, { color: dietConfig.color }]}>›</Text>
-              </TouchableOpacity>
+              />
             )}
             ListFooterComponent={Footer}
             contentContainerStyle={styles.list}

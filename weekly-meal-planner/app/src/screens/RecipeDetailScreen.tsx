@@ -151,6 +151,13 @@ export default function RecipeDetailScreen({ route }: Props) {
           <Text style={styles.name}>{recipe.name}</Text>
           <Text style={styles.description}>{recipe.description}</Text>
 
+          {recipe.pairingNote ? (
+            <View style={styles.pairingCard}>
+              <Text style={styles.pairingIcon}>🍽</Text>
+              <Text style={styles.pairingText}>{recipe.pairingNote}</Text>
+            </View>
+          ) : null}
+
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <Text style={styles.metaLabel}>PREP</Text>
@@ -358,6 +365,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 20,
   },
+  // Side-dish pairing callout (only present on sides).
+  pairingCard: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    backgroundColor: '#e8f5e9',
+    borderWidth: 1,
+    borderColor: '#a8dadc',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+  },
+  pairingIcon: { fontSize: 18 },
+  pairingText: { flex: 1, fontSize: 14, color: '#1d5c63', fontWeight: '600', lineHeight: 20 },
   metaRow: {
     flexDirection: 'row',
     backgroundColor: 'white',

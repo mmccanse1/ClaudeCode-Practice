@@ -42,6 +42,9 @@ export default function RecipeCard({ recipe, onPress, onRefresh, refreshing, ref
         <Text style={styles.description} numberOfLines={2}>
           {recipe.description}
         </Text>
+        {recipe.pairingNote ? (
+          <Text style={styles.pairing} numberOfLines={2}>🍽  {recipe.pairingNote}</Text>
+        ) : null}
         <View style={styles.metaRow}>
           <Text style={styles.meta}>⏱ Prep: {recipe.prepTime}</Text>
           <Text style={styles.meta}>🍳 Cook: {recipe.cookTime}</Text>
@@ -142,6 +145,18 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
     fontStyle: 'italic',
+  },
+  // Side-dish pairing line (only present on sides).
+  pairing: {
+    fontSize: 12,
+    color: '#1d5c63',
+    fontWeight: '600',
+    backgroundColor: '#e8f5e9',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    lineHeight: 17,
   },
   metaRow: {
     flexDirection: 'row',

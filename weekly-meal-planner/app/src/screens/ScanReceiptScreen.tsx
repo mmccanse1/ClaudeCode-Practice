@@ -28,7 +28,7 @@ import { getPantryItems, addPantryItems } from '../services/pantryService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan, hasEverGeneratedPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES } from '../constants/dietTypes';
-import { isMealLocked } from '../constants/subscription';
+import { isMealLocked, IS_PREMIUM } from '../constants/subscription';
 
 // Shared produce/aromatics every sample pantry starts from — diet-neutral.
 const SAMPLE_BASE: string[] = [
@@ -52,14 +52,22 @@ function samplePantryFor(diet: DietType): string[] {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
-const GENERATING_STEPS = [
+// Each step shows for ~3s, so this list needs enough runway to cover a full
+// generation (now longer with sides + day-scene images): ~12 steps ≈ 36s. These
+// are the lead-in beats; the FINAL beat is added per-menu (meal-aware) below,
+// since "Dinner is served!" is wrong for a Pro breakfast/lunch/sides menu.
+const GENERATING_STEPS_LEAD = [
   'Our chefs are thinking…',
+  'Raiding the pantry…',
   'Chopping fresh veggies…',
+  'Heating the pans…',
   'Whipping up recipes…',
   'Sauces are simmering…',
+  'Balancing the flavors…',
   'Seasoning to taste…',
-  'Plating your dishes…',
-  'Dinner is served!',
+  'Setting the table…',
+  'Dishing it all up…',
+  'Adding the final garnish…',
 ];
 
 export default function ScanReceiptScreen({ navigation, route }: Props) {
@@ -87,10 +95,15 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   // First-time users get the "sample pantry" helper; hide it once they've made a plan.
   const [hasGeneratedBefore, setHasGeneratedBefore] = useState(false);
   // Which meals to build. Dinner on by default keeps the original one-tap flow.
+  // The three mains drive the picker grid; `side` is a Pro add-on (5/week, paired
+  // to dinners) toggled from the Add-ons row. It lives in the same map but never
+  // enters the main meal grid or the per-meal generation loop (which iterate
+  // MEAL_TYPES, the three mains only).
   const [meals, setMeals] = useState<Record<MealType, boolean>>({
     breakfast: false,
     lunch: false,
     dinner: true,
+    side: false,
   });
   const [retryCountdown, setRetryCountdown] = useState(0);
   const [pantryCount, setPantryCount] = useState(0);
@@ -104,6 +117,15 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const isParsingRef = useRef(false);
   const premiumTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  // Final loading beat is meal-aware: "Dinner is served!" only fits a dinner-only
+  // menu (every free menu, or a Pro dinner-only one). A Pro menu with breakfast,
+  // lunch, or sides gets a neutral closer instead.
+  const isDinnerOnly = meals.dinner && !meals.breakfast && !meals.lunch && !meals.side;
+  const generatingSteps = [
+    ...GENERATING_STEPS_LEAD,
+    isDinnerOnly ? 'Dinner is served!' : 'Your menu is ready!',
+  ];
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -140,7 +162,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
     if (generating) {
       setGeneratingStep(0);
       stepTimerRef.current = setInterval(() => {
-        setGeneratingStep(prev => Math.min(prev + 1, GENERATING_STEPS.length - 1));
+        setGeneratingStep(prev => Math.min(prev + 1, generatingSteps.length - 1));
       }, 3000);
     } else {
       if (stepTimerRef.current) clearInterval(stepTimerRef.current);
@@ -162,7 +184,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         setLowSalt(false);
         setDiabetic(false);
         setUsePantry(false);
-        setMeals({ breakfast: false, lunch: false, dinner: true });
+        setMeals({ breakfast: false, lunch: false, dinner: true, side: false });
         setRetryCountdown(0);
         if (countdownRef.current) clearInterval(countdownRef.current);
       }
@@ -325,12 +347,15 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
       const selectedMeals = MEAL_TYPES.filter(m => meals[m.id]).map(m => m.id);
       const mealsToUse = selectedMeals.length > 0 ? selectedMeals : (['dinner'] as MealType[]);
-      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse, lowSalt, diabetic);
+      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse, lowSalt, diabetic, meals.side);
 
       // Fetch photos in small batches rather than all 7–21 at once. Bursting the
-      // whole menu at Imagen trips its rate limit and leaves some cards stuck on
-      // the placeholder; capped concurrency keeps the hit-rate high.
-      const PHOTO_BATCH = 3;
+      // whole menu at Imagen trips its per-minute rate limit, and one 429 trips a
+      // client cooldown that nulls out every image after it — which is why the
+      // later recipes (sides) were landing on the placeholder. Low concurrency +
+      // a gap between batches keeps the burst under the limit so sides get photos.
+      const PHOTO_BATCH = 2;
+      const PHOTO_BATCH_GAP_MS = 1100;
       const withPhotos: typeof recipes = [];
       for (let i = 0; i < recipes.length; i += PHOTO_BATCH) {
         const slice = recipes.slice(i, i + PHOTO_BATCH);
@@ -348,6 +373,10 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               : { ...slice[j], dietType, photoUrl: undefined }
           );
         });
+        // Space out subsequent batches (skip the wait after the final one).
+        if (i + PHOTO_BATCH < recipes.length) {
+          await new Promise(r => setTimeout(r, PHOTO_BATCH_GAP_MS));
+        }
       }
 
       if (!isMountedRef.current) return;
@@ -589,28 +618,46 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                     })}
                   </View>
 
-                  {/* Add-ons (Sides / Desserts) — Pro. Locked placeholders for now;
-                      generation is wired in a later build. */}
+                  {/* Add-ons — Pro. Sides are built (togglable when Pro is on);
+                      Desserts are not built yet, so they stay locked. */}
                   <Text style={styles.addonLabel}>Add-ons</Text>
                   <View style={styles.mealChipRow}>
                     {([
-                      ['sides', 'Sides', '🥔'],
-                      ['desserts', 'Desserts', '🍰'],
-                    ] as const).map(([id, label, emoji]) => (
-                      <TouchableOpacity
-                        key={id}
-                        style={[styles.mealChip, styles.mealChipLocked]}
-                        onPress={() => showPremiumNotice(`${label} are a Pro feature`)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.proBadge}>
-                          <Text style={styles.proBadgeText}>PRO</Text>
-                        </View>
-                        <Text style={styles.mealChipEmoji}>{emoji}</Text>
-                        <Text style={styles.mealChipLabel}>{label}</Text>
-                      </TouchableOpacity>
-                    ))}
+                      ['Sides', '🥔', IS_PREMIUM],   // built — togglable under Pro
+                      ['Desserts', '🍰', false],      // not built yet — always locked
+                    ] as const).map(([label, emoji, available]) => {
+                      const on = label === 'Sides' && meals.side;
+                      return (
+                        <TouchableOpacity
+                          key={label}
+                          style={[
+                            styles.mealChip,
+                            on && { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color },
+                            !available && styles.mealChipLocked,
+                          ]}
+                          onPress={() =>
+                            available
+                              ? setMeals(prev => ({ ...prev, side: !prev.side }))
+                              : showPremiumNotice(`${label} are a Pro feature`)
+                          }
+                          activeOpacity={0.7}
+                        >
+                          {!available && (
+                            <View style={styles.proBadge}>
+                              <Text style={styles.proBadgeText}>PRO</Text>
+                            </View>
+                          )}
+                          <Text style={styles.mealChipEmoji}>{emoji}</Text>
+                          <Text style={[styles.mealChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}>
+                            {label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
+                  {meals.side && (
+                    <Text style={styles.addonHint}>5 sides (Mon–Fri), each paired to one of your dinners.</Text>
+                  )}
                 </View>
 
                 {/* Dietary options — compact chips on a single horizontal row so
@@ -669,11 +716,11 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                   <View
                     style={[
                       styles.progressFill,
-                      { width: `${Math.round(((generatingStep + 1) / GENERATING_STEPS.length) * 100)}%` },
+                      { width: `${Math.round(((generatingStep + 1) / generatingSteps.length) * 100)}%` },
                     ]}
                   />
                 </View>
-                <Text style={styles.progressLabel}>{GENERATING_STEPS[generatingStep]}</Text>
+                <Text style={styles.progressLabel}>{generatingSteps[generatingStep]}</Text>
               </View>
             )}
 
@@ -855,6 +902,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 6,
   },
+  addonHint: { fontSize: 12, color: '#5b7a8c', fontStyle: 'italic', marginTop: 8 },
   premiumToast: {
     position: 'absolute',
     bottom: 28,

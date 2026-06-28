@@ -49,13 +49,26 @@ function cacheKey(kind, query) {
 }
 
 function promptFor(kind, query) {
-  return kind === 'ingredient'
-    ? `professional product photography of ${query}, clean white background, sharp focus, studio lighting, ingredient shot`
-    : `professional food photography of ${query}, overhead shot, white ceramic plate, warm natural light, appetizing, restaurant quality`;
+  if (kind === 'ingredient') {
+    return `professional product photography of ${query}, clean white background, sharp focus, studio lighting, ingredient shot`;
+  }
+  if (kind === 'day_scene') {
+    // A served-meal scene (a dinner + its side) for the day card. We want a
+    // close-up table shot with empty table surface in the lower foreground so the
+    // app can place the day-of-week label there without covering the food. No
+    // text — the app renders the label itself.
+    return `close-up food photography of ${query}, plated and served together on a rustic wooden dining table, two dishes, warm natural light, cozy home dinner, shallow depth of field, appetizing, generous empty table surface in the lower foreground, absolutely no text, no words, no letters`;
+  }
+  return `professional food photography of ${query}, overhead shot, white ceramic plate, warm natural light, appetizing, restaurant quality`;
+}
+
+// Day-scene cards read better wide; dish/ingredient shots stay square.
+function aspectRatioFor(kind) {
+  return kind === 'day_scene' ? '4:3' : '1:1';
 }
 
 // Returns base64 string, or { quotaHit: true } on 429, or null on any other miss.
-async function generateImage(prompt, apiKey) {
+async function generateImage(prompt, apiKey, aspectRatio = '1:1') {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 20_000);
   try {
@@ -64,7 +77,7 @@ async function generateImage(prompt, apiKey) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio: '1:1' },
+        parameters: { sampleCount: 1, aspectRatio },
       }),
       signal: controller.signal,
     });
@@ -107,7 +120,10 @@ export default {
     }
 
     const query = typeof payload?.query === 'string' ? payload.query.trim() : '';
-    const kind = payload?.kind === 'ingredient' ? 'ingredient' : 'food';
+    const kind =
+      payload?.kind === 'ingredient' ? 'ingredient'
+      : payload?.kind === 'day_scene' ? 'day_scene'
+      : 'food';
     if (!query) return json({ error: 'missing query' }, 400);
 
     const key = cacheKey(kind, query);
@@ -120,7 +136,7 @@ export default {
     const apiKey = env.GEMINI_API_KEY;
     if (!apiKey) return json({ image: null, reason: 'no_api_key' });
 
-    const result = await generateImage(promptFor(kind, query), apiKey);
+    const result = await generateImage(promptFor(kind, query), apiKey, aspectRatioFor(kind));
     if (result && result.quotaHit) return json({ image: null, reason: 'quota' });
     if (!result) return json({ image: null, reason: 'miss' });
 

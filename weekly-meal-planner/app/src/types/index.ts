@@ -27,7 +27,11 @@ export interface NutritionPremium {
   vitaminB12: number;
 }
 
-export type MealType = 'breakfast' | 'lunch' | 'dinner';
+// 'side' is a Pro add-on course, not a main meal slot. It rides the same recipe
+// pipeline (generation, cards, detail, regenerate) but generates 5/week (Mon–Fri)
+// paired to the week's dinners rather than a full 7. Keep it last so it sorts
+// after the three mains everywhere mealType ordering is applied.
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'side';
 
 export interface Recipe {
   name: string;
@@ -48,6 +52,9 @@ export interface Recipe {
   searchQuery: string;
   photoUrl?: string;
   dietType?: DietType;
+  /** Sides only — which dinner this side is meant to complement. Nullable on
+   *  every other record type (breakfast/lunch/dinner). */
+  pairingNote?: string;
 }
 
 export interface MealPlan {

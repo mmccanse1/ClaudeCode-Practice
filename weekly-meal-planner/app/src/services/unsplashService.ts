@@ -156,6 +156,13 @@ export async function fetchFoodPhoto(query: string): Promise<string | null> {
   return fetchMealDBRecipePhoto(query);
 }
 
+// A served-meal table scene for a day card (dinner + side). No free fallback —
+// returns null on a miss so the caller can drop back to the main dish's photo.
+export async function fetchDayScenePhoto(query: string): Promise<string | null> {
+  const { generateScenePhoto } = await import('./imagenService');
+  return generateScenePhoto(query);
+}
+
 export async function fetchSceneryPhoto(query: string): Promise<string | null> {
   const url = await searchUnsplash(query, 'landscape');
   if (url) return url;

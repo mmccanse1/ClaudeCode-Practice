@@ -3,8 +3,10 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 const PHOTO_DIR = `${FileSystem.documentDirectory}recipe_photos/`;
 const INGREDIENT_DIR = `${FileSystem.documentDirectory}ingredient_photos/`;
+const SCENE_DIR = `${FileSystem.documentDirectory}scene_photos/`;
 const INDEX_KEY = '@recipe_photo_index_v1';
 const INGREDIENT_INDEX_KEY = '@ingredient_photo_index_v1';
+const SCENE_INDEX_KEY = '@scene_photo_index_v1';
 const MAX_CACHE_ENTRIES = 100;
 const IMAGEN_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict';
@@ -22,10 +24,13 @@ const LEGACY_GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
 // daily quota being exhausted), skip further calls for a short cooldown. Without
 // this, every image in a 7–21 image batch retries against a limit that won't
 // clear this instant, so generation crawls and still ends on placeholders.
-const IMAGEN_COOLDOWN_MS = 60_000;
+// Kept short: a 429 is usually the per-minute limit, which clears in well under a
+// minute, and a long freeze cascades — it would null out the sides + day-scene
+// images that are requested right after the dinners.
+const IMAGEN_COOLDOWN_MS = 20_000;
 let imagenCooldownUntil = 0;
 
-type PhotoKind = 'food' | 'ingredient';
+type PhotoKind = 'food' | 'ingredient' | 'day_scene';
 
 function cacheKey(query: string): string {
   return query.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').slice(0, 80);
@@ -34,9 +39,13 @@ function cacheKey(query: string): string {
 // Used only by the legacy direct-Imagen path; the proxy builds the prompt
 // server-side so it can be tuned without shipping an app update.
 function promptFor(kind: PhotoKind, query: string): string {
-  return kind === 'ingredient'
-    ? `professional product photography of ${query}, clean white background, sharp focus, studio lighting, ingredient shot`
-    : `professional food photography of ${query}, overhead shot, white ceramic plate, warm natural light, appetizing, restaurant quality`;
+  if (kind === 'ingredient') {
+    return `professional product photography of ${query}, clean white background, sharp focus, studio lighting, ingredient shot`;
+  }
+  if (kind === 'day_scene') {
+    return `close-up food photography of ${query}, plated and served together on a rustic wooden dining table, warm natural light, cozy home dinner, appetizing, generous empty table surface in the lower foreground, absolutely no text, no words`;
+  }
+  return `professional food photography of ${query}, overhead shot, white ceramic plate, warm natural light, appetizing, restaurant quality`;
 }
 
 async function getIndex(storageKey: string): Promise<Record<string, string>> {
@@ -102,7 +111,7 @@ async function fetchImageBase64(query: string, kind: PhotoKind): Promise<string 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             instances: [{ prompt: promptFor(kind, query) }],
-            parameters: { sampleCount: 1, aspectRatio: '1:1' },
+            parameters: { sampleCount: 1, aspectRatio: kind === 'day_scene' ? '4:3' : '1:1' },
           }),
           signal: controller.signal,
         });
@@ -164,4 +173,16 @@ export async function generateIngredientPhoto(query: string): Promise<string | n
     if (info.exists) return index[key];
   }
   return generateAndCache(query, 'ingredient', INGREDIENT_DIR, INGREDIENT_INDEX_KEY, key);
+}
+
+// A served-meal "table scene" for a day card (dinner + side together). Returns
+// null on any miss/quota so the caller can fall back to the main dish's photo.
+export async function generateScenePhoto(query: string): Promise<string | null> {
+  const key = cacheKey(query);
+  const index = await getIndex(SCENE_INDEX_KEY);
+  if (index[key]) {
+    const info = await FileSystem.getInfoAsync(index[key]);
+    if (info.exists) return index[key];
+  }
+  return generateAndCache(query, 'day_scene', SCENE_DIR, SCENE_INDEX_KEY, key);
 }

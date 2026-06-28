@@ -158,17 +158,21 @@ Add it as a sibling key to "nutrition" in every object, exactly this shape:
 ${PREMIUM_NUTRITION_SHAPE}`;
 }
 
-// Frames a 7-recipe generation as a specific meal of the day.
+// Frames a 7-recipe generation as a specific meal of the day. Sides do NOT use
+// this path (they generate 5/week via generateSides) — the 'side' entry exists
+// only to satisfy the Record and is never read by the main generation loop.
 const MEAL_DIRECTIVE: Record<MealType, string> = {
   breakfast: 'These are BREAKFAST recipes — breakfast-appropriate dishes (eggs, oats, smoothies, yoghurt bowls, savoury breakfasts, etc.) that still fit the diet.',
   lunch: 'These are LUNCH recipes — lighter midday meals (salads, grain bowls, wraps, soups, etc.) that still fit the diet.',
   dinner: 'These are DINNER recipes — satisfying evening main dishes that fit the diet.',
+  side: 'These are SIDE dishes that complement a dinner main.',
 };
 
 const MEAL_LABEL: Record<MealType, string> = {
   breakfast: 'breakfast',
   lunch: 'lunch',
   dinner: 'dinner',
+  side: 'side',
 };
 
 // Dinner protein guidance is diet-aware. Meat-allowing diets center a meat or
@@ -238,6 +242,70 @@ const RECIPE_SHAPE = `[
     "ingredients": ["quantity + ingredient"],
     "steps": ["Full sentence step."],
     "nutritionNotes": "string (1 sentence about why this recipe fits the diet)",
+    ${NUTRITION_SHAPE},
+    "searchQuery": "concise food photo search term"
+  }
+]`;
+
+const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+// ---- Sides (Pro add-on) ----------------------------------------------------
+// Sides ride the same recipe schema (so they reuse every card/detail/regenerate
+// path) but generate as a short course: 5/week, Monday–Friday, each paired to a
+// dinner. The core + variety rules below are shared by the bulk (5) and the
+// single-regenerate (1) paths; pairing context is injected separately so the
+// model can read the week's actual dinners before choosing sides.
+const SIDES_CORE_RULES = `SIDE-DISH RULES:
+- A side complements a dinner main without competing with it — it's the thing that makes the plate feel complete.
+- Build every side from the available ingredients plus common pantry staples. Do NOT introduce ingredients that appear nowhere in the list above.
+- Keep each side to 30 minutes or less of active cooking.
+- Apply the active diet (and any Gluten-Free / Low Salt / Diabetic modifiers) strictly — a side obeys the same diet rules as the mains.`;
+
+const SIDES_VARIETY_RULES = `VARIETY across the week's sides:
+- No two sides may share the same base vegetable, grain, or legume.
+- Vary the cooking method day to day — do not roast everything. Rotate across roasted, sautéed, steamed, raw/dressed, and braised.
+- Every side must be a distinct dish.`;
+
+// Pairing context: feed the week's dinners in so sides complement those specific
+// mains. When there are no dinners (rare — the app forces dinner when no main is
+// chosen), fall back to standalone sides and skip the pairing rules.
+function buildSidePairing(dinners: Recipe[]): string {
+  if (dinners.length === 0) {
+    return `There is no dinner menu to pair against this week, so create well-rounded, varied sides that suit a typical dinner. Set "pairingNote" to a brief serving suggestion.`;
+  }
+  // Include each dinner's ingredient line so the model can actively avoid
+  // repeating a main's components in its paired side (the no-overlap rule below).
+  const list = dinners
+    .slice()
+    .sort((a, b) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day))
+    .map(r => {
+      const ings = (r.ingredients ?? []).join(', ');
+      return `- ${r.day}: ${r.name}${ings ? ` — uses: ${ings}` : ''}`;
+    })
+    .join('\n');
+  return `THE WEEK'S DINNERS — pair your sides to complement these specific mains:
+${list}
+
+PAIRING RULES:
+- Flavor family: match each side to the dominant flavor profile of the dinners (e.g. Mediterranean dinners → lemon/herb/olive-oil sides). Do not force fusion clashes.
+- Texture contrast: pair a fresh, bright, or acidic side with a rich or braised main; a heavier side can carry a lean, grilled main.
+- Don't double the starch: if a dinner already centers on pasta, rice, or potatoes, make its side vegetable-forward.
+- NO INGREDIENT OVERLAP: a side must NOT reuse a primary ingredient of the dinner it complements — its protein, hero/main vegetable, grain, legume, or starch base. Build the side around a DIFFERENT main component so the plate has variety. (Shared seasonings, oils, acids, herbs, and basic pantry staples — salt, pepper, garlic, lemon, olive oil, spices — are fine to reuse.)
+- For EACH side, set "pairingNote" to name the specific dinner it best complements, e.g. "Pairs well with Thursday's lemon-garlic chicken".`;
+}
+
+const SIDE_RECIPE_SHAPE = `[
+  {
+    "name": "string",
+    "description": "string (1-2 sentences)",
+    "day": "Monday",
+    "prepTime": "string e.g. 10 mins",
+    "cookTime": "string e.g. 20 mins",
+    "servings": 4,
+    "ingredients": ["quantity + ingredient"],
+    "steps": ["Full sentence step."],
+    "pairingNote": "Pairs well with [the dinner it complements].",
+    "nutritionNotes": "string (1 sentence about why this side fits the diet)",
     ${NUTRITION_SHAPE},
     "searchQuery": "concise food photo search term"
   }
@@ -417,6 +485,11 @@ export async function regenerateRecipe(
   lowSalt: boolean = false,
   diabetic: boolean = false
 ): Promise<Recipe> {
+  // Sides have their own single-recipe prompt (pairing + side rules), so branch
+  // before the main-meal path below.
+  if (mealType === 'side') {
+    return regenerateSide(ingredients, existingRecipes, dayToReplace, dietType, glutenFree, lowSalt, diabetic);
+  }
   const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
   // The recipe being replaced is the one matching BOTH day and meal type.
   const isTarget = (r: Recipe) =>
@@ -536,19 +609,149 @@ ${RECIPE_SHAPE}`,
   });
 }
 
+// Generates the 5 weekday sides for the week, paired to the supplied dinners.
+// Pro-only at the call site; runs AFTER the mains so it can read the dinner list.
+async function generateSides(
+  ingredients: string[],
+  dietType: DietType,
+  glutenFree: boolean,
+  lowSalt: boolean,
+  diabetic: boolean,
+  dinners: Recipe[]
+): Promise<Recipe[]> {
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
+
+  const text = await callClaude([
+    {
+      type: 'text',
+      text: `${systemPrompt}
+
+Available ingredients: ${ingredients.join(', ')}
+You may also use common pantry staples (pepper, olive oil, garlic, lemon, herbs, and basic spices).
+
+Generate exactly 5 side dishes, one per weekday (Monday–Friday).
+${SIDES_CORE_RULES}
+
+${buildSidePairing(dinners)}
+
+${SIDES_VARIETY_RULES}
+
+${NUTRITION_INSTRUCTION}${premiumNutritionBlock()}
+
+Return ONLY a valid JSON array of 5 objects with this exact shape:
+${SIDE_RECIPE_SHAPE}`,
+    },
+  ], { timeoutMs: 60_000, maxTokens: 8192 });
+
+  const parsed = extractJson<Recipe[]>(text);
+  if (
+    !Array.isArray(parsed) ||
+    parsed.length !== 5 ||
+    parsed.some(r => !r.day || typeof r.day !== 'string')
+  ) {
+    throw new Error(AI_PARSE_ERROR);
+  }
+  return parsed.map(r => {
+    const nutrition = normalizeNutrition(r.nutrition);
+    return {
+      ...r,
+      mealType: 'side' as MealType,
+      pairingNote: typeof r.pairingNote === 'string' ? r.pairingNote : undefined,
+      nutrition,
+      nutritionPremium: normalizeNutritionPremium((r as any).nutrition_premium, nutrition?.sugar),
+    };
+  });
+}
+
+// Swap a single side for a new one — kept distinct from the week's other sides
+// and re-paired to the existing dinners.
+async function regenerateSide(
+  ingredients: string[],
+  existingRecipes: Recipe[],
+  dayToReplace: string,
+  dietType: DietType,
+  glutenFree: boolean,
+  lowSalt: boolean,
+  diabetic: boolean
+): Promise<Recipe> {
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
+  const dinners = existingRecipes.filter(r => (r.mealType ?? 'dinner') === 'dinner');
+  const otherSides = existingRecipes
+    .filter(r => r.mealType === 'side' && r.day !== dayToReplace)
+    .map(r => `${r.day}: ${r.name}`)
+    .join(', ');
+
+  const text = await callClaude([
+    {
+      type: 'text',
+      text: `${systemPrompt}
+
+Available ingredients: ${ingredients.join(', ')}
+You may also use common pantry staples (pepper, olive oil, garlic, lemon, herbs, and basic spices).
+
+Generate exactly 1 new side dish for ${dayToReplace}.
+${SIDES_CORE_RULES}
+
+${buildSidePairing(dinners)}
+
+The week's other sides are already set — your new side must be DIFFERENT from all of these (no shared base vegetable, grain, or legume; use a different cooking method):
+${otherSides || '(none yet)'}
+
+${NUTRITION_INSTRUCTION}${premiumNutritionBlock()}
+
+Return ONLY a valid JSON object (not an array) with this exact shape:
+{
+  "name": "string",
+  "description": "string (1-2 sentences)",
+  "day": "${dayToReplace}",
+  "prepTime": "string e.g. 10 mins",
+  "cookTime": "string e.g. 20 mins",
+  "servings": 4,
+  "ingredients": ["quantity + ingredient"],
+  "steps": ["Full sentence step."],
+  "pairingNote": "Pairs well with [the dinner it complements].",
+  "nutritionNotes": "string (1 sentence diet benefit)",
+  ${NUTRITION_SHAPE},
+  "searchQuery": "concise food photo search term"
+}`,
+    },
+  ], { timeoutMs: 45_000 });
+
+  const recipe = extractJson<Recipe>(text);
+  if (!recipe || typeof recipe !== 'object' || !recipe.day || typeof recipe.day !== 'string' || !recipe.name) {
+    throw new Error(AI_PARSE_ERROR);
+  }
+  const nutrition = normalizeNutrition(recipe.nutrition);
+  return {
+    ...recipe,
+    mealType: 'side',
+    pairingNote: typeof recipe.pairingNote === 'string' ? recipe.pairingNote : undefined,
+    nutrition,
+    nutritionPremium: normalizeNutritionPremium((recipe as any).nutrition_premium, nutrition?.sugar),
+  };
+}
+
 export async function generateMealPlan(
   ingredients: string[],
   dietType: DietType = 'mediterranean',
   glutenFree: boolean = false,
   meals: MealType[] = ['dinner'],
   lowSalt: boolean = false,
-  diabetic: boolean = false
+  diabetic: boolean = false,
+  includeSides: boolean = false
 ): Promise<Recipe[]> {
-  // Only generate the meals the user asked for — one model call per meal type,
-  // run in parallel. A flat list of all (day × meal) recipes comes back.
-  const selected: MealType[] = meals.length > 0 ? meals : ['dinner'];
+  // Mains: one model call per meal type, run in parallel. 'side' never goes
+  // through this loop — it's a dependent pass below that needs the dinners first.
+  const selected: MealType[] = (meals.length > 0 ? meals : (['dinner'] as MealType[])).filter(m => m !== 'side');
   const perMeal = await Promise.all(
     selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal, lowSalt, diabetic))
   );
-  return perMeal.flat();
+  const mains = perMeal.flat();
+
+  // Sides are Pro-only and pair to the week's dinners, so they generate AFTER
+  // the mains and take the generated dinner list as pairing context.
+  if (!includeSides || !IS_PREMIUM) return mains;
+  const dinners = mains.filter(r => (r.mealType ?? 'dinner') === 'dinner');
+  const sides = await generateSides(ingredients, dietType, glutenFree, lowSalt, diabetic, dinners);
+  return [...mains, ...sides];
 }
