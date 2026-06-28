@@ -26,7 +26,7 @@ import {
 } from '../services/claudeService';
 import { getPantryItems, addPantryItems } from '../services/pantryService';
 import { fetchFoodPhoto } from '../services/unsplashService';
-import { saveCurrentMealPlan } from '../services/currentMealPlanService';
+import { saveCurrentMealPlan, hasEverGeneratedPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES } from '../constants/dietTypes';
 
 // Shared produce/aromatics every sample pantry starts from — diet-neutral.
@@ -62,7 +62,7 @@ const GENERATING_STEPS = [
 ];
 
 export default function ScanReceiptScreen({ navigation, route }: Props) {
-  const { dietType, fromPantry } = route.params;
+  const { dietType } = route.params;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
 
   const [receiptUri, setReceiptUri] = useState<string | null>(null);
@@ -74,6 +74,12 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [glutenFree, setGlutenFree] = useState(false);
   const [lowSalt, setLowSalt] = useState(false);
   const [diabetic, setDiabetic] = useState(false);
+  // Pantry chosen as the source (instead of scanning). Reveals the meal/dietary
+  // options + Generate WITHOUT generating — generation only fires on the bottom
+  // Generate button.
+  const [usePantry, setUsePantry] = useState(false);
+  // First-time users get the "sample pantry" helper; hide it once they've made a plan.
+  const [hasGeneratedBefore, setHasGeneratedBefore] = useState(false);
   // Which meals to build. Dinner on by default keeps the original one-tap flow.
   const [meals, setMeals] = useState<Record<MealType, boolean>>({
     breakfast: false,
@@ -95,6 +101,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   useEffect(() => {
     isMountedRef.current = true;
     getPantryItems().then(pantryItems => setPantryCount(pantryItems.length));
+    hasEverGeneratedPlan().then(setHasGeneratedBefore);
     return () => { isMountedRef.current = false; };
   }, []);
 
@@ -143,6 +150,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         setGlutenFree(false);
         setLowSalt(false);
         setDiabetic(false);
+        setUsePantry(false);
         setMeals({ breakfast: false, lunch: false, dinner: true });
         setRetryCountdown(0);
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -375,11 +383,9 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         contentContainerStyle={styles.container}
         ListHeaderComponent={
           <>
-            <Text style={styles.title}>{fromPantry ? 'Cook From Your Pantry' : 'Scan Your Receipt'}</Text>
+            <Text style={styles.title}>Scan Your Receipt</Text>
             <Text style={styles.subtitle}>
-              {fromPantry
-                ? "No receipt needed — we'll build your menu from your saved pantry. Adjust the options below, then generate."
-                : "Photograph your grocery receipt and we'll extract the ingredients automatically."}
+              Photograph your grocery receipt and we'll extract the ingredients automatically.
             </Text>
 
             <View style={styles.miniSteps}>
@@ -403,22 +409,25 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               <Text style={styles.cameraBtnLabel}>Scan with Camera</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry} activeOpacity={0.85}>
-              <Text style={styles.sampleBtnText}>🥗  Start with a sample pantry →</Text>
-            </TouchableOpacity>
+            {/* Sample pantry is a first-run helper only — once the user has made a
+                plan it just adds clutter, so hide it for returning users. */}
+            {!hasGeneratedBefore && (
+              <TouchableOpacity style={styles.sampleBtn} onPress={loadSamplePantry} activeOpacity={0.85}>
+                <Text style={styles.sampleBtnText}>🥗  Start with a sample pantry →</Text>
+              </TouchableOpacity>
+            )}
 
-            {/* Discoverability: a returning user with a stocked pantry can skip the
-                receipt entirely and cook from what's already saved. Shown only when
-                nothing's been scanned yet so it doesn't compete with the item list. */}
-            {items.length === 0 && pantryCount > 0 && (
+            {/* Returning user with a stocked pantry can cook straight from it, no
+                receipt. Tapping only REVEALS the options (it does not generate);
+                generation happens on the bottom Generate button. */}
+            {items.length === 0 && pantryCount > 0 && !usePantry && (
               <TouchableOpacity
                 style={[styles.pantryCookBtn, { borderColor: dietConfig.color }]}
-                onPress={handleGenerate}
-                disabled={generating || retryCountdown > 0}
+                onPress={() => setUsePantry(true)}
                 activeOpacity={0.85}
               >
                 <Text style={[styles.pantryCookBtnText, { color: dietConfig.color }]}>
-                  🥫  Skip scanning — cook from my {pantryCount} pantry item{pantryCount !== 1 ? 's' : ''} →
+                  🥫  Cook from My Pantry ({pantryCount} item{pantryCount !== 1 ? 's' : ''}) →
                 </Text>
               </TouchableOpacity>
             )}
@@ -496,7 +505,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                 A genuine first-timer (empty pantry, nothing scanned) gets the
                 clean screen; a returning user with a pantry keeps full control
                 (and can still generate pantry-only, so the controls must show). */}
-            {(items.length > 0 || pantryCount > 0) && (
+            {(items.length > 0 || usePantry) && (
               <>
                 {/* Meal selection */}
                 <View style={styles.section}>
@@ -546,12 +555,10 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                         onPress={toggle}
                         activeOpacity={0.7}
                       >
-                        <View style={[styles.dietChipCheck, on && { backgroundColor: dietConfig.color, borderColor: dietConfig.color }]}>
-                          {on && <Text style={styles.dietChipCheckMark}>✓</Text>}
-                        </View>
                         <Text
                           style={[styles.dietChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}
                           numberOfLines={1}
+                          allowFontScaling={false}
                         >
                           {label}
                         </Text>
@@ -597,7 +604,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               style={[
                 styles.generateBtn,
                 { backgroundColor: dietConfig.color },
-                (generating || (checkedCount === 0 && pantryCount === 0) || retryCountdown > 0) && styles.btnDisabled,
+                (generating || (checkedCount === 0 && !usePantry) || retryCountdown > 0) && styles.btnDisabled,
               ]}
               onPress={handleGenerate}
               disabled={generating || (checkedCount === 0 && pantryCount === 0) || retryCountdown > 0}
@@ -614,9 +621,11 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               )}
             </TouchableOpacity>
 
-            {!generating && checkedCount === 0 && pantryCount === 0 && (
+            {!generating && checkedCount === 0 && !usePantry && (
               <Text style={styles.generateHint}>
-                Scan a receipt or add items above to get started
+                {pantryCount > 0
+                  ? 'Tap “Cook from My Pantry” above, scan a receipt, or add items'
+                  : 'Scan a receipt or add items above to get started'}
               </Text>
             )}
           </>
@@ -745,29 +754,16 @@ const styles = StyleSheet.create({
   dietChipRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   dietChip: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
     backgroundColor: 'white',
     borderRadius: 12,
     paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderWidth: 1.5,
     borderColor: '#dbe9f0',
   },
-  dietChipCheck: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: '#c2d3dd',
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dietChipCheckMark: { color: 'white', fontSize: 11, fontWeight: '800' },
-  dietChipLabel: { fontSize: 12.5, fontWeight: '600', color: '#5b7a8c', flexShrink: 1 },
+  dietChipLabel: { fontSize: 13, fontWeight: '600', color: '#5b7a8c' },
 
   pantryCookBtn: {
     backgroundColor: 'white',

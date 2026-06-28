@@ -221,8 +221,8 @@ export default function RecipeDetailScreen({ route }: Props) {
                   ['SODIUM', `${recipe.nutrition.sodium}mg`],
                 ] as const).map(([label, value]) => (
                   <View key={label} style={styles.macroItem}>
-                    <Text style={styles.macroValue}>{value}</Text>
-                    <Text style={styles.macroLabel}>{label}</Text>
+                    <Text style={styles.macroValue} numberOfLines={1} allowFontScaling={false}>{value}</Text>
+                    <Text style={styles.macroLabel} numberOfLines={1} allowFontScaling={false}>{label}</Text>
                   </View>
                 ))}
               </View>
@@ -378,8 +378,8 @@ const styles = StyleSheet.create({
   },
   macrosRow: { flexDirection: 'row', justifyContent: 'space-between' },
   macroItem: { flex: 1, alignItems: 'center' },
-  macroValue: { fontSize: 16, fontWeight: '800', color: '#2e86ab' },
-  macroLabel: { fontSize: 9, color: '#9bb4c2', fontWeight: '700', letterSpacing: 0.5, marginTop: 3 },
+  macroValue: { fontSize: 14, fontWeight: '800', color: '#2e86ab' },
+  macroLabel: { fontSize: 9, color: '#9bb4c2', fontWeight: '700', letterSpacing: 0.3, marginTop: 3 },
   macrosDisclaimer: {
     fontSize: 11,
     color: '#9bb4c2',

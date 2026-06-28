@@ -156,31 +156,14 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.secondaryBtnText}>🗄  Manage Pantry</Text>
           </TouchableOpacity>
 
-          {/* Pantry as an active ingredient resource. A real CTA (not just a
-              status line) so users discover they can cook straight from the
-              pantry — no receipt needed. Uses the diet of an existing menu if
-              there is one, else Mediterranean; the diet can be changed by
-              starting from the "Choose a Diet" picker instead. */}
-          {pantryCount > 0 ? (
-            <TouchableOpacity
-              style={styles.pantryCtaBtn}
-              activeOpacity={0.85}
-              onPress={() =>
-                navigation.navigate('ScanReceipt', {
-                  dietType: (activePlans[0]?.dietType ?? 'mediterranean') as DietType,
-                  fromPantry: true,
-                })
-              }
-            >
-              <Text style={styles.pantryCtaText}>
-                🍳  Cook from my pantry · {pantryCount} item{pantryCount !== 1 ? 's' : ''} ready →
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={styles.pantryStatus}>
-              Pantry: 0 items — add some to cook from your shelves
-            </Text>
-          )}
+          {/* Pantry as an active ingredient resource (Option C) — informational
+              only. Choosing the pantry as a menu source happens on the scan
+              screen, after a diet is picked (so we never guess a diet here). */}
+          <Text style={styles.pantryStatus}>
+            {pantryCount > 0
+              ? `Pantry: ${pantryCount} item${pantryCount !== 1 ? 's' : ''} ready`
+              : 'Pantry: 0 items — add some to cook from your shelves'}
+          </Text>
 
           {hasActivated && (
             <TouchableOpacity
@@ -290,17 +273,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 14,
   },
-  pantryCtaBtn: {
-    backgroundColor: '#eaf3f8',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#bcdcec',
-  },
-  pantryCtaText: { color: '#2e86ab', fontSize: 14, fontWeight: '700', textAlign: 'center' },
 
   savedBtn: {
     backgroundColor: 'white',
