@@ -28,6 +28,7 @@ import { getPantryItems, addPantryItems } from '../services/pantryService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { saveCurrentMealPlan, hasEverGeneratedPlan } from '../services/currentMealPlanService';
 import { DIET_TYPES } from '../constants/dietTypes';
+import { isMealLocked } from '../constants/subscription';
 
 // Shared produce/aromatics every sample pantry starts from — diet-neutral.
 const SAMPLE_BASE: string[] = [
@@ -72,6 +73,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   // Manual add is collapsed by default (keeps the screen clean) and expands on
   // tap — it stays available as the OCR-miss recovery path and no-scan entry.
   const [showManualAdd, setShowManualAdd] = useState(false);
+  // Inline "Pro feature" toast for locked premium options (meals, add-ons).
+  const [premiumNotice, setPremiumNotice] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
@@ -99,13 +102,17 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const isMountedRef = useRef(true);
   const isGeneratingRef = useRef(false);
   const isParsingRef = useRef(false);
+  const premiumTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     isMountedRef.current = true;
     getPantryItems().then(pantryItems => setPantryCount(pantryItems.length));
     hasEverGeneratedPlan().then(setHasGeneratedBefore);
-    return () => { isMountedRef.current = false; };
+    return () => {
+      isMountedRef.current = false;
+      if (premiumTimerRef.current) clearTimeout(premiumTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -295,6 +302,12 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
     setChecked({});
     setNewItem('');
     setShowManualAdd(false);
+  }
+
+  function showPremiumNotice(msg: string) {
+    setPremiumNotice(msg);
+    if (premiumTimerRef.current) clearTimeout(premiumTimerRef.current);
+    premiumTimerRef.current = setTimeout(() => setPremiumNotice(null), 2600);
   }
 
   async function handleGenerate() {
@@ -545,17 +558,28 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                   </Text>
                   <View style={styles.mealChipRow}>
                     {MEAL_TYPES.map(m => {
-                      const on = meals[m.id];
+                      const locked = isMealLocked(m.id);
+                      const on = !locked && meals[m.id];
                       return (
                         <TouchableOpacity
                           key={m.id}
                           style={[
                             styles.mealChip,
                             on && { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color },
+                            locked && styles.mealChipLocked,
                           ]}
-                          onPress={() => setMeals(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+                          onPress={() =>
+                            locked
+                              ? showPremiumNotice(`${m.label} is a Pro feature`)
+                              : setMeals(prev => ({ ...prev, [m.id]: !prev[m.id] }))
+                          }
                           activeOpacity={0.7}
                         >
+                          {locked && (
+                            <View style={styles.proBadge}>
+                              <Text style={styles.proBadgeText}>PRO</Text>
+                            </View>
+                          )}
                           <Text style={styles.mealChipEmoji}>{m.emoji}</Text>
                           <Text style={[styles.mealChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}>
                             {m.label}
@@ -563,6 +587,29 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                         </TouchableOpacity>
                       );
                     })}
+                  </View>
+
+                  {/* Add-ons (Sides / Desserts) — Pro. Locked placeholders for now;
+                      generation is wired in a later build. */}
+                  <Text style={styles.addonLabel}>Add-ons</Text>
+                  <View style={styles.mealChipRow}>
+                    {([
+                      ['sides', 'Sides', '🥔'],
+                      ['desserts', 'Desserts', '🍰'],
+                    ] as const).map(([id, label, emoji]) => (
+                      <TouchableOpacity
+                        key={id}
+                        style={[styles.mealChip, styles.mealChipLocked]}
+                        onPress={() => showPremiumNotice(`${label} are a Pro feature`)}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.proBadge}>
+                          <Text style={styles.proBadgeText}>PRO</Text>
+                        </View>
+                        <Text style={styles.mealChipEmoji}>{emoji}</Text>
+                        <Text style={styles.mealChipLabel}>{label}</Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                 </View>
 
@@ -661,6 +708,11 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
           </>
         }
       />
+      {premiumNotice && (
+        <View style={styles.premiumToast} pointerEvents="none">
+          <Text style={styles.premiumToastText}>🔒  {premiumNotice}</Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -782,6 +834,43 @@ const styles = StyleSheet.create({
   },
   mealChipEmoji: { fontSize: 20 },
   mealChipLabel: { fontSize: 13, color: '#5b7a8c', fontWeight: '600' },
+  // Locked premium chip: dashed border + PRO pill (not greyed — grey reads as broken).
+  mealChipLocked: { borderStyle: 'dashed', borderColor: '#f4a261' },
+  proBadge: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: '#f4a261',
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  proBadgeText: { color: 'white', fontSize: 8.5, fontWeight: '800', letterSpacing: 0.5 },
+  addonLabel: {
+    fontSize: 11,
+    color: '#9bb4c2',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  premiumToast: {
+    position: 'absolute',
+    bottom: 28,
+    alignSelf: 'center',
+    maxWidth: '88%',
+    backgroundColor: '#1a1a1a',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  premiumToastText: { color: 'white', fontSize: 13, fontWeight: '600', textAlign: 'center' },
 
   dietChipRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   dietChip: {
