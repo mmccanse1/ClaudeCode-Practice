@@ -67,6 +67,16 @@ export interface MealPlan {
 
 export type DietType = 'mediterranean' | 'keto' | 'paleo' | 'vegetarian' | 'vegan';
 
+// World cuisines (Pro). A cuisine layers ON TOP of a diet: the diet decides WHAT
+// can go in, the cuisine decides HOW it's cooked and spiced. `undefined` means no
+// cuisine preference (the default — diet-only, unchanged behavior).
+export type CuisineType =
+  | 'indian'
+  | 'east_asian'
+  | 'middle_eastern'
+  | 'latin_american'
+  | 'classic_american';
+
 export type RootStackParamList = {
   Home: undefined;
   ScanReceipt: { dietType: DietType };

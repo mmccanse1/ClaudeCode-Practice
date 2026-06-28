@@ -1,4 +1,4 @@
-import { Recipe, DietType, MealType } from '../types';
+import { Recipe, DietType, MealType, CuisineType } from '../types';
 import { IS_PREMIUM } from '../constants/subscription';
 
 export const RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR';
@@ -362,7 +362,7 @@ function normalizeNutritionPremium(raw: any, freeSugar?: number): Recipe['nutrit
   };
 }
 
-function buildSystemPrompt(dietType: DietType, glutenFree: boolean, lowSalt: boolean = false, diabetic: boolean = false): string {
+function dietSystemPrompt(dietType: DietType, glutenFree: boolean, lowSalt: boolean = false, diabetic: boolean = false): string {
   const gfNote = (glutenFree
     ? '\n\nCRITICAL: ALL recipes must be completely GLUTEN-FREE. No wheat, barley, rye, spelt, or standard flour. Use rice, quinoa, buckwheat, almond flour, or naturally gluten-free ingredients only. Double-check every single ingredient.'
     : '') + (lowSalt ? LOW_SALT_NOTE : '') + (diabetic ? DIABETIC_NOTE : '');
@@ -452,6 +452,100 @@ Strict variety rules:
     default:
       throw new Error(`Unknown diet type: ${dietType as string}`);
   }
+}
+
+// World cuisine modules (Pro). Layered AFTER the diet module so diet rules are
+// established first; the cuisine shapes HOW food is cooked and spiced, never WHAT
+// is allowed — it must never override a hard dietary restriction. Transcribed
+// from upgrades/cuisines-gladys.md. Compatibility gating (which cuisines to even
+// offer for a given diet/modifier) is handled separately at the UI layer.
+const CUISINE_MODULES: Record<CuisineType, string> = {
+  indian: `Cuisine — Indian / South Asian (layered on the active diet: the diet decides which proteins/ingredients are allowed, this decides how they're cooked and spiced — never override a dietary restriction):
+- Build flavor with a bhuno base: cook onion, ginger, garlic, and tomato over medium-high heat until the masala "leaves oil" before adding protein or vegetables.
+- Use a tadka (whole spices tempered in hot oil or ghee) at least once in the week — it is the backbone of Indian dal and vegetable dishes.
+- Spice profile: cumin, coriander, turmeric, garam masala, mustard seeds, cardamom, dried red chiles, fresh ginger and garlic, with fresh cilantro to finish.
+- Include a lentil or legume dish (dal, chana masala, rajma) at least twice in the week — these are central mains, not sides.
+- Include at least one dry-style dish (a sabzi/stir-fry such as aloo gobi) alongside sauced dishes to vary texture.
+- Note whether each dish is served with basmati rice or whole-wheat flatbread (roti/chapati) so the user knows what to prep.
+- Plain yogurt recurs (marinade, raita, sauce base); honor the active diet if it excludes dairy.
+- Defer to the active diet for protein choices: vegetarian/vegan rules override protein suggestions; keto reduces rice and legume portions.
+
+Strict cuisine variety rules:
+- Do not repeat the same spice base more than twice in a week (e.g. not both butter chicken and tikka masala — same tomato-cream-garam-masala profile).
+- Alternate sauced dishes (curries, dals) with dry-cooked dishes (stir-fries, flatbreads, roasted vegetables) — no more than three sauced dishes in a row.`,
+
+  east_asian: `Cuisine — East Asian (Chinese / Japanese / Korean; layered on the active diet — the diet decides what's allowed, this decides technique and flavor — never override a dietary restriction):
+- Soy sauce, sesame oil (finishing only), rice vinegar, and fresh ginger/garlic are the shared flavor foundation.
+- Chinese dishes: build around wok technique — high heat, small batches, velvet proteins in cornstarch before stir-frying; use oyster sauce and/or doubanjiang for depth.
+- Japanese dishes: favor dashi-based broths (kombu + bonito steep), mirin and sake for sweetness and umami, and clean presentation with minimal sauce.
+- Korean dishes: gochugaru and/or gochujang are non-negotiable for authentic flavor; doenjang anchors soups and stews; sesame oil and seeds finish most dishes.
+- Include at least one rice dish and one noodle- or broth-based dish across the week.
+- Tofu is a full protein here, not a substitute — use it as a centerpiece in at least one dish.
+- Fish sauce and oyster sauce contain fish/shellfish — for vegan or severe-allergy diets, substitute soy sauce or mushroom sauce and omit oyster sauce.
+- Defer to the active diet for protein exclusions. Keto: skip noodles/rice, serve stir-fries over cauliflower rice or on their own.
+
+Strict cuisine variety rules:
+- No more than two stir-fries in one week — balance with braises, soups, and steamed or simmered dishes.
+- Vary the regional tradition: include dishes from at least two of the three (Chinese, Japanese, Korean); do not cook only one all week.`,
+
+  middle_eastern: `Cuisine — Middle Eastern (layered on the active diet — the diet decides what's allowed, this decides how it's cooked and spiced — never override a dietary restriction):
+- Olive oil is the primary fat; use it generously for roasting, sautéing, and finishing.
+- Spice profile: cumin, coriander, allspice, cinnamon (in savory dishes — correct and important, do not omit), paprika, sumac, za'atar, turmeric.
+- Lemon juice and zest are used constantly — finishing acids as important as salt; every dish gets a squeeze at the end.
+- Tahini appears in sauces, dressings, marinades, and dips — include at least one tahini-forward dish per week.
+- Chickpeas and lentils are full proteins here, not sides (mujaddara, falafel, ful medames are mains).
+- Include at least one meze-style spread (hummus, baba ghanoush, or a dip cluster) across the week.
+- Flat-leaf parsley and fresh mint are structural ingredients used in quantity, not garnish.
+- Defer to the active diet for protein restrictions. Vegan: omit yogurt/labneh, use tahini sauces; shakshuka works without eggs (add extra chickpeas). Gluten-free: serve with rice or GF flatbread instead of pita.
+
+Strict cuisine variety rules:
+- Do not repeat the same core protein or legume more than twice in a week.
+- Vary cooking method: include at least one grilled or roasted dish, one simmered or stewed dish, and one raw or room-temperature preparation (salad, dip, meze).`,
+
+  latin_american: `Cuisine — Latin American (Mexican / Central & South American; layered on the active diet — the diet decides what's allowed, this decides technique and flavor — never override a dietary restriction):
+- Cumin, dried oregano, and dried chiles (ancho, guajillo, chipotle) are the backbone; smoked paprika and coriander support.
+- Dried chile sauces are central: toast, soak, and blend dried chiles to build the base of braises, enchilada sauces, and stews — teach the technique, it is not difficult.
+- Lime juice is structural — finish every dish with a fresh squeeze and use it in marinades; not a garnish.
+- Black beans and pinto beans are full proteins here — include them at least twice across the week.
+- Fresh cilantro is a finishing herb used in quantity (flag it so cilantro-averse users can sub flat-leaf parsley).
+- Corn is a grain here: corn tortillas, masa, and hominy are distinct pantry items; flour tortillas are acceptable for speed.
+- Balance sauced/braised dishes (mole, salsa verde chicken, birria) with dry or fresh preparations (tacos with raw toppings, ceviche, grilled meats).
+- Defer to the active diet for protein restrictions. Vegan: black/pinto beans and squash are sufficient pillars, omit cheese/crema. Keto: reduce rice and beans, serve braises over cauliflower rice or with avocado.
+
+Strict cuisine variety rules:
+- Do not repeat the same chile base more than twice in a week (two chipotle dishes is fine, three is not — rotate ancho, guajillo, or tomatillo).
+- Vary the format: rotate between tacos/wraps, rice bowls, braises, and raw preparations (salads, ceviche, guacamole); do not make only taco-format dishes.`,
+
+  classic_american: `Cuisine — Classic Home-Style (American comfort / heartland; layered on the active diet — the diet decides what's allowed, this decides format and seasoning — never override a dietary restriction):
+- Build plates around a protein + a starch (potatoes, noodles, rice) + a simple vegetable, in the familiar American comfort idiom.
+- Pan gravy and cream/cheese (roux-based) sauces are core — include at least one gravy- or cream-sauce dish in the week.
+- Seasoning is straightforward: salt, black pepper, garlic and onion powder, paprika, dried thyme/sage, Worcestershire. Do not reach for exotic spices — the identity is familiar, savory, and unfussy.
+- Casseroles and braises (pot roast, baked pasta, sheet-pan bakes) are signature formats; include at least one one-dish bake or braise per week.
+- Lean on what a typical household already has — this should feel like "what's in the fridge," not a special shopping trip.
+- Defer to the active diet. Vegetarian: eggs, cheese, beans, lentil/mushroom loaf, baked mac. Vegan: possible but the identity weakens — note this to the user.
+
+Strict cuisine variety rules:
+- Do not repeat the same protein format more than twice (not three ground-beef dishes) — rotate beef, chicken, pork, and a meatless bake.
+- Vary the format: at least one braise, one casserole/bake, and one quick skillet or sandwich-style dinner — not seven heavy oven dishes.`,
+};
+
+// The cuisine block to append after the diet module. Empty when no cuisine is
+// chosen, so diet-only generations are byte-for-byte unchanged.
+function cuisineModule(cuisine?: CuisineType): string {
+  if (!cuisine) return '';
+  const mod = CUISINE_MODULES[cuisine];
+  return mod ? `\n\n${mod}` : '';
+}
+
+// Diet rules first, then the optional cuisine layer on top (spec ordering).
+function buildSystemPrompt(
+  dietType: DietType,
+  glutenFree: boolean,
+  lowSalt: boolean = false,
+  diabetic: boolean = false,
+  cuisine?: CuisineType
+): string {
+  return dietSystemPrompt(dietType, glutenFree, lowSalt, diabetic) + cuisineModule(cuisine);
 }
 
 export async function parseReceiptFromImage(base64: string, mimeType: string = 'image/jpeg'): Promise<string[]> {
