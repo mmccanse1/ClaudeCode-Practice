@@ -69,6 +69,9 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [items, setItems] = useState<string[]>([]);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [newItem, setNewItem] = useState('');
+  // Manual add is collapsed by default (keeps the screen clean) and expands on
+  // tap — it stays available as the OCR-miss recovery path and no-scan entry.
+  const [showManualAdd, setShowManualAdd] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
@@ -147,6 +150,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         setItems([]);
         setChecked({});
         setNewItem('');
+        setShowManualAdd(false);
         setGlutenFree(false);
         setLowSalt(false);
         setDiabetic(false);
@@ -290,6 +294,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
     setItems([]);
     setChecked({});
     setNewItem('');
+    setShowManualAdd(false);
   }
 
   async function handleGenerate() {
@@ -492,23 +497,37 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         )}
         ListFooterComponent={
           <>
-            {/* Add item manually */}
+            {/* Manual add — collapsed by default; expands on tap. Stays as the
+                OCR-miss recovery path and the no-scan typing route. */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Add item manually</Text>
-              <View style={styles.addRow}>
-                <TextInput
-                  style={styles.input}
-                  value={newItem}
-                  onChangeText={setNewItem}
-                  placeholder="e.g. canned chickpeas"
-                  placeholderTextColor="#9bb4c2"
-                  returnKeyType="done"
-                  onSubmitEditing={addManualItem}
-                />
-                <TouchableOpacity style={styles.addBtn} onPress={addManualItem}>
-                  <Text style={styles.addBtnText}>Add</Text>
+              {showManualAdd ? (
+                <>
+                  <Text style={styles.sectionTitle}>Add an item</Text>
+                  <View style={styles.addRow}>
+                    <TextInput
+                      style={styles.input}
+                      value={newItem}
+                      onChangeText={setNewItem}
+                      placeholder="e.g. canned chickpeas"
+                      placeholderTextColor="#9bb4c2"
+                      returnKeyType="done"
+                      onSubmitEditing={addManualItem}
+                      autoFocus
+                    />
+                    <TouchableOpacity style={styles.addBtn} onPress={addManualItem}>
+                      <Text style={styles.addBtnText}>Add</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addToggle}
+                  onPress={() => setShowManualAdd(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.addToggleText}>＋  Add an item manually</Text>
                 </TouchableOpacity>
-              </View>
+              )}
             </View>
 
             {/* Meal selection + dietary options are revealed once there is
@@ -728,6 +747,8 @@ const styles = StyleSheet.create({
   removeBtn: { color: '#9bb4c2', fontWeight: '700', fontSize: 14 },
 
   section: { marginBottom: 14, marginTop: 4 },
+  addToggle: { paddingVertical: 8, alignSelf: 'flex-start' },
+  addToggleText: { color: '#2e86ab', fontSize: 15, fontWeight: '600' },
   addRow: { flexDirection: 'row', gap: 10 },
   input: {
     flex: 1,
