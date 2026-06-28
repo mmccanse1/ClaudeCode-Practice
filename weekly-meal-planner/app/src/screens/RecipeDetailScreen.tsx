@@ -376,9 +376,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: 12,
   },
-  macrosRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  macroItem: { flex: 1, alignItems: 'center' },
-  macroValue: { fontSize: 14, fontWeight: '800', color: '#2e86ab' },
+  // 3 per row, wrapping to 2 rows — gives each value enough width to render in
+  // full (no wrap, no "…" truncation on 4-digit sodium values).
+  macrosRow: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14 },
+  macroItem: { width: '33.333%', alignItems: 'center' },
+  macroValue: { fontSize: 15, fontWeight: '800', color: '#2e86ab' },
   macroLabel: { fontSize: 9, color: '#9bb4c2', fontWeight: '700', letterSpacing: 0.3, marginTop: 3 },
   macrosDisclaimer: {
     fontSize: 11,

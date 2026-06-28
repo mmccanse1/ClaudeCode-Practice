@@ -187,9 +187,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: 10,
   },
-  macrosRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  macroItem: { flex: 1, alignItems: 'center' },
-  macroValue: { fontSize: 13, fontWeight: '800' },
+  // 3 per row, wrapping to 2 rows — each value gets enough width to render in
+  // full (no wrap, no "…" truncation).
+  macrosRow: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 12 },
+  macroItem: { width: '33.333%', alignItems: 'center' },
+  macroValue: { fontSize: 14, fontWeight: '800' },
   macroLabel: { fontSize: 8.5, color: '#9bb4c2', fontWeight: '700', letterSpacing: 0.2, marginTop: 3 },
   macrosDisclaimer: { fontSize: 10, color: '#9bb4c2', fontStyle: 'italic', marginTop: 10, textAlign: 'center' },
   sourceNote: { textAlign: 'center', fontSize: 10, color: '#9bb4c2', marginTop: 16, marginBottom: 4 },
