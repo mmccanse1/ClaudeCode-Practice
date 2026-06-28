@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   // each side) — a percentage width can collapse an Image to zero in a ScrollView.
   pantryImage: {
     width: SCREEN_W - 40,
-    height: Math.round((SCREEN_W - 40) * 0.62),
+    height: Math.round((SCREEN_W - 40) * 0.83),
     borderRadius: 14,
     alignSelf: 'center',
     marginTop: 8,
