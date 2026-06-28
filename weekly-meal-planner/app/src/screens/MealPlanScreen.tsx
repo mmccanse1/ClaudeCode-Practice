@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Animated,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Recipe, DietType, MealType } from '../types';
@@ -283,7 +284,10 @@ export default function MealPlanScreen({ navigation, route }: Props) {
         {sharingWeek ? (
           <ActivityIndicator color={dietConfig.color} />
         ) : (
-          <Text style={[styles.shareWeekBtnText, { color: dietConfig.color }]}>📤  Share My Week</Text>
+          <>
+            <MaterialCommunityIcons name="share" size={18} color={dietConfig.color} />
+            <Text style={[styles.shareWeekBtnText, { color: dietConfig.color }]}>Share My Week</Text>
+          </>
         )}
       </TouchableOpacity>
 
@@ -428,7 +432,10 @@ const styles = StyleSheet.create({
     borderColor: '#e2dcce',
     borderRadius: 12,
     paddingVertical: 12,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     marginTop: 10,
   },
   shareWeekBtnText: { fontSize: 15, fontWeight: '700' },

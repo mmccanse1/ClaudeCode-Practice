@@ -10,6 +10,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { saveRecipe, unsaveRecipe, isRecipeSaved } from '../services/savedRecipesService';
@@ -166,7 +167,10 @@ export default function RecipeDetailScreen({ route }: Props) {
             {sharing ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.shareBtnText}>Share Recipe Card</Text>
+              <>
+                <MaterialCommunityIcons name="share" size={19} color="white" />
+                <Text style={styles.shareBtnText}>Share Recipe Card</Text>
+              </>
             )}
           </TouchableOpacity>
 
@@ -408,7 +412,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f4a261',
     borderRadius: 14,
     paddingVertical: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     marginBottom: 12,
   },
   shareBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
