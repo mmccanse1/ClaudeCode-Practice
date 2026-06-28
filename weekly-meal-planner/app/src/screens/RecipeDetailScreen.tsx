@@ -14,6 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { saveRecipe, unsaveRecipe, isRecipeSaved } from '../services/savedRecipesService';
 import { fetchFoodPhoto } from '../services/unsplashService';
+import { printRecipe } from '../services/recipePrint';
 import { DIET_TYPES } from '../constants/dietTypes';
 import RecipeShareCard from '../components/RecipeShareCard';
 import * as Sharing from 'expo-sharing';
@@ -25,6 +26,7 @@ export default function RecipeDetailScreen({ route }: Props) {
   const { recipe, dietType = 'mediterranean' } = route.params;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [sharing, setSharing] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   // Photo shown in the hero / share card. Starts from the recipe's stored URL but
@@ -66,6 +68,18 @@ export default function RecipeDetailScreen({ route }: Props) {
       Alert.alert('Couldn’t save recipe', 'We couldn’t save this to your Saved Recipes. Please try again.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePrint() {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      await printRecipe(heroRecipe, dietConfig.label);
+    } catch (e: any) {
+      Alert.alert('Couldn’t open the printout', 'Something went wrong preparing the printable recipe. Please try again.');
+    } finally {
+      setPrinting(false);
     }
   }
 
@@ -198,6 +212,19 @@ export default function RecipeDetailScreen({ route }: Props) {
               <ActivityIndicator color="white" />
             ) : (
               <Text style={styles.shareBtnText}>Share Recipe Card</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.printBtn}
+            onPress={handlePrint}
+            disabled={printing}
+            activeOpacity={0.85}
+          >
+            {printing ? (
+              <ActivityIndicator color="#2e86ab" />
+            ) : (
+              <Text style={styles.printBtnText}>🖨  Print Recipe</Text>
             )}
           </TouchableOpacity>
 
@@ -384,5 +411,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   shareBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  printBtn: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: '#2e86ab',
+  },
+  printBtnText: { color: '#2e86ab', fontSize: 16, fontWeight: '700' },
   sourceNote: { textAlign: 'center', fontSize: 11, color: '#9bb4c2', marginBottom: 24 },
 });

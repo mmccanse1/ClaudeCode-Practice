@@ -72,6 +72,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
   const [parsing, setParsing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [glutenFree, setGlutenFree] = useState(false);
+  const [lowSalt, setLowSalt] = useState(false);
   // Which meals to build. Dinner on by default keeps the original one-tap flow.
   const [meals, setMeals] = useState<Record<MealType, boolean>>({
     breakfast: false,
@@ -139,6 +140,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         setChecked({});
         setNewItem('');
         setGlutenFree(false);
+        setLowSalt(false);
         setMeals({ breakfast: false, lunch: false, dinner: true });
         setRetryCountdown(0);
         if (countdownRef.current) clearInterval(countdownRef.current);
@@ -295,7 +297,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
       const selectedMeals = MEAL_TYPES.filter(m => meals[m.id]).map(m => m.id);
       const mealsToUse = selectedMeals.length > 0 ? selectedMeals : (['dinner'] as MealType[]);
-      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse);
+      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse, lowSalt);
 
       // Fetch photos in small batches rather than all 7–21 at once. Bursting the
       // whole menu at Imagen trips its rate limit and leaves some cards stuck on
@@ -333,6 +335,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         ingredients: allIngredients,
         dietType,
         glutenFree,
+        lowSalt,
         pantrySavedCount: toSave.length,
       });
     } catch (e: any) {
@@ -503,22 +506,35 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                   </View>
                 </View>
 
-                {/* Gluten-free toggle */}
+                {/* Dietary options — two equal, side-by-side toggle buttons */}
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Dietary options</Text>
-                  <TouchableOpacity
-                    style={styles.glutenFreeRow}
-                    onPress={() => setGlutenFree(prev => !prev)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.toggle, glutenFree && styles.toggleOn]}>
-                      <View style={[styles.toggleThumb, glutenFree && styles.toggleThumbOn]} />
-                    </View>
-                    <View style={styles.glutenFreeText}>
-                      <Text style={styles.glutenFreeLabel}>Gluten-Free</Text>
-                      <Text style={styles.glutenFreeHint}>All recipes will avoid gluten-containing ingredients</Text>
-                    </View>
-                  </TouchableOpacity>
+                  <View style={styles.dietOptionRow}>
+                    <TouchableOpacity
+                      style={styles.dietOptionCard}
+                      onPress={() => setGlutenFree(prev => !prev)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.toggle, glutenFree && styles.toggleOn]}>
+                        <View style={[styles.toggleThumb, glutenFree && styles.toggleThumbOn]} />
+                      </View>
+                      <Text style={[styles.dietOptionLabel, glutenFree && styles.dietOptionLabelOn]}>
+                        Gluten-Free
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.dietOptionCard}
+                      onPress={() => setLowSalt(prev => !prev)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.toggle, lowSalt && styles.toggleOn]}>
+                        <View style={[styles.toggleThumb, lowSalt && styles.toggleThumbOn]} />
+                      </View>
+                      <Text style={[styles.dietOptionLabel, lowSalt && styles.dietOptionLabelOn]}>
+                        Low Salt
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </>
             )}
@@ -703,13 +719,18 @@ const styles = StyleSheet.create({
   mealChipEmoji: { fontSize: 20 },
   mealChipLabel: { fontSize: 13, color: '#5b7a8c', fontWeight: '600' },
 
-  glutenFreeRow: {
+  dietOptionRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  dietOptionCard: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
     backgroundColor: 'white',
     borderRadius: 12,
-    padding: 14,
-    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderColor: '#dbe9f0',
   },
   toggle: {
     width: 46,
@@ -732,9 +753,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   toggleThumbOn: { alignSelf: 'flex-end' },
-  glutenFreeText: { flex: 1 },
-  glutenFreeLabel: { fontSize: 15, fontWeight: '600', color: '#1a1a1a' },
-  glutenFreeHint: { fontSize: 12, color: '#5b7a8c', marginTop: 2 },
+  dietOptionLabel: { fontSize: 15, fontWeight: '600', color: '#1a1a1a', flexShrink: 1 },
+  dietOptionLabelOn: { color: '#2e86ab' },
 
   startOverBtn: {
     alignSelf: 'center',

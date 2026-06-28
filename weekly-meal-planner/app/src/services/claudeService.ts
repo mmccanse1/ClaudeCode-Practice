@@ -72,17 +72,52 @@ const PROTEIN_KEYWORDS = [
   'mince', 'meat', 'poultry',
 ];
 
+// Meat/poultry/fish/seafood keywords — the subset of PROTEIN_KEYWORDS that is
+// forbidden on plant-based diets. Used to filter the "available proteins" list
+// so a shared-household receipt's chicken never gets offered to a vegan menu.
+const MEAT_SEAFOOD_KEYWORDS = [
+  'chicken', 'beef', 'pork', 'lamb', 'turkey', 'duck', 'venison', 'rabbit',
+  'salmon', 'tuna', 'cod', 'tilapia', 'halibut', 'shrimp', 'prawn', 'crab',
+  'lobster', 'scallop', 'sardine', 'anchovy', 'bass', 'trout', 'mahi', 'fish', 'seafood',
+  'sausage', 'bacon', 'ham', 'steak', 'ground beef', 'ground turkey', 'ground pork',
+  'mince', 'meat', 'poultry',
+];
+
+function isMeatOrSeafood(ingredient: string): boolean {
+  const lower = ingredient.toLowerCase();
+  return MEAT_SEAFOOD_KEYWORDS.some(kw => lower.includes(kw));
+}
+
 function extractProteins(ingredients: string[]): string[] {
   return ingredients.filter(ing =>
     PROTEIN_KEYWORDS.some(kw => ing.toLowerCase().includes(kw))
   );
 }
 
-function buildProteinConstraint(ingredients: string[]): string {
-  const proteins = extractProteins(ingredients);
+// Restrict the available-protein list to what the diet actually permits.
+// Vegetarian drops meat/poultry/fish/seafood (keeps eggs, tofu, legumes);
+// vegan additionally drops eggs. Other diets keep everything available.
+function allowedProteinsForDiet(proteins: string[], dietType: DietType): string[] {
+  if (dietType === 'vegan') {
+    return proteins.filter(p => !isMeatOrSeafood(p) && !p.toLowerCase().includes('egg'));
+  }
+  if (dietType === 'vegetarian') {
+    return proteins.filter(p => !isMeatOrSeafood(p));
+  }
+  return proteins;
+}
+
+function buildProteinConstraint(ingredients: string[], dietType: DietType): string {
+  const proteins = allowedProteinsForDiet(extractProteins(ingredients), dietType);
   if (proteins.length > 0) {
     return `PROTEINS AVAILABLE (the ONLY proteins you may use): ${proteins.join(', ')}
 Do NOT introduce any other meat, poultry, fish, seafood, eggs, tofu, or legumes — even if they would be a natural fit for this diet. If a protein is not in this list, it is not in the kitchen.`;
+  }
+  // No diet-appropriate proteins were found in the pantry. For plant-based diets
+  // this is the common case when the only meats present belong to other members
+  // of the household — fall back to plant proteins rather than offering the meat.
+  if (dietType === 'vegan' || dietType === 'vegetarian') {
+    return `The pantry has no ${dietType}-appropriate protein, so build meals around plant proteins suited to this diet (legumes, beans, lentils, chickpeas, tofu, tempeh, edamame, nuts, seeds${dietType === 'vegetarian' ? ', eggs, dairy' : ''}). Do NOT use any meat, poultry, fish, or seafood, even if it appears in the ingredient list — it is not for this menu.`;
   }
   return `No animal proteins are in the pantry. Use only plant-based proteins visible in the ingredient list above (legumes, tofu, tempeh, edamame, nuts, seeds). Do not introduce any meat, poultry, or fish.`;
 }
@@ -109,7 +144,7 @@ const NUTRITION_SHAPE = `"nutrition": { "calories": 520, "protein": 32, "carbs":
 const MEAL_DIRECTIVE: Record<MealType, string> = {
   breakfast: 'These are BREAKFAST recipes — breakfast-appropriate dishes (eggs, oats, smoothies, yoghurt bowls, savoury breakfasts, etc.) that still fit the diet.',
   lunch: 'These are LUNCH recipes — lighter midday meals (salads, grain bowls, wraps, soups, etc.) that still fit the diet.',
-  dinner: 'These are DINNER recipes — satisfying evening main dishes that fit the diet. Dinners should generally include a meat or seafood protein when the diet allows — aim for most of the week. Eggs are NOT acceptable as the primary dinner protein.',
+  dinner: 'These are DINNER recipes — satisfying evening main dishes that fit the diet.',
 };
 
 const MEAL_LABEL: Record<MealType, string> = {
@@ -117,6 +152,39 @@ const MEAL_LABEL: Record<MealType, string> = {
   lunch: 'lunch',
   dinner: 'dinner',
 };
+
+// Dinner protein guidance is diet-aware. Meat-allowing diets center a meat or
+// seafood protein (eggs are not a valid dinner centerpiece there). Vegetarian
+// and vegan are EXEMPT from the meat rule and instead center a diet-appropriate
+// protein — otherwise a vegan menu could land chicken on Monday.
+function dinnerProteinRule(dietType: DietType): string {
+  switch (dietType) {
+    case 'vegan':
+      return ' Build each dinner around a substantial plant protein (tofu, tempeh, seitan, edamame, lentils, beans, chickpeas). Do NOT use any meat, poultry, fish, seafood, eggs, or dairy.';
+    case 'vegetarian':
+      return ' Build each dinner around a substantial vegetarian protein (lentils, beans, chickpeas, tofu, tempeh, paneer or other cheese, or eggs). Do NOT use any meat, poultry, fish, or seafood.';
+    default:
+      return ' Dinners should generally include a meat or seafood protein when the diet allows — aim for most of the week. Eggs are NOT acceptable as the primary dinner protein.';
+  }
+}
+
+// The meal directive, with the dinner one specialised per diet.
+function mealDirective(mealType: MealType, dietType: DietType): string {
+  if (mealType === 'dinner') return MEAL_DIRECTIVE.dinner + dinnerProteinRule(dietType);
+  return MEAL_DIRECTIVE[mealType];
+}
+
+// Low-sodium guidance, injected when the user enables the Low Salt option.
+// Grounded in AHA / DASH guidance: target ~1,500 mg sodium/day, season with
+// herbs/acids instead of salt, and avoid the processed/canned items that carry
+// most dietary sodium. Layered on top of any diet (like the gluten-free option).
+const LOW_SALT_NOTE = `
+
+LOW-SODIUM REQUIREMENT (the user has chosen a Low Salt menu — follow strictly):
+- Keep each recipe low in sodium: aim for roughly 500 mg sodium or less PER SERVING so a day stays near the 1,500 mg DASH/American Heart Association low-sodium target.
+- Do NOT add table salt as a listed ingredient; build flavor with herbs, spices, garlic, onion, citrus/lemon, vinegar, and other aromatics instead.
+- Avoid high-sodium and processed ingredients: cured/deli meats, bacon, sausage, canned soups, bouillon/stock cubes, soy sauce, most cheeses, olives, pickles, and jarred sauces. If a canned item (beans, tomatoes) is the only option, call for "no-salt-added" or rinsed.
+- Reflect the reduced sodium in the nutrition estimate.`;
 
 // Weekly ingredient-variety limits for a 7-recipe menu. Deliberately SOFT: the
 // app cooks from what the user already bought, so a sparse pantry must still
@@ -166,10 +234,10 @@ function normalizeNutrition(raw: any): Recipe['nutrition'] {
   return { calories, protein, carbs, sugar, sodium };
 }
 
-function buildSystemPrompt(dietType: DietType, glutenFree: boolean): string {
-  const gfNote = glutenFree
+function buildSystemPrompt(dietType: DietType, glutenFree: boolean, lowSalt: boolean = false): string {
+  const gfNote = (glutenFree
     ? '\n\nCRITICAL: ALL recipes must be completely GLUTEN-FREE. No wheat, barley, rye, spelt, or standard flour. Use rice, quinoa, buckwheat, almond flour, or naturally gluten-free ingredients only. Double-check every single ingredient.'
-    : '';
+    : '') + (lowSalt ? LOW_SALT_NOTE : '');
 
   switch (dietType) {
     case 'mediterranean':
@@ -285,9 +353,10 @@ export async function regenerateRecipe(
   dayToReplace: string,
   dietType: DietType = 'mediterranean',
   glutenFree: boolean = false,
-  mealType: MealType = 'dinner'
+  mealType: MealType = 'dinner',
+  lowSalt: boolean = false
 ): Promise<Recipe> {
-  const systemPrompt = buildSystemPrompt(dietType, glutenFree);
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt);
   // The recipe being replaced is the one matching BOTH day and meal type.
   const isTarget = (r: Recipe) =>
     r.day === dayToReplace && (r.mealType ?? 'dinner') === mealType;
@@ -302,7 +371,7 @@ export async function regenerateRecipe(
          r.ingredients?.some(i => i.toLowerCase().includes('salmon'))
   );
 
-  const proteinConstraint = buildProteinConstraint(ingredients);
+  const proteinConstraint = buildProteinConstraint(ingredients, dietType);
 
   const text = await callClaude([
     {
@@ -310,10 +379,10 @@ export async function regenerateRecipe(
       text: `${systemPrompt}
 
 Available ingredients: ${ingredients.join(', ')}
-You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
+You may also use common pantry staples (pepper, olive oil, garlic, lemon, herbs, and basic spices).
 ${proteinConstraint}
 
-Generate exactly 1 new ${MEAL_LABEL[mealType]} recipe for ${dayToReplace}. ${MEAL_DIRECTIVE[mealType]}
+Generate exactly 1 new ${MEAL_LABEL[mealType]} recipe for ${dayToReplace}. ${mealDirective(mealType, dietType)}
 
 The rest of the weekly menu is already set — do NOT duplicate any of these:
 ${otherRecipes}
@@ -354,10 +423,11 @@ async function generateMealForType(
   ingredients: string[],
   dietType: DietType,
   glutenFree: boolean,
-  mealType: MealType
+  mealType: MealType,
+  lowSalt: boolean = false
 ): Promise<Recipe[]> {
-  const systemPrompt = buildSystemPrompt(dietType, glutenFree);
-  const proteinConstraint = buildProteinConstraint(ingredients);
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt);
+  const proteinConstraint = buildProteinConstraint(ingredients, dietType);
 
   const text = await callClaude([
     {
@@ -365,10 +435,10 @@ async function generateMealForType(
       text: `${systemPrompt}
 
 Available ingredients: ${ingredients.join(', ')}
-You may also use common pantry staples (salt, pepper, olive oil, garlic, lemon, herbs, and basic spices).
+You may also use common pantry staples (pepper, olive oil, garlic, lemon, herbs, and basic spices).
 ${proteinConstraint}
 
-Generate exactly 7 ${MEAL_LABEL[mealType]} recipes, one per day (Monday–Sunday). ${MEAL_DIRECTIVE[mealType]} Each recipe must primarily use ingredients from the list above.
+Generate exactly 7 ${MEAL_LABEL[mealType]} recipes, one per day (Monday–Sunday). ${mealDirective(mealType, dietType)} Each recipe must primarily use ingredients from the list above.
 
 ${WEEKLY_VARIETY_RULES}
 
@@ -394,13 +464,14 @@ export async function generateMealPlan(
   ingredients: string[],
   dietType: DietType = 'mediterranean',
   glutenFree: boolean = false,
-  meals: MealType[] = ['dinner']
+  meals: MealType[] = ['dinner'],
+  lowSalt: boolean = false
 ): Promise<Recipe[]> {
   // Only generate the meals the user asked for — one model call per meal type,
   // run in parallel. A flat list of all (day × meal) recipes comes back.
   const selected: MealType[] = meals.length > 0 ? meals : ['dinner'];
   const perMeal = await Promise.all(
-    selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal))
+    selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal, lowSalt))
   );
   return perMeal.flat();
 }
