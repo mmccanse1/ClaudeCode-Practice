@@ -128,21 +128,32 @@ export async function fetchIngredientPhoto(query: string): Promise<string | null
 }
 
 async function fetchMealDBRecipePhoto(query: string): Promise<string | null> {
+  // Bounded with an abort timeout: this runs in the awaited recipe-refresh path
+  // as the Imagen fallback, so an unresponsive request must not stall the swap.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8_000);
   try {
     const url = `https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) return null;
     const data = await res.json();
     const meals: any[] = data.meals ?? [];
     return meals[0]?.strMealThumb ?? null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
 export async function fetchFoodPhoto(query: string): Promise<string | null> {
   const { generateFoodPhoto } = await import('./imagenService');
-  return generateFoodPhoto(query);
+  const generated = await generateFoodPhoto(query);
+  if (generated) return generated;
+  // Fallback when image generation is unavailable (missing key, quota, or a
+  // transient failure): TheMealDB has free recipe thumbnails keyed by dish name.
+  // Without this, a failed generation left recipe cards with no photo at all.
+  return fetchMealDBRecipePhoto(query);
 }
 
 export async function fetchSceneryPhoto(query: string): Promise<string | null> {

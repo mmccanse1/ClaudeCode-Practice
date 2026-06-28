@@ -10,9 +10,12 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { saveRecipe, unsaveRecipe, isRecipeSaved } from '../services/savedRecipesService';
+import { fetchFoodPhoto } from '../services/unsplashService';
+import { printRecipe } from '../services/recipePrint';
 import { DIET_TYPES } from '../constants/dietTypes';
 import RecipeShareCard from '../components/RecipeShareCard';
 import * as Sharing from 'expo-sharing';
@@ -24,13 +27,31 @@ export default function RecipeDetailScreen({ route }: Props) {
   const { recipe, dietType = 'mediterranean' } = route.params;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [sharing, setSharing] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Photo shown in the hero / share card. Starts from the recipe's stored URL but
+  // can be filled in lazily below if it arrived here without one.
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>(recipe.photoUrl);
   const shareRef = useRef<View>(null);
 
   useEffect(() => {
     isRecipeSaved(recipe).then(setSaved);
   }, []);
+
+  // Recover a missing image: if generation failed earlier (no key, quota, or a
+  // transient error) the card landed here without a photo. Try once more on open
+  // so the recipe doesn't stay stuck on the placeholder emoji.
+  useEffect(() => {
+    if (photoUrl) return;
+    let active = true;
+    fetchFoodPhoto(recipe.searchQuery)
+      .then(url => { if (active && url) setPhotoUrl(url); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  const heroRecipe = { ...recipe, photoUrl };
 
   async function handleSave() {
     setSaving(true);
@@ -51,12 +72,24 @@ export default function RecipeDetailScreen({ route }: Props) {
     }
   }
 
+  async function handlePrint() {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      await printRecipe(heroRecipe, dietConfig.label);
+    } catch (e: any) {
+      Alert.alert('Couldn’t open the printout', 'Something went wrong preparing the printable recipe. Please try again.');
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   async function handleShare() {
     setSharing(true);
     try {
       // The off-screen card's hero is a local file already shown above, so it's
       // warm in the image cache; a short settle keeps capture from racing layout.
-      if (recipe.photoUrl) await new Promise(r => setTimeout(r, 200));
+      if (photoUrl) await new Promise(r => setTimeout(r, 200));
       const uri = await captureRef(shareRef, { format: 'png', quality: 1, result: 'tmpfile' });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: recipe.name });
@@ -71,8 +104,8 @@ export default function RecipeDetailScreen({ route }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {recipe.photoUrl ? (
-          <Image source={{ uri: recipe.photoUrl }} style={styles.hero} />
+        {photoUrl ? (
+          <Image source={{ uri: photoUrl }} style={styles.hero} />
         ) : (
           <View style={styles.heroPlaceholder}>
             <Text style={styles.heroEmoji}>🫒</Text>
@@ -107,6 +140,54 @@ export default function RecipeDetailScreen({ route }: Props) {
               <Text style={styles.metaLabel}>SERVES</Text>
               <Text style={styles.metaValue}>{recipe.servings}</Text>
             </View>
+          </View>
+
+          {/* Primary actions — icon-only, evenly spaced in a horizontal row */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.iconBtn, styles.saveBtn, saved && styles.saveBtnSaved]}
+              onPress={handleSave}
+              disabled={saving}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={saved ? 'Saved' : 'Save'}
+            >
+              {saving ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <MaterialCommunityIcons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color="white" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.iconBtn, styles.shareBtn]}
+              onPress={handleShare}
+              disabled={sharing}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Share"
+            >
+              {sharing ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <MaterialCommunityIcons name="share" size={26} color="white" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.iconBtn, styles.printBtn]}
+              onPress={handlePrint}
+              disabled={printing}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Print"
+            >
+              {printing ? (
+                <ActivityIndicator color="#2e86ab" />
+              ) : (
+                <MaterialCommunityIcons name="printer-outline" size={26} color="#2e86ab" />
+              )}
+            </TouchableOpacity>
           </View>
 
           <Text style={styles.sectionTitle}>Ingredients</Text>
@@ -155,34 +236,6 @@ export default function RecipeDetailScreen({ route }: Props) {
             <Text style={styles.nutritionText}>{recipe.nutritionNotes}</Text>
           </View>
 
-          <TouchableOpacity
-            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
-            onPress={handleSave}
-            disabled={saving}
-            activeOpacity={0.85}
-          >
-            {saving ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.saveBtnText}>
-                {saved ? '🔖  Saved to Recipes' : '🔖  Save Recipe'}
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.shareBtn}
-            onPress={handleShare}
-            disabled={sharing}
-            activeOpacity={0.85}
-          >
-            {sharing ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.shareBtnText}>Share Recipe Card</Text>
-            )}
-          </TouchableOpacity>
-
           <Text style={styles.sourceNote}>{dietConfig.source}</Text>
         </View>
       </ScrollView>
@@ -190,7 +243,7 @@ export default function RecipeDetailScreen({ route }: Props) {
       {/* Off-screen render target captured to a PNG for sharing. */}
       <View style={styles.offscreen} pointerEvents="none">
         <View ref={shareRef} collapsable={false}>
-          <RecipeShareCard recipe={recipe} dietType={dietType} />
+          <RecipeShareCard recipe={heroRecipe} dietType={dietType} />
         </View>
       </View>
     </SafeAreaView>
@@ -228,7 +281,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 26, fontWeight: '800', color: '#1a1a1a', marginBottom: 10 },
   description: {
     fontSize: 15,
-    color: '#666',
+    color: '#5b7a8c',
     fontStyle: 'italic',
     lineHeight: 22,
     marginBottom: 20,
@@ -246,9 +299,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   metaItem: { flex: 1, alignItems: 'center' },
-  metaLabel: { fontSize: 10, color: '#aaa', fontWeight: '700', letterSpacing: 0.8, marginBottom: 4 },
+  metaLabel: { fontSize: 10, color: '#9bb4c2', fontWeight: '700', letterSpacing: 0.8, marginBottom: 4 },
   metaValue: { fontSize: 16, fontWeight: '700', color: '#2e86ab' },
-  divider: { width: 1, backgroundColor: '#eee', marginHorizontal: 8 },
+  divider: { width: 1, backgroundColor: '#eef4f8', marginHorizontal: 8 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
@@ -317,7 +370,7 @@ const styles = StyleSheet.create({
   macrosTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#888',
+    color: '#5b7a8c',
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 12,
@@ -325,10 +378,10 @@ const styles = StyleSheet.create({
   macrosRow: { flexDirection: 'row', justifyContent: 'space-between' },
   macroItem: { flex: 1, alignItems: 'center' },
   macroValue: { fontSize: 16, fontWeight: '800', color: '#2e86ab' },
-  macroLabel: { fontSize: 9, color: '#aaa', fontWeight: '700', letterSpacing: 0.5, marginTop: 3 },
+  macroLabel: { fontSize: 9, color: '#9bb4c2', fontWeight: '700', letterSpacing: 0.5, marginTop: 3 },
   macrosDisclaimer: {
     fontSize: 11,
-    color: '#aaa',
+    color: '#9bb4c2',
     fontStyle: 'italic',
     marginTop: 12,
     textAlign: 'center',
@@ -347,24 +400,23 @@ const styles = StyleSheet.create({
   },
   nutritionIcon: { fontSize: 20 },
   nutritionText: { flex: 1, fontSize: 13, color: '#1d5c63', lineHeight: 20 },
-  saveBtn: {
-    backgroundColor: '#2e86ab',
-    borderRadius: 14,
-    paddingVertical: 16,
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
     alignItems: 'center',
-    marginBottom: 12,
+    marginTop: 4,
+    marginBottom: 20,
   },
-  saveBtnSaved: {
-    backgroundColor: '#1d5c63',
-  },
-  saveBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  shareBtn: {
-    backgroundColor: '#f4a261',
-    borderRadius: 14,
-    paddingVertical: 16,
+  iconBtn: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'center',
   },
-  shareBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  sourceNote: { textAlign: 'center', fontSize: 11, color: '#aaa', marginBottom: 24 },
+  saveBtn: { backgroundColor: '#2e86ab' },
+  saveBtnSaved: { backgroundColor: '#1d5c63' },
+  shareBtn: { backgroundColor: '#f4a261' },
+  printBtn: { backgroundColor: 'white', borderWidth: 1.5, borderColor: '#2e86ab' },
+  sourceNote: { textAlign: 'center', fontSize: 11, color: '#9bb4c2', marginBottom: 24 },
 });

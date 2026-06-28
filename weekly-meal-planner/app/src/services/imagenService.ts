@@ -9,6 +9,13 @@ const MAX_CACHE_ENTRIES = 100;
 const IMAGEN_URL =
   'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict';
 
+// Circuit breaker. When Imagen returns 429 (per-minute rate limit OR the daily
+// quota being exhausted), skip further calls for a short cooldown. Without this,
+// every image in a 7–21 image batch retries against a limit that won't clear
+// this instant, so generation crawls and still ends on placeholders.
+const IMAGEN_COOLDOWN_MS = 60_000;
+let imagenCooldownUntil = 0;
+
 function cacheKey(query: string): string {
   return query.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').slice(0, 80);
 }
@@ -48,10 +55,20 @@ async function generateAndCache(
   const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '';
   if (!apiKey) return null;
 
+  // Circuit open from a recent 429 — fast-fail to the caller's fallback instead
+  // of retrying against a limit that won't have cleared yet.
+  if (Date.now() < imagenCooldownUntil) return null;
+
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => {});
 
   let b64: string | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // Bound each attempt with an abort timeout so a hung image request can't stall
+  // recipe (re)generation. On 429 we trip the circuit breaker and stop: the daily
+  // quota / rate limit won't recover mid-batch, so retrying every image just makes
+  // generation crawl. The cooldown lets a later attempt probe for recovery.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15_000);
     try {
       const res = await fetch(`${IMAGEN_URL}?key=${apiKey}`, {
         method: 'POST',
@@ -60,13 +77,20 @@ async function generateAndCache(
           instances: [{ prompt }],
           parameters: { sampleCount: 1, aspectRatio: '1:1' },
         }),
+        signal: controller.signal,
       });
+      if (res.status === 429) {
+        imagenCooldownUntil = Date.now() + IMAGEN_COOLDOWN_MS;
+        break;
+      }
       if (!res.ok) break;
       const data = await res.json();
       b64 = data.predictions?.[0]?.bytesBase64Encoded ?? null;
       if (b64) break;
     } catch {
-      // transient error — retry
+      // transient error or timeout — retry once
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
   if (!b64) return null;

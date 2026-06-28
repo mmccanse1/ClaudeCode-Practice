@@ -21,7 +21,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Pantry'>;
 
 const PANTRY_BG = require('../../assets/pantry-bg.png');
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const { width: SCREEN_W } = Dimensions.get('window');
 
 export default function PantryScreen({ navigation }: Props) {
   const [items, setItems] = useState<string[]>([]);
@@ -77,9 +77,6 @@ export default function PantryScreen({ navigation }: Props) {
             </TouchableOpacity>
           )}
         </View>
-        <Text style={styles.subtitle}>
-          Items here are added to every menu you generate.
-        </Text>
 
         <View style={styles.instructions}>
           {[
@@ -100,7 +97,7 @@ export default function PantryScreen({ navigation }: Props) {
             value={newItem}
             onChangeText={setNewItem}
             placeholder="e.g. canned tomatoes"
-            placeholderTextColor="#bbb"
+            placeholderTextColor="#9bb4c2"
             returnKeyType="done"
             onSubmitEditing={handleAdd}
           />
@@ -154,7 +151,6 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 24, fontWeight: '800', color: '#1a1a1a' },
   clearBtn: { fontSize: 14, color: '#e05c5c', fontWeight: '600' },
-  subtitle: { fontSize: 13, color: '#777', lineHeight: 19, marginBottom: 16 },
 
   instructions: {
     backgroundColor: 'white',
@@ -164,11 +160,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#eef4f8',
   },
   instructionRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   instructionIcon: { fontSize: 16, width: 24, textAlign: 'center' },
-  instructionText: { fontSize: 13, color: '#555', flex: 1, lineHeight: 18 },
+  instructionText: { fontSize: 13, color: '#3a5663', flex: 1, lineHeight: 18 },
 
   addRow: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   input: {
@@ -180,7 +176,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1a1a1a',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#dbe9f0',
   },
   addBtn: {
     backgroundColor: '#2e86ab',
@@ -223,9 +219,15 @@ const styles = StyleSheet.create({
   },
   openBtnText: { color: 'white', fontWeight: '700', fontSize: 14 },
 
+  // Bounded, rounded illustration rather than a full-bleed image taller than the
+  // screen. Explicit numeric width (screen minus the container's 20px padding
+  // each side) — a percentage width can collapse an Image to zero in a ScrollView.
   pantryImage: {
-    width: SCREEN_W,
-    height: SCREEN_H * 0.62,
-    marginLeft: -20,
+    width: SCREEN_W - 40,
+    height: Math.round((SCREEN_W - 40) * 1.1),
+    borderRadius: 14,
+    alignSelf: 'center',
+    marginTop: 8,
+    marginBottom: 24,
   },
 });

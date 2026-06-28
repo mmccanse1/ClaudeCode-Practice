@@ -26,6 +26,7 @@ export default function DayScreen({ navigation, route }: Props) {
   const { day, ingredients } = route.params;
   const dietType: DietType = route.params.dietType;
   const glutenFree = route.params.glutenFree ?? false;
+  const lowSalt = route.params.lowSalt ?? false;
   const isSavedView = route.params.saved ?? false;
 
   // Hold the full week so a refresh can persist the whole updated plan.
@@ -42,7 +43,7 @@ export default function DayScreen({ navigation, route }: Props) {
     const mealType: MealType = target.mealType ?? 'dinner';
     setRefreshingKey(recipeKey(target));
     try {
-      const newRecipe = await regenerateRecipe(ingredients, recipes, day, dietType, glutenFree, mealType);
+      const newRecipe = await regenerateRecipe(ingredients, recipes, day, dietType, glutenFree, mealType, lowSalt);
       const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
       const replacement = { ...newRecipe, photoUrl, dietType, mealType };
       const updated = recipes.map(r =>
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
   scroll: { padding: 20, paddingBottom: 40 },
   title: { fontSize: 26, fontWeight: '800', color: '#1a1a1a', marginBottom: 6 },
-  subtitle: { fontSize: 14, color: '#666', lineHeight: 20, marginBottom: 16 },
+  subtitle: { fontSize: 14, color: '#5b7a8c', lineHeight: 20, marginBottom: 16 },
 
   mealHeader: { marginBottom: 8, marginTop: 4 },
   mealHeaderText: { fontSize: 15, fontWeight: '800', color: '#1d5c63', letterSpacing: 0.3 },

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,44 +13,74 @@ import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, DietType } from '../types';
 import { getAllCurrentPlans, hasEverGeneratedPlan, CurrentPlan } from '../services/currentMealPlanService';
+import { getPantryItems } from '../services/pantryService';
 import { DIET_TYPES, DietConfig } from '../constants/dietTypes';
+import Dropdown, { DropdownOption } from '../components/Dropdown';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 // All diets are free; this is simply every diet, kept as a named list.
 const FREE_DIETS = DIET_TYPES.filter(d => !d.premium);
 
+function planDaysLabel(plan: CurrentPlan): string {
+  if (plan.daysRemaining <= 0) return 'Expires today — time to replan!';
+  if (plan.daysRemaining === 1) return 'Expires tomorrow — time to replan!';
+  return `${plan.daysRemaining} days remaining`;
+}
+
 export default function HomeScreen({ navigation }: Props) {
   const [activePlans, setActivePlans] = useState<CurrentPlan[]>([]);
   const [hasMadePlan, setHasMadePlan] = useState(false);
+  const [pantryCount, setPantryCount] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       getAllCurrentPlans().then(setActivePlans);
       hasEverGeneratedPlan().then(setHasMadePlan);
+      getPantryItems().then(items => setPantryCount(items.length));
     }, [])
   );
-
-  function handleDietSelect(diet: DietConfig) {
-    navigation.navigate('ScanReceipt', { dietType: diet.id });
-  }
 
   function getDietConfig(dietType: DietType): DietConfig {
     return DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   }
 
+  function handleDietSelect(option: DropdownOption) {
+    navigation.navigate('ScanReceipt', { dietType: option.id as DietType });
+  }
+
+  function handleMenuSelect(option: DropdownOption) {
+    const plan = activePlans.find(p => p.dietType === option.id);
+    if (!plan) return;
+    navigation.navigate('MealPlan', {
+      recipes: plan.recipes,
+      ingredients: plan.ingredients,
+      dietType: plan.dietType,
+    });
+  }
+
   const isNewUser = activePlans.length === 0;
   // True once the user has earned their first "aha" — either the persisted flag,
   // or an active plan (covers users from before the flag existed). Gates the
-  // premium upsell and the empty-until-used Saved Recipes shortcut.
+  // empty-until-used Saved Recipes shortcut.
   const hasActivated = hasMadePlan || activePlans.length > 0;
 
-  const HeaderContent = (
-    <View style={styles.headerOverlay}>
-      <Text style={styles.title}>Weekly Meal Planner</Text>
-      <Text style={styles.subtitle}>What did you buy this week? Snap your receipt and our chefs plan 7 dinners from it — no sign-up.</Text>
-    </View>
-  );
+  const dietOptions: DropdownOption[] = FREE_DIETS.map(d => ({
+    id: d.id,
+    label: d.label,
+    color: d.color,
+    sublabel: d.tagline,
+  }));
+
+  const menuOptions: DropdownOption[] = activePlans.map(plan => {
+    const cfg = getDietConfig(plan.dietType);
+    return {
+      id: plan.dietType,
+      label: `${cfg.label} Menu`,
+      color: cfg.color,
+      sublabel: planDaysLabel(plan),
+    };
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -62,7 +92,12 @@ export default function HomeScreen({ navigation }: Props) {
           resizeMode="cover"
         >
           <View style={styles.heroOverlay} />
-          {HeaderContent}
+          <View style={styles.headerOverlay}>
+            <Text style={styles.title}>Weekly Meal Planner</Text>
+            <Text style={styles.subtitle}>
+              Snap your receipt and our chefs plan 7 dinners from it — no sign-up.
+            </Text>
+          </View>
         </ImageBackground>
 
         <View style={styles.body}>
@@ -71,8 +106,8 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.howTitle}>How it works</Text>
             {[
               ['1', 'Choose your diet'],
-              ['2', 'Photograph your grocery receipt or add pantry items'],
-              ['3', 'Get 7 recipes built from the groceries you already have'],
+              ['2', 'Photograph your receipt or add pantry items'],
+              ['3', 'Get 7 recipes from groceries you already have'],
               ['4', 'Save and share your recipe cards'],
             ].map(([num, text]) => (
               <View key={num} style={styles.step}>
@@ -84,29 +119,14 @@ export default function HomeScreen({ navigation }: Props) {
             ))}
           </View>
 
-          {/* Diet picker — all diets are free */}
-          <View style={styles.tierHeader}>
-            <Text style={styles.sectionLabel}>Choose your diet</Text>
-          </View>
-
-          {FREE_DIETS.map(diet => (
-            <TouchableOpacity
-              key={diet.id}
-              style={[styles.featuredCard, { borderColor: diet.color }]}
-              onPress={() => handleDietSelect(diet)}
-              activeOpacity={0.65}
-            >
-              <View style={styles.featuredCardInner}>
-                <View style={styles.featuredText}>
-                  <View style={styles.featuredLabelRow}>
-                    <Text style={[styles.featuredLabel, { color: diet.color }]}>{diet.label}</Text>
-                  </View>
-                  <Text style={styles.featuredTagline}>{diet.tagline}</Text>
-                </View>
-                <Text style={[styles.arrow, { color: diet.color }]}>›</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {/* Choose a Diet — dropdown; picking one starts the scan flow */}
+          <Dropdown
+            label="Choose a Diet"
+            placeholder="Pick a diet to start →"
+            options={dietOptions}
+            onSelect={handleDietSelect}
+            accentColor="#2e86ab"
+          />
 
           {/* New-user directed CTA */}
           {isNewUser && (
@@ -117,40 +137,15 @@ export default function HomeScreen({ navigation }: Props) {
             </View>
           )}
 
-          {/* Active plans */}
+          {/* Current Menus — dropdown filtered by diet type */}
           {activePlans.length > 0 && (
-            <View style={styles.activePlansSection}>
-              <Text style={[styles.sectionLabel, { marginBottom: 12 }]}>Active menus</Text>
-              {activePlans.map(plan => {
-                const cfg = getDietConfig(plan.dietType);
-                const expiringSoon = plan.daysRemaining <= 2;
-                return (
-                  <TouchableOpacity
-                    key={plan.dietType}
-                    style={[styles.currentPlanBtn, { backgroundColor: cfg.color }]}
-                    onPress={() =>
-                      navigation.navigate('MealPlan', {
-                        recipes: plan.recipes,
-                        ingredients: plan.ingredients,
-                        dietType: plan.dietType,
-                      })
-                    }
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.currentPlanTitle}>
-                      {cfg.label} Menu
-                    </Text>
-                    <Text style={styles.currentPlanDays}>
-                      {expiringSoon
-                        ? plan.daysRemaining === 1
-                          ? '⚠️ Expires today — time to replan!'
-                          : '⚠️ Expires tomorrow — time to replan!'
-                        : `${plan.daysRemaining} days remaining`}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <Dropdown
+              label="Current Menus"
+              placeholder={`View a menu (${activePlans.length}) →`}
+              options={menuOptions}
+              onSelect={handleMenuSelect}
+              accentColor="#f4a261"
+            />
           )}
 
           <TouchableOpacity
@@ -160,6 +155,13 @@ export default function HomeScreen({ navigation }: Props) {
           >
             <Text style={styles.secondaryBtnText}>🗄  Manage Pantry</Text>
           </TouchableOpacity>
+
+          {/* Pantry as an active ingredient resource (Option C) */}
+          <Text style={styles.pantryStatus}>
+            {pantryCount > 0
+              ? `Pantry: ${pantryCount} item${pantryCount !== 1 ? 's' : ''} ready`
+              : 'Pantry: 0 items — add some to cook from your shelves'}
+          </Text>
 
           {hasActivated && (
             <TouchableOpacity
@@ -200,241 +202,95 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f5f0e8' },
   container: { flexGrow: 1 },
 
-  heroImage: { width: '100%', height: 220, justifyContent: 'flex-end', backgroundColor: '#2e86ab' },
+  heroImage: { width: '100%', height: 158, justifyContent: 'flex-end', backgroundColor: '#2e86ab' },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.38)',
   },
-  headerOverlay: { padding: 24, paddingTop: 48 },
+  headerOverlay: { padding: 18, paddingTop: 36 },
   title: {
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: '800',
     color: 'white',
-    marginBottom: 4,
+    marginBottom: 3,
     textShadowColor: 'rgba(0,0,0,0.4)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: 'rgba(255,255,255,0.88)',
     textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
 
-  body: { padding: 24 },
+  body: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
 
-  miniSteps: {
-    flexDirection: 'row',
+  // How it works — shrunk ~10% from the prior sizing to reclaim vertical space.
+  howItWorks: { marginBottom: 18 },
+  howTitle: { fontSize: 15, fontWeight: '700', color: '#1a1a1a', marginBottom: 12 },
+  step: { flexDirection: 'row', alignItems: 'center', marginBottom: 11, gap: 12 },
+  stepNum: {
+    width: 29,
+    height: 29,
+    borderRadius: 15,
+    backgroundColor: '#2e86ab',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'white',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 24,
-    gap: 4,
   },
-  miniStep: { alignItems: 'center', flex: 1 },
-  miniStepIcon: { fontSize: 22, marginBottom: 4 },
-  miniStepLabel: { fontSize: 11, color: '#555', fontWeight: '600', textAlign: 'center', lineHeight: 14 },
-  miniStepArrow: { fontSize: 20, color: '#ccc', fontWeight: '300', marginBottom: 14 },
-
-  tierHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  freePill: {
-    backgroundColor: '#2e86ab',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  freePillText: { color: 'white', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  premiumPillText: { fontSize: 13, color: '#c0392b', fontWeight: '700' },
-
-  featuredCard: {
-    backgroundColor: 'white',
-    borderRadius: 14,
-    borderWidth: 2,
-    padding: 16,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  featuredCardInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  featuredEmoji: { fontSize: 36 },
-  featuredText: { flex: 1 },
-  featuredLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
-  featuredLabel: { fontSize: 18, fontWeight: '800' },
-  freeBadge: {
-    backgroundColor: '#2e86ab',
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  freeBadgeText: { color: 'white', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  featuredTagline: { fontSize: 13, color: '#777' },
-  arrow: { fontSize: 28, fontWeight: '300', marginLeft: 4 },
-
-  dietGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 8,
-  },
-  dietCard: {
-    width: '47.5%',
-    borderRadius: 14,
-    padding: 14,
-    position: 'relative',
-  },
-  lockBadge: { position: 'absolute', top: 10, right: 10 },
-  lockIcon: { fontSize: 14 },
-  dietEmoji: { fontSize: 30, marginBottom: 6 },
-  dietLabel: { fontSize: 15, fontWeight: '800', marginBottom: 3 },
-  dietTagline: { fontSize: 12, color: '#666' },
+  stepNumText: { color: 'white', fontWeight: '700', fontSize: 13 },
+  stepText: { flex: 1, fontSize: 13, color: '#444', lineHeight: 18 },
 
   newUserCta: {
-    backgroundColor: '#fff8e1',
+    backgroundColor: '#eaf3f8',
     borderRadius: 12,
-    padding: 14,
-    marginTop: 4,
-    marginBottom: 24,
+    padding: 12,
+    marginBottom: 14,
     borderLeftWidth: 4,
-    borderLeftColor: '#f4a261',
+    borderLeftColor: '#2e86ab',
   },
-  newUserCtaText: { fontSize: 14, color: '#555', fontWeight: '500', lineHeight: 20 },
-
-  activePlansSection: { marginBottom: 16 },
-  currentPlanBtn: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    marginBottom: 10,
-    alignItems: 'center',
-  },
-  currentPlanTitle: { color: 'white', fontSize: 16, fontWeight: '700', marginBottom: 2 },
-  currentPlanDays: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '500' },
+  newUserCtaText: { fontSize: 13, color: '#3a5663', fontWeight: '500', lineHeight: 19 },
 
   secondaryBtn: {
     backgroundColor: 'white',
     borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: 12,
+    marginTop: 4,
+    marginBottom: 6,
     borderWidth: 1.5,
     borderColor: '#2e86ab',
   },
-  secondaryBtnText: { color: '#2e86ab', fontSize: 17, fontWeight: '700' },
+  secondaryBtnText: { color: '#2e86ab', fontSize: 16, fontWeight: '700' },
+
+  pantryStatus: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#5b7a8c',
+    fontWeight: '600',
+    marginBottom: 14,
+  },
 
   savedBtn: {
     backgroundColor: 'white',
     borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 18,
     borderWidth: 1.5,
     borderColor: '#f4a261',
   },
-  savedBtnText: { color: '#f4a261', fontSize: 17, fontWeight: '700' },
+  savedBtnText: { color: '#f4a261', fontSize: 16, fontWeight: '700' },
 
-  howItWorks: { marginBottom: 24 },
-  howTitle: { fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 16 },
-  step: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 14 },
-  stepNum: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#2e86ab',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepNumText: { color: 'white', fontWeight: '700', fontSize: 14 },
-  stepText: { flex: 1, fontSize: 14, color: '#444', lineHeight: 20 },
-
-  source: { textAlign: 'center', fontSize: 11, color: '#aaa', marginBottom: 8 },
+  source: { textAlign: 'center', fontSize: 11, color: '#9bb4c2', marginBottom: 8 },
 
   legalFooter: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  legalLink: { fontSize: 11, color: '#aaa' },
-  legalSep: { fontSize: 11, color: '#aaa' },
-
-  // Upgrade modal
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  upgradeSheet: {
-    backgroundColor: 'white',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 28,
-    paddingBottom: 44,
-  },
-  sheetClose: { position: 'absolute', top: 20, right: 24, padding: 6 },
-  sheetCloseText: { fontSize: 18, color: '#aaa', fontWeight: '700' },
-  sheetEmoji: { fontSize: 40, marginBottom: 8, marginTop: 8 },
-  sheetDietName: { fontSize: 26, fontWeight: '800', marginBottom: 4 },
-  sheetTaglineText: { fontSize: 14, color: '#888', marginBottom: 20 },
-  sheetBenefits: { marginBottom: 16 },
-  sheetBenefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
-  sheetBenefitCheck: { fontSize: 16, fontWeight: '800', marginTop: 1 },
-  sheetBenefitText: { flex: 1, fontSize: 15, color: '#333', lineHeight: 22 },
-  sheetDivider: { height: 1, backgroundColor: '#eee', marginBottom: 16 },
-
-  billingToggle: { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  billingOption: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-    position: 'relative',
-    overflow: 'visible',
-  },
-  billingOptionActive: { backgroundColor: '#f0f7fb', borderColor: '#2e86ab' },
-  billingOptionLabel: { fontSize: 14, fontWeight: '600', color: '#888', marginBottom: 4 },
-  billingOptionLabelActive: { color: '#1a1a1a' },
-  billingOptionPrice: { fontSize: 16, fontWeight: '800', color: '#888' },
-  billingOptionPriceActive: { color: '#2e86ab' },
-  bestValueBadge: {
-    position: 'absolute',
-    top: -10,
-    backgroundColor: '#f4a261',
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  bestValueText: { fontSize: 9, fontWeight: '800', color: 'white', letterSpacing: 0.5 },
-
-  sheetPrice: { fontSize: 13, color: '#888', textAlign: 'center', marginBottom: 16, fontStyle: 'italic' },
-  sheetJoinBtn: { borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 16 },
-  sheetJoinBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  sheetFreeBtn: { alignItems: 'center', paddingVertical: 8 },
-  sheetFreeBtnText: { color: '#2e86ab', fontSize: 15, fontWeight: '600' },
+  legalLink: { fontSize: 11, color: '#9bb4c2' },
+  legalSep: { fontSize: 11, color: '#9bb4c2' },
 });

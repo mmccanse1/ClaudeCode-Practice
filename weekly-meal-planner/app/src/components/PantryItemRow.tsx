@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   remove: {
-    color: '#bbb',
+    color: '#9bb4c2',
     fontSize: 14,
     fontWeight: '700',
   },
