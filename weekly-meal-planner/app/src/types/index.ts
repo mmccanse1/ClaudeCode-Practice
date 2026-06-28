@@ -9,6 +9,24 @@ export interface Nutrition {
   sodium: number;
 }
 
+/** Premium detailed nutrition (Pro). Estimated per serving; integers in fixed
+ *  units: grams except cholesterol/omega3/potassium/calcium/iron/magnesium = mg,
+ *  vitaminD/vitaminB12 = mcg. */
+export interface NutritionPremium {
+  fiber: number;
+  netCarbs: number;
+  saturatedFat: number;
+  addedSugar: number;
+  cholesterol: number;
+  omega3: number;
+  potassium: number;
+  calcium: number;
+  iron: number;
+  magnesium: number;
+  vitaminD: number;
+  vitaminB12: number;
+}
+
 export type MealType = 'breakfast' | 'lunch' | 'dinner';
 
 export interface Recipe {
@@ -25,6 +43,8 @@ export interface Recipe {
   nutritionNotes: string;
   /** Optional — older saved recipes predate this and render without it. */
   nutrition?: Nutrition;
+  /** Premium detailed nutrition. Only present when generated with Pro enabled. */
+  nutritionPremium?: NutritionPremium;
   searchQuery: string;
   photoUrl?: string;
   dietType?: DietType;

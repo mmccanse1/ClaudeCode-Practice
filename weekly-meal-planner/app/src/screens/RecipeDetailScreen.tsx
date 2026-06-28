@@ -12,14 +12,39 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
+import { RootStackParamList, NutritionPremium } from '../types';
 import { saveRecipe, unsaveRecipe, isRecipeSaved } from '../services/savedRecipesService';
 import { fetchFoodPhoto } from '../services/unsplashService';
 import { printRecipe } from '../services/recipePrint';
 import { DIET_TYPES } from '../constants/dietTypes';
+import { IS_PREMIUM } from '../constants/subscription';
 import RecipeShareCard from '../components/RecipeShareCard';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
+
+// Premium detailed nutrition, grouped for display (per the nutritionist spec).
+function premiumGroups(p: NutritionPremium) {
+  return [
+    { title: 'Carb detail', rows: [
+      ['Fiber', `${p.fiber} g`],
+      ['Net carbs', `${p.netCarbs} g`],
+      ['Added sugar', `${p.addedSugar} g`],
+    ] },
+    { title: 'Fat & cholesterol', rows: [
+      ['Saturated fat', `${p.saturatedFat} g`],
+      ['Cholesterol', `${p.cholesterol} mg`],
+      ['Omega-3', `${p.omega3} mg`],
+    ] },
+    { title: 'Micronutrients', rows: [
+      ['Potassium', `${p.potassium} mg`],
+      ['Magnesium', `${p.magnesium} mg`],
+      ['Calcium', `${p.calcium} mg`],
+      ['Iron', `${p.iron} mg`],
+      ['Vitamin D', `${p.vitaminD} mcg`],
+      ['Vitamin B12', `${p.vitaminB12} mcg`],
+    ] },
+  ];
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RecipeDetail'>;
 
@@ -33,6 +58,7 @@ export default function RecipeDetailScreen({ route }: Props) {
   // Photo shown in the hero / share card. Starts from the recipe's stored URL but
   // can be filled in lazily below if it arrived here without one.
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(recipe.photoUrl);
+  const [premiumOpen, setPremiumOpen] = useState(true);
   const shareRef = useRef<View>(null);
 
   useEffect(() => {
@@ -232,6 +258,51 @@ export default function RecipeDetailScreen({ route }: Props) {
             </View>
           )}
 
+          {/* Premium detailed nutrition — gated on Pro. */}
+          {IS_PREMIUM ? (
+            recipe.nutritionPremium ? (
+              <View style={styles.premiumCard}>
+                <TouchableOpacity
+                  style={styles.premiumHeader}
+                  onPress={() => setPremiumOpen(o => !o)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.premiumTitle}>Detailed nutrition · per serving</Text>
+                  <Text style={styles.premiumChevron}>{premiumOpen ? '▾' : '▸'}</Text>
+                </TouchableOpacity>
+                {premiumOpen && (
+                  <>
+                    {premiumGroups(recipe.nutritionPremium).map(group => (
+                      <View key={group.title} style={styles.premiumGroup}>
+                        <Text style={styles.premiumGroupTitle}>{group.title}</Text>
+                        {group.rows.map(([label, value]) => (
+                          <View key={label} style={styles.premiumRow}>
+                            <Text style={styles.premiumRowLabel}>{label}</Text>
+                            <Text style={styles.premiumRowValue}>{value}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ))}
+                    <Text style={styles.macrosDisclaimer}>
+                      AI-estimated per serving for general guidance only — not medical or dietary advice.
+                    </Text>
+                  </>
+                )}
+              </View>
+            ) : (
+              <Text style={styles.premiumUnavailable}>
+                Detailed nutrition isn't available for this recipe — regenerate it to see the full breakdown.
+              </Text>
+            )
+          ) : (
+            <View style={styles.premiumLockedCard}>
+              <Text style={styles.premiumLockedTitle}>🔒  Detailed macros & micronutrients</Text>
+              <Text style={styles.premiumLockedSub}>
+                Fiber, net carbs, added sugar, saturated fat, cholesterol, omega-3, potassium, magnesium, calcium, iron, vitamin D & B12 — unlock with Pro.
+              </Text>
+            </View>
+          )}
+
           <View style={styles.nutritionBox}>
             <Text style={styles.nutritionIcon}>🌿</Text>
             <Text style={styles.nutritionText}>{recipe.nutritionNotes}</Text>
@@ -389,6 +460,34 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
   },
+  premiumCard: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: '#eef4f8',
+  },
+  premiumHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  premiumTitle: { fontSize: 12, fontWeight: '700', color: '#5b7a8c', textTransform: 'uppercase', letterSpacing: 0.6 },
+  premiumChevron: { fontSize: 14, color: '#9bb4c2' },
+  premiumGroup: { marginTop: 14 },
+  premiumGroupTitle: { fontSize: 11, fontWeight: '700', color: '#9bb4c2', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+  premiumRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#f3f7fa' },
+  premiumRowLabel: { fontSize: 14, color: '#333' },
+  premiumRowValue: { fontSize: 14, color: '#1a1a1a', fontWeight: '700' },
+  premiumUnavailable: { fontSize: 13, color: '#9bb4c2', fontStyle: 'italic', marginTop: 14, lineHeight: 19 },
+  premiumLockedCard: {
+    backgroundColor: '#fff8f0',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 14,
+    borderWidth: 1.5,
+    borderColor: '#f4d8bf',
+    borderStyle: 'dashed',
+  },
+  premiumLockedTitle: { fontSize: 15, fontWeight: '800', color: '#c07030', marginBottom: 4 },
+  premiumLockedSub: { fontSize: 13, color: '#5b7a8c', lineHeight: 19 },
   nutritionBox: {
     flexDirection: 'row',
     gap: 10,

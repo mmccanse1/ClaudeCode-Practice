@@ -1,4 +1,5 @@
 import { Recipe, DietType, MealType } from '../types';
+import { IS_PREMIUM } from '../constants/subscription';
 
 export const RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR';
 export const AI_PARSE_ERROR = 'AI_PARSE_ERROR';
@@ -140,6 +141,23 @@ These are estimates for general guidance only — they do not need lab precision
 
 const NUTRITION_SHAPE = `"nutrition": { "calories": 520, "protein": 32, "carbs": 18, "fat": 22, "sugar": 6, "sodium": 640 }`;
 
+// Premium detailed nutrition — only requested when Pro is on, so free
+// generations don't pay for the extra tokens. Returned as a SIBLING of "nutrition".
+const PREMIUM_NUTRITION_INSTRUCTION = `Because Premium is enabled, ALSO return an expanded "nutrition_premium" object per recipe — all integers, per serving, estimated using USDA FoodData Central conventions:
+- fiber (g), net_carbs (g, = carbs minus fiber), saturated_fat (g), added_sugar (g, added during cooking/processing — not naturally occurring), cholesterol (mg), omega_3 (mg), potassium (mg), calcium (mg), iron (mg), magnesium (mg), vitamin_d (mcg), vitamin_b12 (mcg).
+If a value is trace or effectively zero, return 0 — never null, never omitted.`;
+
+const PREMIUM_NUTRITION_SHAPE = `"nutrition_premium": { "fiber": 7, "net_carbs": 41, "saturated_fat": 5, "added_sugar": 3, "cholesterol": 85, "omega_3": 240, "potassium": 620, "calcium": 110, "iron": 3, "magnesium": 60, "vitamin_d": 2, "vitamin_b12": 1 }`;
+
+function premiumNutritionBlock(): string {
+  if (!IS_PREMIUM) return '';
+  return `
+
+${PREMIUM_NUTRITION_INSTRUCTION}
+Add it as a sibling key to "nutrition" in every object, exactly this shape:
+${PREMIUM_NUTRITION_SHAPE}`;
+}
+
 // Frames a 7-recipe generation as a specific meal of the day.
 const MEAL_DIRECTIVE: Record<MealType, string> = {
   breakfast: 'These are BREAKFAST recipes — breakfast-appropriate dishes (eggs, oats, smoothies, yoghurt bowls, savoury breakfasts, etc.) that still fit the diet.',
@@ -247,6 +265,33 @@ function normalizeNutrition(raw: any): Recipe['nutrition'] {
   const sugar = num(raw.sugar) ?? 0;
   const sodium = num(raw.sodium) ?? 0;
   return { calories, protein, carbs, fat, sugar, sodium };
+}
+
+// Parse the premium nutrition object (snake_case from the model) into camelCase.
+// Missing/trace values default to 0 (spec: never null). Returns undefined when the
+// object is absent (free generation or legacy recipe) so the UI shows "unavailable".
+function normalizeNutritionPremium(raw: any, freeSugar?: number): Recipe['nutritionPremium'] {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const num = (v: any): number => {
+    const n = Number(v);
+    return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+  };
+  let addedSugar = num(raw.added_sugar);
+  if (typeof freeSugar === 'number' && addedSugar > freeSugar) addedSugar = freeSugar;
+  return {
+    fiber: num(raw.fiber),
+    netCarbs: num(raw.net_carbs),
+    saturatedFat: num(raw.saturated_fat),
+    addedSugar,
+    cholesterol: num(raw.cholesterol),
+    omega3: num(raw.omega_3),
+    potassium: num(raw.potassium),
+    calcium: num(raw.calcium),
+    iron: num(raw.iron),
+    magnesium: num(raw.magnesium),
+    vitaminD: num(raw.vitamin_d),
+    vitaminB12: num(raw.vitamin_b12),
+  };
 }
 
 function buildSystemPrompt(dietType: DietType, glutenFree: boolean, lowSalt: boolean = false, diabetic: boolean = false): string {
@@ -408,7 +453,7 @@ STRICT rules:
 - Must be different from all the recipes listed above.
 - Favor a main protein and centerpiece ingredients that are UNDER-used in the rest of the week — do not pick a protein that already headlines two or more of the recipes listed above, unless the available ingredients leave no alternative.
 
-${NUTRITION_INSTRUCTION}
+${NUTRITION_INSTRUCTION}${premiumNutritionBlock()}
 
 Return ONLY a valid JSON object (not an array) with this exact shape:
 {
@@ -431,7 +476,13 @@ Return ONLY a valid JSON object (not an array) with this exact shape:
   if (!recipe || typeof recipe !== 'object' || !recipe.day || typeof recipe.day !== 'string' || !recipe.name) {
     throw new Error(AI_PARSE_ERROR);
   }
-  return { ...recipe, mealType, nutrition: normalizeNutrition(recipe.nutrition) };
+  const nutrition = normalizeNutrition(recipe.nutrition);
+  return {
+    ...recipe,
+    mealType,
+    nutrition,
+    nutritionPremium: normalizeNutritionPremium((recipe as any).nutrition_premium, nutrition?.sugar),
+  };
 }
 
 // Generates the 7 day-recipes for a single meal type, tagged with that meal.
@@ -459,7 +510,7 @@ Generate exactly 7 ${MEAL_LABEL[mealType]} recipes, one per day (Monday–Sunday
 
 ${WEEKLY_VARIETY_RULES}
 
-${NUTRITION_INSTRUCTION}
+${NUTRITION_INSTRUCTION}${premiumNutritionBlock()}
 
 Return ONLY a valid JSON array of 7 objects with this exact shape:
 ${RECIPE_SHAPE}`,
@@ -474,7 +525,15 @@ ${RECIPE_SHAPE}`,
   ) {
     throw new Error(AI_PARSE_ERROR);
   }
-  return parsed.map(r => ({ ...r, mealType, nutrition: normalizeNutrition(r.nutrition) }));
+  return parsed.map(r => {
+    const nutrition = normalizeNutrition(r.nutrition);
+    return {
+      ...r,
+      mealType,
+      nutrition,
+      nutritionPremium: normalizeNutritionPremium((r as any).nutrition_premium, nutrition?.sugar),
+    };
+  });
 }
 
 export async function generateMealPlan(
