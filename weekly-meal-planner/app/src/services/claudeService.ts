@@ -537,7 +537,23 @@ function cuisineModule(cuisine?: CuisineType): string {
   return mod ? `\n\n${mod}` : '';
 }
 
-// Diet rules first, then the optional cuisine layer on top (spec ordering).
+// When a cuisine is stacked on a health modifier (Gluten-Free / Low-Salt /
+// Diabetic), the cuisine module sits LAST in the prompt and can quietly pull
+// against the modifier (soy sauce vs Low-Salt, sweet glazes vs Diabetic). This
+// re-asserts, after the cuisine, that the health requirement wins — so the
+// cuisine bends to the restriction, not the reverse. Only emitted when both a
+// cuisine and at least one modifier are active.
+function cuisineModifierPrecedence(glutenFree: boolean, lowSalt: boolean, diabetic: boolean): string {
+  const active: string[] = [];
+  if (glutenFree) active.push('Gluten-Free');
+  if (lowSalt) active.push('Low-Salt');
+  if (diabetic) active.push('Diabetic');
+  if (active.length === 0) return '';
+  return `\n\nPRECEDENCE — the ${active.join(' and ')} requirement(s) above OVERRIDE the cuisine: they are hard limits, not suggestions. Where a cuisine's signature ingredient conflicts — e.g. soy/fish/oyster sauce, salty cheeses, cured meats, or pickles under Low-Salt; refined sugar, sweet glazes, honey, or sugary sauces under Diabetic; wheat noodles, soy sauce, flatbread, or breadcrumbs under Gluten-Free — drop it or substitute a compliant alternative and keep the dish within the restriction. The cuisine adapts to the restriction; it never relaxes it.`;
+}
+
+// Diet rules first, then the optional cuisine layer on top (spec ordering), then
+// a precedence reminder so an active health modifier always beats the cuisine.
 function buildSystemPrompt(
   dietType: DietType,
   glutenFree: boolean,
@@ -545,7 +561,8 @@ function buildSystemPrompt(
   diabetic: boolean = false,
   cuisine?: CuisineType
 ): string {
-  return dietSystemPrompt(dietType, glutenFree, lowSalt, diabetic) + cuisineModule(cuisine);
+  const base = dietSystemPrompt(dietType, glutenFree, lowSalt, diabetic) + cuisineModule(cuisine);
+  return cuisine ? base + cuisineModifierPrecedence(glutenFree, lowSalt, diabetic) : base;
 }
 
 export async function parseReceiptFromImage(base64: string, mimeType: string = 'image/jpeg'): Promise<string[]> {
