@@ -142,54 +142,53 @@ export default function RecipeDetailScreen({ route }: Props) {
             </View>
           </View>
 
-          {/* Primary actions — kept together at the top, in line with each other */}
-          <TouchableOpacity
-            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
-            onPress={handleSave}
-            disabled={saving}
-            activeOpacity={0.85}
-          >
-            {saving ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <>
-                <MaterialCommunityIcons name={saved ? 'bookmark' : 'bookmark-outline'} size={19} color="white" />
-                <Text style={styles.saveBtnText}>{saved ? 'Saved' : 'Save'}</Text>
-              </>
-            )}
-          </TouchableOpacity>
+          {/* Primary actions — icon-only, evenly spaced in a horizontal row */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.iconBtn, styles.saveBtn, saved && styles.saveBtnSaved]}
+              onPress={handleSave}
+              disabled={saving}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={saved ? 'Saved' : 'Save'}
+            >
+              {saving ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <MaterialCommunityIcons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color="white" />
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.shareBtn}
-            onPress={handleShare}
-            disabled={sharing}
-            activeOpacity={0.85}
-          >
-            {sharing ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <>
-                <MaterialCommunityIcons name="share" size={19} color="white" />
-                <Text style={styles.shareBtnText}>Share</Text>
-              </>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.iconBtn, styles.shareBtn]}
+              onPress={handleShare}
+              disabled={sharing}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Share"
+            >
+              {sharing ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <MaterialCommunityIcons name="share" size={26} color="white" />
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.printBtn}
-            onPress={handlePrint}
-            disabled={printing}
-            activeOpacity={0.85}
-          >
-            {printing ? (
-              <ActivityIndicator color="#2e86ab" />
-            ) : (
-              <>
-                <MaterialCommunityIcons name="printer-outline" size={19} color="#2e86ab" />
-                <Text style={styles.printBtnText}>Print</Text>
-              </>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.iconBtn, styles.printBtn]}
+              onPress={handlePrint}
+              disabled={printing}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Print"
+            >
+              {printing ? (
+                <ActivityIndicator color="#2e86ab" />
+              ) : (
+                <MaterialCommunityIcons name="printer-outline" size={26} color="#2e86ab" />
+              )}
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.sectionTitle}>Ingredients</Text>
           {recipe.ingredients.map((ing, i) => (
@@ -401,43 +400,23 @@ const styles = StyleSheet.create({
   },
   nutritionIcon: { fontSize: 20 },
   nutritionText: { flex: 1, fontSize: 13, color: '#1d5c63', lineHeight: 20 },
-  saveBtn: {
-    backgroundColor: '#2e86ab',
-    borderRadius: 14,
-    paddingVertical: 16,
+  actionRow: {
     flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  iconBtn: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginBottom: 12,
   },
-  saveBtnSaved: {
-    backgroundColor: '#1d5c63',
-  },
-  saveBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  shareBtn: {
-    backgroundColor: '#f4a261',
-    borderRadius: 14,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  shareBtnText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  printBtn: {
-    backgroundColor: 'white',
-    borderRadius: 14,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: '#2e86ab',
-  },
-  printBtnText: { color: '#2e86ab', fontSize: 16, fontWeight: '700' },
+  saveBtn: { backgroundColor: '#2e86ab' },
+  saveBtnSaved: { backgroundColor: '#1d5c63' },
+  shareBtn: { backgroundColor: '#f4a261' },
+  printBtn: { backgroundColor: 'white', borderWidth: 1.5, borderColor: '#2e86ab' },
   sourceNote: { textAlign: 'center', fontSize: 11, color: '#9bb4c2', marginBottom: 24 },
 });
