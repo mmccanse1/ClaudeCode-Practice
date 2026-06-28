@@ -422,16 +422,23 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
             )}
 
             {/* Returning user with a stocked pantry can cook straight from it, no
-                receipt. Tapping only REVEALS the options (it does not generate);
-                generation happens on the bottom Generate button. */}
-            {items.length === 0 && pantryCount > 0 && !usePantry && (
+                receipt. Tapping REVEALS the options (it does not generate) and
+                stays visible in a selected state so the source is always clear;
+                tapping again deselects. Generation only on the Generate button. */}
+            {items.length === 0 && pantryCount > 0 && (
               <TouchableOpacity
-                style={[styles.pantryCookBtn, { borderColor: dietConfig.color }]}
-                onPress={() => setUsePantry(true)}
+                style={[
+                  styles.pantryCookBtn,
+                  { borderColor: dietConfig.color },
+                  usePantry && { backgroundColor: dietConfig.accentColor },
+                ]}
+                onPress={() => setUsePantry(prev => !prev)}
                 activeOpacity={0.85}
               >
                 <Text style={[styles.pantryCookBtnText, { color: dietConfig.color }]}>
-                  🥫  Cook from My Pantry ({pantryCount} item{pantryCount !== 1 ? 's' : ''}) →
+                  {usePantry
+                    ? `✓  Cooking from My Pantry (${pantryCount} item${pantryCount !== 1 ? 's' : ''})`
+                    : `🥫  Cook from My Pantry (${pantryCount} item${pantryCount !== 1 ? 's' : ''}) →`}
                 </Text>
               </TouchableOpacity>
             )}
