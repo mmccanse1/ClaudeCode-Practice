@@ -252,58 +252,80 @@ Strict variety rules:
 
 ---
 
-## 5. West African / Nigerian (Bonus — Strongly Recommended)
+## 5. Classic Home-Style (American comfort / heartland)
 
-I'm adding this one because it is dramatically underrepresented in meal-planning apps, it has serious depth and flavor, and the pantry footprint is smaller than you'd think once users own palm oil and crayfish. Worth differentiating the product.
+Comfort cooking — meatloaf, fried chicken, casseroles, pot roast, mac and cheese, chicken pot pie. The smallest specialty-pantry footprint of any cuisine here: most households already own everything, which makes it the easiest cuisine to cook straight off a typical grocery receipt. It leans rich and salt-forward by design — see the compatibility note at the end of this section and the matrix that follows.
 
-### Signature Spices & Aromatics
-Scotch bonnet or habanero chiles (heat and fruitiness — can dial back quantity), dried crayfish (ground or whole — foundational umami; nothing substitutes), palm oil (orange-red, smoky — essential for egusi and jollof), ground coriander, ground ginger, white pepper, bay leaf, curry powder (Nigerian "curry" is its own mild blend). Aromatics: onion (always), garlic, scotch bonnet, tomatoes (blended, always), scallions.
+### Signature Seasonings & Aromatics
+Salt and black pepper (heavily — flag for Low-Salt), garlic powder, onion powder, paprika (sweet and smoked), dried thyme, sage, dried parsley, bay leaf, poultry seasoning, butter, Worcestershire sauce, yellow mustard, a little brown sugar (glazes, meatloaf), ketchup or tomato paste. Aromatics: yellow onion, celery, carrot (the mirepoix trio), garlic. Stock (chicken or beef) is the everyday liquid.
 
 ### Pantry Staples
-- **Grains/legumes:** Long-grain parboiled rice (for jollof), white rice, black-eyed peas (beans, stewed), egusi (ground melon seeds — unique ingredient, worth sourcing from African grocers)
-- **Oils:** Palm oil (red, unrefined — distinct from palm kernel oil, which is different), vegetable oil
-- **Canned/jarred:** Canned plum tomatoes or crushed tomatoes (blended), tomato paste
-- **Proteins:** Smoked fish (mackerel, catfish — adds deep umami to stews), dried crayfish, stock cubes (Maggi or Knorr — widely used in Nigerian cooking, not a shortcut, it's tradition)
-- **Vegetables:** Bitter leaf (dried works), ugu leaves (fluted pumpkin leaf — sub spinach), okra
+- **Grains/starch:** Russet potatoes (mashed, roasted, in casseroles), egg noodles, elbow macaroni, white rice, all-purpose flour (gravy/roux/dredging), breadcrumbs, sandwich bread, pasta
+- **Dairy/fats:** Butter, whole milk, heavy cream, sour cream, sharp cheddar, American cheese (for mac), eggs
+- **Canned/frozen:** Canned cream-of-mushroom (or a scratch roux), canned green beans, frozen peas and corn, canned diced tomatoes
+- **Condiments:** Ketchup, yellow mustard, Worcestershire, brown sugar, bbq sauce
+- **Proteins on hand:** Ground beef, chicken (legs/thighs and breasts), pork chops, bacon, breakfast sausage, beef chuck (pot roast)
 
 ### Typical Proteins
-Goat, beef, chicken, smoked fish, dried crayfish (as seasoning and protein), fresh catfish.
-**Vegetarian swaps:** Black-eyed peas (beans in red sauce is a classic dish), egusi stew can be made vegan with palm oil and vegetable stock.
-**Vegan swaps:** Same as above — remove smoked fish and dried crayfish (flavor gap is real but manageable with extra tomato and onion depth).
+Ground beef (meatloaf, casseroles, sloppy joes, chili), chicken (fried, baked, pot pie), pork chops, bacon and sausage, beef chuck (pot roast, stew), eggs.
+**Vegetarian swaps:** Eggs and cheese carry this cuisine — baked mac and cheese, egg-noodle and vegetable casseroles, lentil or mushroom "meat"loaf, bean chili.
+**Vegan swaps:** Possible but a real stretch — lentil/mushroom loaf, vegan mac, bean-and-veg casseroles, mashed potatoes with plant milk + oil. The flavor identity weakens; see the compatibility note.
 
 ### Core Techniques
-- **Blended tomato base:** Blend plum tomatoes, scotch bonnet, and onion — fry this paste in palm oil or vegetable oil over medium heat, stirring constantly, until it deepens in color and smells cooked (30–45 minutes for a large pot). This is the foundation of virtually every Nigerian stew.
-- **Jollof rice technique:** Fry tomato base, add parboiled rice and stock, cover and cook low. The bottom layer should develop a slight crust (the "party crust" — deliberate, not burnt).
-- **Egusi method:** Fry ground melon seeds in oil until golden (or mix into stew raw — varies by region), add blended tomato base, protein, and leafy greens. Rich and substantial.
-- **Peppersoup:** Light broth, whole spices (peppersoup spice mix), protein. Clean and herbal — a counterpoint to the thick stews.
+- **Roux & pan gravy:** Equal butter and flour cooked to a blond paste, whisked with stock and pan drippings into gravy — the backbone of comfort plates (meatloaf, pot roast, mashed potatoes).
+- **Braise / pot roast:** Sear a chuck roast, then low oven with mirepoix and stock for hours until fork-tender. Low effort, big payoff, yields leftovers.
+- **Casserole assembly:** Layer a starch + protein + vegetable + binder (cream sauce or cheese) and bake — the defining home-style format.
+- **Dredge-and-fry / oven-fry:** Seasoned flour (or flour-egg-crumb) coating for fried chicken or pork; oven-fry on a rack for a lighter version.
+- **Mash & bake:** Boil-and-mash potatoes with butter and milk; bake meatloaf and casseroles low and even.
 
 ### Example Dishes (Easy → Ambitious)
-1. Nigerian fried rice (with vegetables and protein, different from Chinese fried rice)
-2. Jollof rice (the classic — party version or everyday version)
-3. Beans (black-eyed peas in palm oil and onion stew) with fried plantain
-4. Egusi soup with spinach and chicken
-5. Pepper soup (light goat or chicken broth with whole spices)
-6. Efo riro (Yoruba spinach stew with assorted protein)
-7. Oha soup (spinach + oha leaf variation — regional)
-8. Ofada rice with ayamase sauce (green pepper stew — ambitious, stunning)
+1. Sloppy joes (ground beef, fast weeknight)
+2. Baked mac and cheese
+3. Oven-"fried" chicken with mashed potatoes
+4. Tuna or chicken noodle casserole
+5. Meatloaf with brown-sugar glaze and gravy
+6. Pot roast with carrots and potatoes (Sunday braise)
+7. Chicken pot pie (scratch crust or biscuit top)
+8. Shepherd's / cottage pie (ground beef + mashed-potato lid)
 
-### System Prompt Module — West African / Nigerian
+### System Prompt Module — Classic Home-Style
 
 ```
-Cuisine principles — West African / Nigerian:
-- The blended tomato base (plum tomatoes + scotch bonnet + onion, fried in palm oil until deepened) is the foundation of nearly every stew and rice dish. Build it correctly — it requires 30–45 minutes of active frying to lose the raw taste.
-- Palm oil is structural, not optional — it provides flavor, color, and fat that vegetable oil cannot replicate. Red palm oil (unrefined) is the correct ingredient; do not substitute coconut oil.
-- Dried crayfish is an umami anchor in soups and stews. If unavailable, substitute fish sauce at reduced quantity — not ideal but functional.
-- Protein often includes smoked or dried fish alongside fresh meat — both in the same pot is traditional, not redundant.
-- Include one rice dish (jollof or fried rice) and one soup or stew over the week; balance is expected.
-- Leafy greens (spinach, bitter leaf, or ugu) are a structural part of soups, not a side — include them.
-- Scotch bonnet chiles provide both heat and fruity flavor; instruct users to reduce quantity for lower heat rather than substituting a different chile.
-- [DEFER to diet module. Vegan: omit dried crayfish and smoked fish (flavor gap is significant — note this clearly). Keto: jollof rice and bean dishes are high-carb; focus on stews and soups with protein and leafy greens.]
+Cuisine principles — Classic Home-Style (American comfort):
+- Build plates around a protein + a starch (potatoes, noodles, rice) + a simple vegetable, in the familiar American comfort idiom.
+- Pan gravy and cream/cheese (roux-based) sauces are core — include at least one gravy- or cream-sauce dish in the week.
+- Seasoning is straightforward: salt, black pepper, garlic and onion powder, paprika, dried thyme/sage, Worcestershire. Do not reach for exotic spices — this cuisine's identity is familiar, savory, and unfussy.
+- Casseroles and braises (pot roast, baked pasta, sheet-pan bakes) are signature formats; include at least one one-dish bake or braise per week.
+- Lean on what a typical household already has — this should feel like "what's in the fridge," not a special shopping trip.
+- [DEFER to diet module. Vegetarian: eggs, cheese, beans, lentil/mushroom loaf, baked mac. Vegan: possible but identity weakens (note to user). NOT offered for Keto, Low-Salt, or Diabetic — see compatibility matrix.]
 
 Strict variety rules:
-- Do not repeat the same tomato-base stew more than twice in one week. Rotate to peppersoup (light broth), jollof rice, or fried rice to vary texture and weight.
-- Alternate heavy stews with lighter or drier preparations across the week — not every meal should be thick sauce.
+- Do not repeat the same protein format more than twice (e.g., not three ground-beef dishes) — rotate beef, chicken, pork, and a meatless bake.
+- Vary the format: at least one braise, one casserole/bake, and one quick skillet or sandwich-style dinner — don't make seven heavy oven dishes.
 ```
+
+### Compatibility note
+Classic Home-Style is rich and salt-forward by nature. Offered for **Mediterranean (loosely), Vegetarian, and — with a caveat — Vegan**, and **NOT offered when Keto, Low-Salt, or Diabetic is active**: there's no honest "low-sodium fried-chicken casserole," and forcing it produces sad food. This is the clearest case of the compatibility rule below.
+
+---
+
+## Cuisine × Diet / Modifier Compatibility
+
+Product rule: **if a cuisine can't honestly conform to a restriction, don't offer it for that restriction** — filter it out of the cuisine list when the modifier is active. Legend: ✓ offered · ~ offered with constraints · ✗ hidden.
+
+| Cuisine | Mediterranean | Keto | Paleo | Vegetarian | Vegan | +Gluten-Free | +Low-Salt | +Diabetic |
+|---|---|---|---|---|---|---|---|---|
+| Indian / South Asian | ✓ | ~ | ~ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| East Asian | ✓ | ~ | ✗ | ✓ | ✓ | ~ | ✗ | ~ |
+| Middle Eastern | ✓ | ~ | ~ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Latin American | ✓ | ~ | ~ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Classic Home-Style | ~ | ✗ | ✗ | ✓ | ~ | ~ | ✗ | ✗ |
+
+Notes:
+- **East Asian + Low-Salt = ✗**: soy/fish/oyster sauces are the backbone and are sodium bombs; stripping them removes the identity. East Asian + Paleo = ✗ (grains/soy/rice central); + Diabetic = ~ (cauliflower rice, limit sweet sauces).
+- **Paleo ~** for Indian/Middle Eastern/Latin: drop grains/legumes/dairy — doable but narrows the menu.
+- **Keto ~** across the board: reduce rice/bread/legumes, serve over cauliflower rice.
+- This matrix is the single source of truth for which cuisine chips to show once a diet + modifiers are selected.
 
 ---
 
@@ -311,11 +333,11 @@ Strict variety rules:
 
 1. **Module stacking order:** Cuisine module should come *after* the diet module in the system prompt so diet rules are established first. The cuisine module then applies within those constraints.
 
-2. **Ingredient availability flags:** Indian, East Asian, and Middle Eastern cuisine modules assume access to specialty pantry items (gochujang, tahini, dried chiles, palm oil). Consider a user-facing "pantry check" at cuisine selection that lists the 3–4 must-have specialty items. Nothing worse than a recipe requiring doubanjiang when the user lives 45 minutes from an Asian grocery.
+2. **Ingredient availability flags:** Indian, East Asian, and Middle Eastern cuisine modules assume access to specialty pantry items (gochujang, tahini, dried chiles). Consider a user-facing "pantry check" at cuisine selection that lists the 3–4 must-have specialty items. Nothing worse than a recipe requiring doubanjiang when the user lives 45 minutes from an Asian grocery. (Classic Home-Style is the opposite — no specialty items, the safe default.)
 
-3. **Dried crayfish and fish sauce:** Both flag for vegan diet — the module says to defer, but make sure the diet module's vegan rules explicitly override any cuisine module ingredient suggestions. Easy to miss in a long prompt.
+3. **Fish sauce and oyster sauce (East Asian):** Flag for vegan diet — the module says to defer, but make sure the diet module's vegan rules explicitly override any cuisine ingredient suggestions. Easy to miss in a long prompt.
 
-4. **West African / Nigerian:** This module assumes users have access to an African grocery store or can order online. Palm oil and egusi are not found at a typical Walmart. Flag this to the user at module selection. It is worth adding — it will stand out in the market — but set expectations.
+4. **Classic Home-Style:** The opposite extreme — essentially zero specialty ingredients, so it's the best default / "first cuisine" for users who haven't stocked an ethnic pantry. Its constraint is dietary, not availability: gate it off Keto, Low-Salt, and Diabetic per the compatibility matrix rather than letting it generate non-compliant comfort food.
 
 5. **Variety rules interaction:** If a user picks both a diet module (e.g., Vegetarian) and a cuisine module (e.g., Indian), the "strict variety rules" from BOTH modules apply. Test this combination explicitly — the rules should complement, not conflict. Indian Vegetarian is actually the easiest combination because the cuisine is already predominantly vegetarian and the variety rules don't pull against each other.
 

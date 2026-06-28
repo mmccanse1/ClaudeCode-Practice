@@ -34,10 +34,13 @@ Units: kcal for calories, mg for sodium, g for everything else. All integers, pe
   "saturated_fat": 5,
   "added_sugar": 3,
   "cholesterol": 85,
+  "omega_3": 240,
   "potassium": 620,
   "calcium": 110,
   "iron": 3,
-  "vitamin_d": 2
+  "magnesium": 60,
+  "vitamin_d": 2,
+  "vitamin_b12": 1
 }
 ```
 
@@ -65,7 +68,11 @@ The goal is the highest-signal set for a general meal-planning audience — not 
 - **Iron**: critical flag for plant-forward eaters and menstruating adults; frequently asked about.
 - **Vitamin D**: near-universally deficient in Western populations; food sources are limited and users notice when a recipe is a meaningful source. Justifies its slot.
 
-Excluded deliberately: Vitamin C (rarely limiting in a full-day diet), Zinc (hard to estimate reliably from ingredients), Magnesium (valuable but overlaps heavily with potassium coverage for MVP), B12 (important for vegans but better handled via a dedicated vegan callout than a number in a macro panel).
+- **Magnesium**: broadly under-consumed; relevant to muscle/nerve function and a frequent ask from health-focused users.
+- **Vitamin B12**: a key flag for plant-based eaters — a 0 here is genuinely informative on a vegan week, and a real value reassures on others.
+- **Omega-3**: a positive marker users actively seek out (fish, flax, walnuts, chia). Reported in **mg** because per-serving amounts are usually well under 1 g, and integer grams would collapse most foods to 0.
+
+Excluded deliberately: Vitamin C (rarely limiting in a full-day diet), Zinc (hard to estimate reliably from ingredients), and the long tail (vitamins A/E/K, selenium, copper, manganese…) where AI estimates add noise, not signal.
 
 ---
 
@@ -80,10 +87,13 @@ Additionally, for each recipe return an expanded "nutrition_premium" object with
 - saturated_fat (g)
 - added_sugar (g) — sugar added during cooking or processing, not naturally occurring
 - cholesterol (mg)
+- omega_3 (mg)
 - potassium (mg)
 - calcium (mg)
 - iron (mg)
+- magnesium (mg)
 - vitamin_d (mcg)
+- vitamin_b12 (mcg)
 
 Estimate these values using USDA FoodData Central conventions. If a value is trace or effectively zero for this recipe, return 0. Do not return null or omit fields. All values must be plausible for a single serving of the described dish.
 ```
@@ -126,14 +136,17 @@ Added Sugar   3 g
 ```
 Saturated Fat   5 g
 Cholesterol    85 mg
+Omega-3       240 mg
 ```
 
 **Group C — Key Micronutrients**
 ```
 Potassium    620 mg
+Magnesium     60 mg
 Calcium      110 mg
 Iron           3 mg
 Vitamin D      2 mcg
+Vitamin B12    1 mcg
 ```
 
 **Display recommendations:**
@@ -155,11 +168,11 @@ When a diet type is active, surface the most relevant premium fields with visual
 | **Keto** | Net Carbs (primary), Fiber, Saturated Fat | Net carbs is the operative number for ketosis tracking; fiber is the subtractor; sat fat is high on keto so worth flagging |
 | **Low-carb** | Net Carbs, Fiber, Sugar | Same carb-tracking logic, softer emphasis than keto |
 | **Diabetic-friendly** | Net Carbs, Added Sugar, Fiber | Glycemic load proxies; added sugar is the key lever for blood glucose management |
-| **Low-sodium** | (Sodium already free) + Potassium | Potassium offsets sodium's blood pressure effect — showing them together is genuinely useful context |
-| **Vegan** | Calcium, Iron, Vitamin D, Protein (free field) | The four nutrients most commonly limited on vegan diets; this is where the premium panel earns its keep for plant-based users |
-| **Vegetarian** | Calcium, Iron, Vitamin D | Same as vegan but protein concern is lower |
+| **Low-sodium** | (Sodium already free) + Potassium, Magnesium | Potassium and magnesium both offset sodium's blood pressure effect — useful context shown alongside sodium |
+| **Vegan** | Calcium, Iron, **Vitamin B12**, Vitamin D, Omega-3, Protein (free field) | The nutrients most commonly limited on vegan diets — B12 especially (often 0 without fortified foods); this is where the premium panel earns its keep for plant-based users |
+| **Vegetarian** | Calcium, Iron, Vitamin B12, Vitamin D | Same as vegan but protein concern is lower |
 | **High-protein** | Protein (free), Saturated Fat | Confirm protein hit; flag sat fat since high-protein often means high animal fat |
-| **Mediterranean** | Fiber, Potassium, Saturated Fat | Fiber and potassium are positive markers; sat fat is the Mediterranean diet's defining constraint |
+| **Mediterranean** | Fiber, Potassium, Omega-3, Saturated Fat | Fiber, potassium, and omega-3 (fish, olive oil) are positive markers; sat fat is the diet's defining constraint |
 | **General / No diet** | Fiber, Potassium | Two of the most under-consumed nutrients in Western diets; broadly relevant |
 
 **Implementation note:** the diet-specific emphasis logic belongs in the display layer (component config), not in the prompt. The AI always returns the full `nutrition_premium` object regardless of diet. The front end then reads `activeDiet` from app state and applies the emphasis mapping.
@@ -181,10 +194,13 @@ When a diet type is active, surface the most relevant premium fields with visual
 | added_sugar | **Premium** | Carb Detail |
 | saturated_fat | **Premium** | Fat & Cholesterol |
 | cholesterol | **Premium** | Fat & Cholesterol |
+| omega_3 | **Premium** | Fat & Cholesterol |
 | potassium | **Premium** | Key Micronutrients |
+| magnesium | **Premium** | Key Micronutrients |
 | calcium | **Premium** | Key Micronutrients |
 | iron | **Premium** | Key Micronutrients |
 | vitamin_d | **Premium** | Key Micronutrients |
+| vitamin_b12 | **Premium** | Key Micronutrients |
 
 ---
 
