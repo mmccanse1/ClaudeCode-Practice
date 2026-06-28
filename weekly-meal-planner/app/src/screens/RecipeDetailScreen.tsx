@@ -152,9 +152,10 @@ export default function RecipeDetailScreen({ route }: Props) {
             {saving ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.saveBtnText}>
-                {saved ? '🔖  Saved to Recipes' : '🔖  Save Recipe'}
-              </Text>
+              <>
+                <MaterialCommunityIcons name={saved ? 'bookmark' : 'bookmark-outline'} size={19} color="white" />
+                <Text style={styles.saveBtnText}>{saved ? 'Saved' : 'Save'}</Text>
+              </>
             )}
           </TouchableOpacity>
 
@@ -169,7 +170,7 @@ export default function RecipeDetailScreen({ route }: Props) {
             ) : (
               <>
                 <MaterialCommunityIcons name="share" size={19} color="white" />
-                <Text style={styles.shareBtnText}>Share Recipe Card</Text>
+                <Text style={styles.shareBtnText}>Share</Text>
               </>
             )}
           </TouchableOpacity>
@@ -183,7 +184,10 @@ export default function RecipeDetailScreen({ route }: Props) {
             {printing ? (
               <ActivityIndicator color="#2e86ab" />
             ) : (
-              <Text style={styles.printBtnText}>🖨  Print Recipe</Text>
+              <>
+                <MaterialCommunityIcons name="printer-outline" size={19} color="#2e86ab" />
+                <Text style={styles.printBtnText}>Print</Text>
+              </>
             )}
           </TouchableOpacity>
 
@@ -401,7 +405,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#2e86ab',
     borderRadius: 14,
     paddingVertical: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     marginBottom: 12,
   },
   saveBtnSaved: {
@@ -423,7 +430,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 14,
     paddingVertical: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
     marginBottom: 12,
     borderWidth: 1.5,
     borderColor: '#2e86ab',
