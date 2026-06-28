@@ -1,0 +1,14 @@
+{
+  "name": "meal-planner-image-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker: image proxy + shared KV cache for the Weekly Meal Planner. Keeps the Gemini key server-side and generates each unique dish image once globally.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}
