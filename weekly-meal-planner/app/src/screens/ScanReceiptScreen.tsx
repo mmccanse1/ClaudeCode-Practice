@@ -388,25 +388,29 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
               Photograph your grocery receipt and we'll extract the ingredients automatically.
             </Text>
 
-            <View style={styles.miniSteps}>
-              {[
-                ['📷', 'Scan receipt'],
-                ['🤖', 'AI builds 7 recipes'],
-                ['🍽', 'Eat well all week'],
-              ].map(([icon, label], i, arr) => (
-                <React.Fragment key={label}>
-                  <View style={styles.miniStep}>
-                    <Text style={styles.miniStepIcon}>{icon}</Text>
-                    <Text style={styles.miniStepLabel}>{label}</Text>
-                  </View>
-                  {i < arr.length - 1 && <Text style={styles.miniStepArrow}>›</Text>}
-                </React.Fragment>
-              ))}
-            </View>
+            {/* 3-step orientation: shown for first-time users only. Returning
+                users (who've made a plan) get the decluttered screen instead. */}
+            {!hasGeneratedBefore && (
+              <View style={styles.miniSteps}>
+                {[
+                  ['📷', 'Scan receipt'],
+                  ['🤖', 'AI builds 7 recipes'],
+                  ['🍽', 'Eat well all week'],
+                ].map(([icon, label], i, arr) => (
+                  <React.Fragment key={label}>
+                    <View style={styles.miniStep}>
+                      <Text style={styles.miniStepIcon}>{icon}</Text>
+                      <Text style={styles.miniStepLabel}>{label}</Text>
+                    </View>
+                    {i < arr.length - 1 && <Text style={styles.miniStepArrow}>›</Text>}
+                  </React.Fragment>
+                ))}
+              </View>
+            )}
 
             <TouchableOpacity style={styles.cameraBtn} onPress={() => pickReceipt(true)} activeOpacity={0.85}>
               <Text style={styles.cameraBtnIcon}>📷</Text>
-              <Text style={styles.cameraBtnLabel}>Scan with Camera</Text>
+              <Text style={styles.cameraBtnLabel}>Scan Receipt</Text>
             </TouchableOpacity>
 
             {/* Sample pantry is a first-run helper only — once the user has made a
