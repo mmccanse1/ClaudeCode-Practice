@@ -141,6 +141,48 @@ export default function RecipeDetailScreen({ route }: Props) {
             </View>
           </View>
 
+          {/* Primary actions — kept together at the top, in line with each other */}
+          <TouchableOpacity
+            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
+            onPress={handleSave}
+            disabled={saving}
+            activeOpacity={0.85}
+          >
+            {saving ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.saveBtnText}>
+                {saved ? '🔖  Saved to Recipes' : '🔖  Save Recipe'}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={handleShare}
+            disabled={sharing}
+            activeOpacity={0.85}
+          >
+            {sharing ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.shareBtnText}>Share Recipe Card</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.printBtn}
+            onPress={handlePrint}
+            disabled={printing}
+            activeOpacity={0.85}
+          >
+            {printing ? (
+              <ActivityIndicator color="#2e86ab" />
+            ) : (
+              <Text style={styles.printBtnText}>🖨  Print Recipe</Text>
+            )}
+          </TouchableOpacity>
+
           <Text style={styles.sectionTitle}>Ingredients</Text>
           {recipe.ingredients.map((ing, i) => (
             <View key={i} style={styles.ingredientRow}>
@@ -186,47 +228,6 @@ export default function RecipeDetailScreen({ route }: Props) {
             <Text style={styles.nutritionIcon}>🌿</Text>
             <Text style={styles.nutritionText}>{recipe.nutritionNotes}</Text>
           </View>
-
-          <TouchableOpacity
-            style={[styles.saveBtn, saved && styles.saveBtnSaved]}
-            onPress={handleSave}
-            disabled={saving}
-            activeOpacity={0.85}
-          >
-            {saving ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.saveBtnText}>
-                {saved ? '🔖  Saved to Recipes' : '🔖  Save Recipe'}
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.shareBtn}
-            onPress={handleShare}
-            disabled={sharing}
-            activeOpacity={0.85}
-          >
-            {sharing ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text style={styles.shareBtnText}>Share Recipe Card</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.printBtn}
-            onPress={handlePrint}
-            disabled={printing}
-            activeOpacity={0.85}
-          >
-            {printing ? (
-              <ActivityIndicator color="#2e86ab" />
-            ) : (
-              <Text style={styles.printBtnText}>🖨  Print Recipe</Text>
-            )}
-          </TouchableOpacity>
 
           <Text style={styles.sourceNote}>{dietConfig.source}</Text>
         </View>
