@@ -135,10 +135,10 @@ function extractJson<T>(text: string): T {
 
 // Per-serving nutrition estimate. Units are fixed so the UI can label them.
 const NUTRITION_INSTRUCTION = `For "nutrition", give realistic PER-SERVING estimates as integers:
-- calories in kcal, protein/carbs/sugar in grams, sodium in milligrams.
+- calories in kcal, protein/carbs/fat/sugar in grams, sodium in milligrams.
 These are estimates for general guidance only — they do not need lab precision, but should be plausible for the ingredients and serving size.`;
 
-const NUTRITION_SHAPE = `"nutrition": { "calories": 520, "protein": 32, "carbs": 18, "sugar": 6, "sodium": 640 }`;
+const NUTRITION_SHAPE = `"nutrition": { "calories": 520, "protein": 32, "carbs": 18, "fat": 22, "sugar": 6, "sodium": 640 }`;
 
 // Frames a 7-recipe generation as a specific meal of the day.
 const MEAL_DIRECTIVE: Record<MealType, string> = {
@@ -186,6 +186,19 @@ LOW-SODIUM REQUIREMENT (the user has chosen a Low Salt menu — follow strictly)
 - Avoid high-sodium and processed ingredients: cured/deli meats, bacon, sausage, canned soups, bouillon/stock cubes, soy sauce, most cheeses, olives, pickles, and jarred sauces. If a canned item (beans, tomatoes) is the only option, call for "no-salt-added" or rinsed.
 - Reflect the reduced sodium in the nutrition estimate.`;
 
+// Diabetic-friendly guidance, injected when the user enables the Diabetic option.
+// Aligns with general diabetes nutrition guidance: limit added sugar and refined
+// carbs, favor fiber + lean protein + healthy fat, keep carbs/sugar per serving
+// moderate. Layered on top of any diet (like the gluten-free and low-salt options).
+const DIABETIC_NOTE = `
+
+DIABETIC-FRIENDLY REQUIREMENT (the user has chosen a Diabetic-friendly menu — follow strictly):
+- Keep each recipe blood-sugar-friendly and lower-glycemic: minimize added sugars and refined carbohydrates (white bread, white rice, sugary sauces, fruit juice, sweets).
+- Favor high-fiber, slow-digesting carbs (non-starchy vegetables, legumes, whole/intact grains) and pair carbohydrates with protein and healthy fat.
+- Keep total carbohydrate per serving moderate and the sugar estimate low — aim for roughly 10 g of sugar or less per serving where the available ingredients allow.
+- Do NOT add sugar, honey, syrup, or sweetened ingredients as listed items; build flavor with spices, herbs, citrus, and aromatics instead.
+- Reflect the controlled carbohydrate and reduced sugar in the nutrition estimate.`;
+
 // Weekly ingredient-variety limits for a 7-recipe menu. Deliberately SOFT: the
 // app cooks from what the user already bought, so a sparse pantry must still
 // generate a full week rather than fail trying to force variety. Tune the
@@ -230,15 +243,16 @@ function normalizeNutrition(raw: any): Recipe['nutrition'] {
   if (calories === null || protein === null || carbs === null) {
     return undefined;
   }
+  const fat = num(raw.fat) ?? 0;
   const sugar = num(raw.sugar) ?? 0;
   const sodium = num(raw.sodium) ?? 0;
-  return { calories, protein, carbs, sugar, sodium };
+  return { calories, protein, carbs, fat, sugar, sodium };
 }
 
-function buildSystemPrompt(dietType: DietType, glutenFree: boolean, lowSalt: boolean = false): string {
+function buildSystemPrompt(dietType: DietType, glutenFree: boolean, lowSalt: boolean = false, diabetic: boolean = false): string {
   const gfNote = (glutenFree
     ? '\n\nCRITICAL: ALL recipes must be completely GLUTEN-FREE. No wheat, barley, rye, spelt, or standard flour. Use rice, quinoa, buckwheat, almond flour, or naturally gluten-free ingredients only. Double-check every single ingredient.'
-    : '') + (lowSalt ? LOW_SALT_NOTE : '');
+    : '') + (lowSalt ? LOW_SALT_NOTE : '') + (diabetic ? DIABETIC_NOTE : '');
 
   switch (dietType) {
     case 'mediterranean':
@@ -355,9 +369,10 @@ export async function regenerateRecipe(
   dietType: DietType = 'mediterranean',
   glutenFree: boolean = false,
   mealType: MealType = 'dinner',
-  lowSalt: boolean = false
+  lowSalt: boolean = false,
+  diabetic: boolean = false
 ): Promise<Recipe> {
-  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt);
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
   // The recipe being replaced is the one matching BOTH day and meal type.
   const isTarget = (r: Recipe) =>
     r.day === dayToReplace && (r.mealType ?? 'dinner') === mealType;
@@ -425,9 +440,10 @@ async function generateMealForType(
   dietType: DietType,
   glutenFree: boolean,
   mealType: MealType,
-  lowSalt: boolean = false
+  lowSalt: boolean = false,
+  diabetic: boolean = false
 ): Promise<Recipe[]> {
-  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt);
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
   const proteinConstraint = buildProteinConstraint(ingredients, dietType);
 
   const text = await callClaude([
@@ -466,13 +482,14 @@ export async function generateMealPlan(
   dietType: DietType = 'mediterranean',
   glutenFree: boolean = false,
   meals: MealType[] = ['dinner'],
-  lowSalt: boolean = false
+  lowSalt: boolean = false,
+  diabetic: boolean = false
 ): Promise<Recipe[]> {
   // Only generate the meals the user asked for — one model call per meal type,
   // run in parallel. A flat list of all (day × meal) recipes comes back.
   const selected: MealType[] = meals.length > 0 ? meals : ['dinner'];
   const perMeal = await Promise.all(
-    selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal, lowSalt))
+    selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal, lowSalt, diabetic))
   );
   return perMeal.flat();
 }

@@ -43,6 +43,7 @@ export async function buildRecipePrintHtml(recipe: Recipe, dietLabel: string): P
          <td><span class="v">${esc(recipe.nutrition.calories)}</span><br/>CAL</td>
          <td><span class="v">${esc(recipe.nutrition.protein)}g</span><br/>PROTEIN</td>
          <td><span class="v">${esc(recipe.nutrition.carbs)}g</span><br/>CARBS</td>
+         <td><span class="v">${esc(recipe.nutrition.fat ?? 0)}g</span><br/>FAT</td>
          <td><span class="v">${esc(recipe.nutrition.sugar)}g</span><br/>SUGAR</td>
          <td><span class="v">${esc(recipe.nutrition.sodium)}mg</span><br/>SODIUM</td>
        </tr></table>

@@ -4,6 +4,23 @@ Ideas discussed during development. Not in scope for v1 launch.
 
 ---
 
+## ✅ STATUS — updated 2026-06-28
+
+Some of the items below have shipped or been overtaken since this doc was written:
+
+- **Macro breakdown on cards** — ✅ DONE. Basic per-serving macros now show (calories, protein, carbs, **fat**, sugar, sodium). The *detailed/premium* layer (net carbs, fiber, micronutrients) is specced in **`detailed-macros-marge.md`**.
+- **Diabetic-friendly / heart-healthy** — ✅ DONE as toggles (Diabetic + Low Salt), layered on any diet.
+- **Claude vs Gemini** — ✅ RESOLVED: meal-gen + OCR run on **Claude** (this doc's "uses Gemini" references are stale). Images run on Imagen via a **Cloudflare Worker proxy + shared cache** (the "backend proxy / 503 risk" item is largely addressed for images).
+- **Pricing** — decided: **$4.99 one-time Pro unlock**, no subscription at launch (this doc's "$2.99/mo" is superseded — see the `project-pricing-strategy` memory).
+- **Ethnic / world cuisines** — NOT built; implementation-ready modules now specced in **`cuisines-gladys.md`**.
+- **Sides & desserts** — NOT built; specced in **`sides-desserts-erika.md`**.
+- **Premium pantry (spice rack / shelf backgrounds) + quantity tracking** — NOT built; still v2.
+- **ScanReceipt layout** (meals control, sides/desserts placement, locked-premium treatment) — design recommendation in **`scanreceipt-layout-design.md`**.
+
+The original idea list below is kept for reference.
+
+---
+
 ## 📊 Macro Breakdown on Recipe Cards
 
 **The insight (from focus group):**

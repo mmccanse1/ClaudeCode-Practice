@@ -156,7 +156,9 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.secondaryBtnText}>🗄  Manage Pantry</Text>
           </TouchableOpacity>
 
-          {/* Pantry as an active ingredient resource (Option C) */}
+          {/* Pantry as an active ingredient resource (Option C) — informational
+              only. Choosing the pantry as a menu source happens on the scan
+              screen, after a diet is picked (so we never guess a diet here). */}
           <Text style={styles.pantryStatus}>
             {pantryCount > 0
               ? `Pantry: ${pantryCount} item${pantryCount !== 1 ? 's' : ''} ready`

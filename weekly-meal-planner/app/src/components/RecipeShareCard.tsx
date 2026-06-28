@@ -85,12 +85,13 @@ export default function RecipeShareCard({ recipe, dietType }: Props) {
                 ['CAL', `${recipe.nutrition.calories}`],
                 ['PROTEIN', `${recipe.nutrition.protein}g`],
                 ['CARBS', `${recipe.nutrition.carbs}g`],
+                ['FAT', `${recipe.nutrition.fat ?? 0}g`],
                 ['SUGAR', `${recipe.nutrition.sugar}g`],
                 ['SODIUM', `${recipe.nutrition.sodium}mg`],
               ] as const).map(([label, value]) => (
                 <View key={label} style={styles.macroItem}>
-                  <Text style={[styles.macroValue, { color: accent }]}>{value}</Text>
-                  <Text style={styles.macroLabel}>{label}</Text>
+                  <Text style={[styles.macroValue, { color: accent }]} numberOfLines={1} allowFontScaling={false}>{value}</Text>
+                  <Text style={styles.macroLabel} numberOfLines={1} allowFontScaling={false}>{label}</Text>
                 </View>
               ))}
             </View>
@@ -188,8 +189,8 @@ const styles = StyleSheet.create({
   },
   macrosRow: { flexDirection: 'row', justifyContent: 'space-between' },
   macroItem: { flex: 1, alignItems: 'center' },
-  macroValue: { fontSize: 15, fontWeight: '800' },
-  macroLabel: { fontSize: 9, color: '#9bb4c2', fontWeight: '700', letterSpacing: 0.5, marginTop: 3 },
+  macroValue: { fontSize: 13, fontWeight: '800' },
+  macroLabel: { fontSize: 8.5, color: '#9bb4c2', fontWeight: '700', letterSpacing: 0.2, marginTop: 3 },
   macrosDisclaimer: { fontSize: 10, color: '#9bb4c2', fontStyle: 'italic', marginTop: 10, textAlign: 'center' },
   sourceNote: { textAlign: 'center', fontSize: 10, color: '#9bb4c2', marginTop: 16, marginBottom: 4 },
   footer: { backgroundColor: '#1a1a1a', paddingVertical: 16, paddingHorizontal: 20 },

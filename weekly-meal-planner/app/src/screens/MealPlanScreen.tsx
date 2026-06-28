@@ -47,6 +47,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const dietType: DietType = route.params.dietType ?? 'mediterranean';
   const glutenFree = route.params.glutenFree ?? false;
   const lowSalt = route.params.lowSalt ?? false;
+  const diabetic = route.params.diabetic ?? false;
   const isSavedView = route.params.saved ?? false;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
@@ -184,6 +185,9 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     if (sharingWeek) return;
     setSharingWeek(true);
     try {
+      // If the card carries a hero photo (a local file), give it a beat to settle
+      // so capture doesn't race the image load and produce a blank banner.
+      if (recipes.some(r => r.photoUrl)) await new Promise(r => setTimeout(r, 250));
       const uri = await captureRef(shareRef, { format: 'png', quality: 1, result: 'tmpfile' });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your week' });
@@ -203,7 +207,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     const mealType: MealType = target.mealType ?? 'dinner';
     setRefreshingDay(target.day);
     try {
-      const newRecipe = await regenerateRecipe(ingredients, recipes, target.day, dietType, glutenFree, mealType, lowSalt);
+      const newRecipe = await regenerateRecipe(ingredients, recipes, target.day, dietType, glutenFree, mealType, lowSalt, diabetic);
       const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
       const updated = recipes.map(r =>
         r.day === target.day && (r.mealType ?? 'dinner') === mealType
@@ -371,6 +375,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
                     dietType,
                     glutenFree,
                     lowSalt,
+                    diabetic,
                     saved: isSavedView,
                   })
                 }
@@ -404,7 +409,12 @@ export default function MealPlanScreen({ navigation, route }: Props) {
       {/* Off-screen render target captured to a PNG for the shareable week image. */}
       <View style={styles.offscreen} pointerEvents="none">
         <View ref={shareRef} collapsable={false}>
-          <WeekShareCard recipes={recipes} dietType={dietType} ingredientCount={ingredients.length} />
+          <WeekShareCard
+            recipes={recipes}
+            dietType={dietType}
+            ingredientCount={ingredients.length}
+            heroPhotoUrl={recipes.find(r => r.photoUrl)?.photoUrl}
+          />
         </View>
       </View>
     </View>
