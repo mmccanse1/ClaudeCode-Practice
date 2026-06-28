@@ -13,7 +13,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Recipe, DietType, MealType } from '../types';
+import { RootStackParamList, Recipe, DietType, MealType, CuisineType } from '../types';
 import { DIET_TYPES } from '../constants/dietTypes';
 import { sortByMeal } from '../constants/mealTypes';
 import RecipeCard from '../components/RecipeCard';
@@ -54,6 +54,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
   const glutenFree = route.params.glutenFree ?? false;
   const lowSalt = route.params.lowSalt ?? false;
   const diabetic = route.params.diabetic ?? false;
+  const cuisine: CuisineType | undefined = route.params.cuisine;
   const isSavedView = route.params.saved ?? false;
   const dietConfig = DIET_TYPES.find(d => d.id === dietType) ?? DIET_TYPES[0];
   const [recipes, setRecipes] = useState<Recipe[]>(route.params.recipes);
@@ -217,7 +218,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
     const mealType: MealType = target.mealType ?? 'dinner';
     setRefreshingDay(target.day);
     try {
-      const newRecipe = await regenerateRecipe(ingredients, recipes, target.day, dietType, glutenFree, mealType, lowSalt, diabetic);
+      const newRecipe = await regenerateRecipe(ingredients, recipes, target.day, dietType, glutenFree, mealType, lowSalt, diabetic, cuisine);
       const photoUrl = (await fetchFoodPhoto(newRecipe.searchQuery)) ?? undefined;
       const updated = recipes.map(r =>
         r.day === target.day && (r.mealType ?? 'dinner') === mealType
@@ -452,6 +453,7 @@ export default function MealPlanScreen({ navigation, route }: Props) {
                     glutenFree,
                     lowSalt,
                     diabetic,
+                    cuisine,
                     saved: isSavedView,
                   })
                 }

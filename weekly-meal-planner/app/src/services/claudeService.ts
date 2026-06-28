@@ -577,14 +577,15 @@ export async function regenerateRecipe(
   glutenFree: boolean = false,
   mealType: MealType = 'dinner',
   lowSalt: boolean = false,
-  diabetic: boolean = false
+  diabetic: boolean = false,
+  cuisine?: CuisineType
 ): Promise<Recipe> {
   // Sides have their own single-recipe prompt (pairing + side rules), so branch
   // before the main-meal path below.
   if (mealType === 'side') {
-    return regenerateSide(ingredients, existingRecipes, dayToReplace, dietType, glutenFree, lowSalt, diabetic);
+    return regenerateSide(ingredients, existingRecipes, dayToReplace, dietType, glutenFree, lowSalt, diabetic, cuisine);
   }
-  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic, cuisine);
   // The recipe being replaced is the one matching BOTH day and meal type.
   const isTarget = (r: Recipe) =>
     r.day === dayToReplace && (r.mealType ?? 'dinner') === mealType;
@@ -659,9 +660,10 @@ async function generateMealForType(
   glutenFree: boolean,
   mealType: MealType,
   lowSalt: boolean = false,
-  diabetic: boolean = false
+  diabetic: boolean = false,
+  cuisine?: CuisineType
 ): Promise<Recipe[]> {
-  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic, cuisine);
   const proteinConstraint = buildProteinConstraint(ingredients, dietType);
 
   const text = await callClaude([
@@ -711,9 +713,10 @@ async function generateSides(
   glutenFree: boolean,
   lowSalt: boolean,
   diabetic: boolean,
-  dinners: Recipe[]
+  dinners: Recipe[],
+  cuisine?: CuisineType
 ): Promise<Recipe[]> {
-  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic, cuisine);
 
   const text = await callClaude([
     {
@@ -766,9 +769,10 @@ async function regenerateSide(
   dietType: DietType,
   glutenFree: boolean,
   lowSalt: boolean,
-  diabetic: boolean
+  diabetic: boolean,
+  cuisine?: CuisineType
 ): Promise<Recipe> {
-  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic);
+  const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic, cuisine);
   const dinners = existingRecipes.filter(r => (r.mealType ?? 'dinner') === 'dinner');
   const otherSides = existingRecipes
     .filter(r => r.mealType === 'side' && r.day !== dayToReplace)
@@ -832,13 +836,14 @@ export async function generateMealPlan(
   meals: MealType[] = ['dinner'],
   lowSalt: boolean = false,
   diabetic: boolean = false,
-  includeSides: boolean = false
+  includeSides: boolean = false,
+  cuisine?: CuisineType
 ): Promise<Recipe[]> {
   // Mains: one model call per meal type, run in parallel. 'side' never goes
   // through this loop — it's a dependent pass below that needs the dinners first.
   const selected: MealType[] = (meals.length > 0 ? meals : (['dinner'] as MealType[])).filter(m => m !== 'side');
   const perMeal = await Promise.all(
-    selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal, lowSalt, diabetic))
+    selected.map(meal => generateMealForType(ingredients, dietType, glutenFree, meal, lowSalt, diabetic, cuisine))
   );
   const mains = perMeal.flat();
 
@@ -846,6 +851,6 @@ export async function generateMealPlan(
   // the mains and take the generated dinner list as pairing context.
   if (!includeSides || !IS_PREMIUM) return mains;
   const dinners = mains.filter(r => (r.mealType ?? 'dinner') === 'dinner');
-  const sides = await generateSides(ingredients, dietType, glutenFree, lowSalt, diabetic, dinners);
+  const sides = await generateSides(ingredients, dietType, glutenFree, lowSalt, diabetic, dinners, cuisine);
   return [...mains, ...sides];
 }

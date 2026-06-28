@@ -16,8 +16,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, DietType, MealType } from '../types';
+import { RootStackParamList, DietType, MealType, CuisineType } from '../types';
 import { MEAL_TYPES } from '../constants/mealTypes';
+import { CUISINE_TYPES } from '../constants/cuisineTypes';
 import {
   parseReceiptFromImage,
   generateMealPlan,
@@ -105,6 +106,8 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
     dinner: true,
     side: false,
   });
+  // Optional cuisine style (Pro). undefined = "no preference" (diet-only).
+  const [cuisine, setCuisine] = useState<CuisineType | undefined>(undefined);
   const [retryCountdown, setRetryCountdown] = useState(0);
   const [pantryCount, setPantryCount] = useState(0);
   const [progressStep, setProgressStep] = useState(0);
@@ -185,6 +188,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         setDiabetic(false);
         setUsePantry(false);
         setMeals({ breakfast: false, lunch: false, dinner: true, side: false });
+        setCuisine(undefined);
         setRetryCountdown(0);
         if (countdownRef.current) clearInterval(countdownRef.current);
       }
@@ -347,7 +351,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
       const allIngredients = Array.from(new Set([...checkedItems, ...pantryItems]));
       const selectedMeals = MEAL_TYPES.filter(m => meals[m.id]).map(m => m.id);
       const mealsToUse = selectedMeals.length > 0 ? selectedMeals : (['dinner'] as MealType[]);
-      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse, lowSalt, diabetic, meals.side);
+      const recipes = await generateMealPlan(allIngredients, dietType, glutenFree, mealsToUse, lowSalt, diabetic, meals.side, cuisine);
 
       // Fetch photos in small batches rather than all 7–21 at once. Bursting the
       // whole menu at Imagen trips its per-minute rate limit, and one 429 trips a
@@ -394,6 +398,7 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
         glutenFree,
         lowSalt,
         diabetic,
+        cuisine,
         pantrySavedCount: toSave.length,
       });
     } catch (e: any) {
@@ -660,6 +665,52 @@ export default function ScanReceiptScreen({ navigation, route }: Props) {
                   )}
                 </View>
 
+                {/* Cuisine (optional, Pro) — single-select; tapping the selected
+                    chip clears it back to "no preference". Locked when not Pro. */}
+                <View style={styles.section}>
+                  <View style={styles.cuisineHeaderRow}>
+                    <Text style={styles.sectionTitle}>Cuisine</Text>
+                    {!IS_PREMIUM && (
+                      <View style={styles.proBadgeInline}>
+                        <Text style={styles.proBadgeText}>PRO</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.pantryHint}>
+                    Optional — a world-cuisine spin on your diet. Leave unpicked for no preference.
+                  </Text>
+                  <View style={styles.cuisineChipRow}>
+                    {CUISINE_TYPES.map(c => {
+                      const on = IS_PREMIUM && cuisine === c.id;
+                      return (
+                        <TouchableOpacity
+                          key={c.id}
+                          style={[
+                            styles.cuisineChip,
+                            on && { backgroundColor: dietConfig.accentColor, borderColor: dietConfig.color },
+                            !IS_PREMIUM && styles.mealChipLocked,
+                          ]}
+                          onPress={() =>
+                            IS_PREMIUM
+                              ? setCuisine(prev => (prev === c.id ? undefined : c.id))
+                              : showPremiumNotice('World cuisines are a Pro feature')
+                          }
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.cuisineChipEmoji}>{c.emoji}</Text>
+                          <Text
+                            style={[styles.cuisineChipLabel, on && { color: dietConfig.color, fontWeight: '700' }]}
+                            numberOfLines={1}
+                            allowFontScaling={false}
+                          >
+                            {c.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
                 {/* Dietary options — compact chips on a single horizontal row so
                     adding a third (Diabetic) keeps the screen to one view. */}
                 <View style={styles.section}>
@@ -903,6 +954,27 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   addonHint: { fontSize: 12, color: '#5b7a8c', fontStyle: 'italic', marginTop: 8 },
+  cuisineHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  proBadgeInline: {
+    backgroundColor: '#f4a261',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  cuisineChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  cuisineChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'white',
+    borderWidth: 1.5,
+    borderColor: '#dbe9f0',
+  },
+  cuisineChipEmoji: { fontSize: 16 },
+  cuisineChipLabel: { fontSize: 13, fontWeight: '600', color: '#5b7a8c' },
   premiumToast: {
     position: 'absolute',
     bottom: 28,
