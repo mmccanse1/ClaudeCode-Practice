@@ -220,12 +220,14 @@ const styles = StyleSheet.create({
   openBtnText: { color: 'white', fontWeight: '700', fontSize: 14 },
 
   // Bounded, rounded illustration rather than a full-bleed image taller than the
-  // screen — keeps proportions sensible and the page from scrolling excessively.
+  // screen. Explicit numeric width (screen minus the container's 20px padding
+  // each side) — a percentage width can collapse an Image to zero in a ScrollView.
   pantryImage: {
-    width: '100%',
-    height: Math.round(SCREEN_W * 0.52),
+    width: SCREEN_W - 40,
+    height: Math.round((SCREEN_W - 40) * 0.62),
     borderRadius: 14,
-    marginTop: 4,
-    marginBottom: 20,
+    alignSelf: 'center',
+    marginTop: 8,
+    marginBottom: 24,
   },
 });
