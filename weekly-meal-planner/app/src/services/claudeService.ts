@@ -160,9 +160,9 @@ const MEAL_LABEL: Record<MealType, string> = {
 function dinnerProteinRule(dietType: DietType): string {
   switch (dietType) {
     case 'vegan':
-      return ' Build each dinner around a substantial plant protein (tofu, tempeh, seitan, edamame, lentils, beans, chickpeas). Do NOT use any meat, poultry, fish, seafood, eggs, or dairy.';
+      return ' Center MOST dinners on a substantial plant protein (tofu, tempeh, seitan, edamame, lentils, beans, chickpeas), varying which one day to day. To keep the week from repeating, a couple of dinners may be vegetable-forward instead — e.g. a hearty dinner salad over greens/lettuce, a roasted-vegetable plate, or a vegetable soup. Do NOT use any meat, poultry, fish, seafood, eggs, or dairy.';
     case 'vegetarian':
-      return ' Build each dinner around a substantial vegetarian protein (lentils, beans, chickpeas, tofu, tempeh, paneer or other cheese, or eggs). Do NOT use any meat, poultry, fish, or seafood.';
+      return ' Center MOST dinners on a substantial vegetarian protein (lentils, beans, chickpeas, tofu, tempeh, paneer or other cheese, or eggs), varying which one day to day. To keep the week from repeating, a couple of dinners may be vegetable-forward instead — e.g. a hearty dinner salad, a roasted-vegetable plate, or a vegetable soup. Do NOT use any meat, poultry, fish, or seafood.';
     default:
       return ' Dinners should generally include a meat or seafood protein when the diet allows — aim for most of the week. Eggs are NOT acceptable as the primary dinner protein.';
   }
@@ -193,7 +193,8 @@ LOW-SODIUM REQUIREMENT (the user has chosen a Low Salt menu — follow strictly)
 const WEEKLY_VARIETY_RULES = `STRICT variety rules — apply across the whole week, but NEVER invent ingredients that are not in the available list above:
 - No single main ingredient — whether a protein, a main vegetable, or a starch base (rice, potato, pasta, bread, tortilla, etc.) — may headline or be the centerpiece of more than 2 of the 7 recipes.
 - Every recipe must be a distinct dish — no repeats — and vary the cooking method and cuisine style from day to day.
-- If the available ingredients are too limited to satisfy this cap, prioritise keeping the "only use available ingredients" rule and instead make each day feel different through different preparations, sauces, spices, and supporting vegetables.`;
+- Use ONLY proteins that appear in the available list above — never introduce a protein (or any other ingredient) that is not listed.
+- If the available proteins are too few to satisfy the cap, do NOT just repeat the same bean/legume/protein night after night. Break up the week with vegetable-forward dishes built from the available produce — a hearty dinner salad, a roasted-vegetable plate, or a soup — and vary preparations, sauces, and spices.`;
 
 const RECIPE_SHAPE = `[
   {
