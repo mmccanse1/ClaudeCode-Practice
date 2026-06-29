@@ -13,7 +13,7 @@ export const CUISINE_TYPES: CuisineMeta[] = [
   { id: 'east_asian', label: 'East Asian', emoji: '🥢' },
   { id: 'middle_eastern', label: 'Middle Eastern', emoji: '🥙' },
   { id: 'latin_american', label: 'Latin American', emoji: '🌮' },
-  { id: 'classic_american', label: 'Home-Style', emoji: '🍗' },
+  { id: 'classic_american', label: 'Classic American', emoji: '🍗' },
 ];
 
 /** Meta for a cuisine id, or undefined for "no preference". */

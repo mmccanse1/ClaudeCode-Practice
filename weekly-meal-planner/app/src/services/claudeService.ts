@@ -516,7 +516,7 @@ Strict cuisine variety rules:
 - Do not repeat the same chile base more than twice in a week (two chipotle dishes is fine, three is not — rotate ancho, guajillo, or tomatillo).
 - Vary the format: rotate between tacos/wraps, rice bowls, braises, and raw preparations (salads, ceviche, guacamole); do not make only taco-format dishes.`,
 
-  classic_american: `Cuisine — Classic Home-Style (American comfort / heartland; layered on the active diet — the diet decides what's allowed, this decides format and seasoning — never override a dietary restriction):
+  classic_american: `Cuisine — Classic American (everyday American home cooking / heartland comfort food; layered on the active diet — the diet decides what's allowed, this decides format and seasoning — never override a dietary restriction):
 - Build plates around a protein + a starch (potatoes, noodles, rice) + a simple vegetable, in the familiar American comfort idiom.
 - Pan gravy and cream/cheese (roux-based) sauces are core — include at least one gravy- or cream-sauce dish in the week.
 - Seasoning is straightforward: salt, black pepper, garlic and onion powder, paprika, dried thyme/sage, Worcestershire. Do not reach for exotic spices — the identity is familiar, savory, and unfussy.
@@ -529,12 +529,17 @@ Strict cuisine variety rules:
 - Vary the format: at least one braise, one casserole/bake, and one quick skillet or sandwich-style dinner — not seven heavy oven dishes.`,
 };
 
+// Every cuisine should produce its everyday HOME-STYLE register — the comforting,
+// approachable food people actually cook at home (Indian home-style, Latin
+// home-style, etc.), not fussy restaurant plating. Appended to all modules.
+const CUISINE_HOMESTYLE_NOTE = `- Cook in an everyday home-style register: comforting, approachable dishes a home cook actually makes on a weeknight from regular groceries — not fussy restaurant or banquet plating.`;
+
 // The cuisine block to append after the diet module. Empty when no cuisine is
 // chosen, so diet-only generations are byte-for-byte unchanged.
 function cuisineModule(cuisine?: CuisineType): string {
   if (!cuisine) return '';
   const mod = CUISINE_MODULES[cuisine];
-  return mod ? `\n\n${mod}` : '';
+  return mod ? `\n\n${mod}\n${CUISINE_HOMESTYLE_NOTE}` : '';
 }
 
 // When a cuisine is stacked on a health modifier (Gluten-Free / Low-Salt /
