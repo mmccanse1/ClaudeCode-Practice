@@ -163,7 +163,7 @@ ${PREMIUM_NUTRITION_SHAPE}`;
 // only to satisfy the Record and is never read by the main generation loop.
 const MEAL_DIRECTIVE: Record<MealType, string> = {
   breakfast: 'These are BREAKFAST recipes — breakfast-appropriate dishes (eggs, oats, smoothies, yoghurt bowls, savoury breakfasts, etc.) that still fit the diet.',
-  lunch: 'These are LUNCH recipes — lighter midday meals (salads, grain bowls, wraps, soups, etc.) that still fit the diet.',
+  lunch: 'These are LUNCH recipes — lighter, quicker, more portable midday meals: hearty salads, grain or protein bowls, sandwiches and wraps, soups, and frittatas or other egg dishes. Keep them satisfying but lighter and less involved than a dinner main — do NOT just shrink a dinner. Leftovers-style and make-ahead lunches are welcome.',
   dinner: 'These are DINNER recipes — satisfying evening main dishes that fit the diet.',
   side: 'These are SIDE dishes that complement a dinner main.',
 };
@@ -190,10 +190,72 @@ function dinnerProteinRule(dietType: DietType): string {
   }
 }
 
-// The meal directive, with the dinner one specialised per diet.
+// Shared breakfast rule. The distinction is about the DISH, not the vegetable:
+// veggies belong at breakfast inside an egg dish (omelet, frittata, quiche, hash,
+// shakshuka); a standalone savory vegetable plate or a legume base is a dinner.
+const BREAKFAST_EXCLUSIONS = ' Vegetables ARE welcome at breakfast WHEN they go into a breakfast egg dish — folded into an omelet, frittata, quiche, scramble, or breakfast hash, or simmered as the tomato base for shakshuka / eggs in purgatory (eggs poached in tomato sauce). Broccoli, onion, peppers, spinach, mushrooms, and tomatoes all work that way. What to avoid is serving a DINNER dish at breakfast: no standalone savory vegetable plate, no legume-based main, do not center a breakfast on chickpeas, beans, or lentils, and NEVER make chickpea-flour or bean-flour pancakes.';
+
+// Breakfast needs the firmest guardrails: without them the model shoehorns dinner
+// produce and legumes (chickpea pancakes, cauliflower) into the morning and skips
+// the obvious egg/dairy dishes. Diet-aware — eggs/dairy/grains access varies.
+function breakfastDirective(dietType: DietType): string {
+  switch (dietType) {
+    case 'vegan':
+      return ' Each must be unmistakably BREAKFAST (morning food, not a dinner dish relabeled): anchor the week on tofu scrambles, oats/overnight oats, smoothies, chia and plant-yogurt bowls, nut-butter toast, and fruit.' + BREAKFAST_EXCLUSIONS;
+    case 'paleo':
+      return ' Each must be unmistakably BREAKFAST: LEAN HARD ON EGGS (fried, scrambled, poached, omelets, frittatas, baked eggs, veggie egg hash) — they should anchor most mornings — plus breakfast meats (bacon, sausage), avocado, sweet-potato hash, and fruit. Paleo = no dairy and no grains: skip pancakes, toast, oats, cheese, and yogurt.' + BREAKFAST_EXCLUSIONS;
+    case 'keto':
+      return ' Each must be unmistakably BREAKFAST: LEAN HARD ON EGGS AND DAIRY (fried/scrambled eggs, omelets, frittatas, quiche, cheese, baked eggs) plus bacon, sausage, and avocado — they should anchor most mornings. Keep it low-carb: no pancakes, toast, oats, or sugary items.' + BREAKFAST_EXCLUSIONS;
+    default: // mediterranean / vegetarian / home_style — full breakfast range
+      return ' Each must be unmistakably BREAKFAST (morning food, not a dinner dish relabeled): LEAN HARD ON EGGS AND DAIRY — egg-and-cheese dishes (fried/scrambled/poached eggs, omelets, frittatas, quiche, baked eggs, shakshuka) should anchor SEVERAL mornings, exactly the home breakfast people expect. Round out the week with pancakes, waffles, French toast, or oatmeal (wheat/all-purpose flour or oats — NEVER chickpea or bean flour), yogurt/cottage-cheese-and-fruit bowls, and breakfast meats (bacon, sausage, ham).' + BREAKFAST_EXCLUSIONS;
+  }
+}
+
+// Cuisine modules are written for dinner mains, so for breakfast/lunch they must
+// be steered to that cuisine's morning/midday repertoire — otherwise an "Indian
+// breakfast" comes back as chana masala instead of a masala omelet.
+const CUISINE_MEAL_FIT = ' If a world cuisine is selected, choose dishes from that cuisine that genuinely belong at THIS meal — its breakfast or lunch repertoire, not its dinner mains (e.g. Indian breakfast → masala omelet, poha, uttapam, or paratha, not chana masala or dal). Meal-appropriateness comes first; the cuisine shapes the flavors and technique within it.';
+
+// The meal directive, with dinner and breakfast specialised per diet, and a
+// cuisine-fit nudge on the non-dinner meals (whose cuisine dishes differ from the mains).
 function mealDirective(mealType: MealType, dietType: DietType): string {
   if (mealType === 'dinner') return MEAL_DIRECTIVE.dinner + dinnerProteinRule(dietType);
+  if (mealType === 'breakfast') return MEAL_DIRECTIVE.breakfast + breakfastDirective(dietType) + CUISINE_MEAL_FIT;
+  if (mealType === 'lunch') return MEAL_DIRECTIVE.lunch + CUISINE_MEAL_FIT;
   return MEAL_DIRECTIVE[mealType];
+}
+
+// Breakfast doesn't use the rigid dinner-protein list (which would force whatever
+// protein is in the pantry — chickpeas — into the morning). It leans on eggs and
+// dairy, assumed on hand, plus any breakfast meats.
+function breakfastProteinNote(dietType: DietType): string {
+  if (dietType === 'vegan') {
+    return `BREAKFAST PROTEIN: tofu, plant yogurt, nuts, seeds, nut butters, and oats. Do NOT build breakfasts around beans, lentils, or chickpeas, and never use bean or chickpea flour.`;
+  }
+  const dairy = dietType === 'paleo' ? '' : ' and dairy (milk, butter, cheese, yogurt)';
+  const assume = dietType === 'paleo' ? 'eggs are' : 'eggs, milk, butter, and cheese are';
+  return `BREAKFAST PROTEIN: lean on EGGS${dairy} — assume ${assume} on hand even if not in the list — plus any breakfast meats present (bacon, sausage, ham). Do NOT build breakfasts around dinner proteins or legumes (no beef, chicken, fish, chickpeas, beans, or lentils as the centerpiece), and never use chickpea or bean flour.`;
+}
+
+// Meal-aware protein guidance: breakfast gets the egg/dairy note; everything else
+// uses the strict pantry-protein list.
+function proteinConstraintFor(mealType: MealType, ingredients: string[], dietType: DietType): string {
+  if (mealType === 'breakfast') return breakfastProteinNote(dietType);
+  return buildProteinConstraint(ingredients, dietType);
+}
+
+// Breakfast may assume everyday breakfast staples on hand (eggs etc., diet-permitting)
+// so it makes real egg dishes instead of shoehorning dinner produce into the morning.
+function staplesLineFor(mealType: MealType, dietType: DietType): string {
+  if (mealType !== 'breakfast' || dietType === 'vegan') {
+    return 'You may also use common pantry staples (pepper, olive oil, garlic, lemon, herbs, and basic spices).';
+  }
+  const extras = dietType === 'paleo'
+    ? 'eggs'
+    : dietType === 'keto'
+      ? 'eggs and dairy (milk, butter, cheese)'
+      : 'eggs, dairy (milk, butter, cheese), flour, and oats';
+  return `You may also use common pantry staples (pepper, olive oil, garlic, herbs, basic spices) plus standard breakfast staples — assume ${extras} are on hand even if not listed.`;
 }
 
 // Low-sodium guidance, injected when the user enables the Low Salt option.
@@ -230,6 +292,17 @@ const WEEKLY_VARIETY_RULES = `STRICT variety rules — apply across the whole we
 - Every recipe must be a distinct dish — no repeats — and vary the cooking method and cuisine style from day to day.
 - Use ONLY proteins that appear in the available list above — never introduce a protein (or any other ingredient) that is not listed.
 - If the available proteins are too few to satisfy the cap, do NOT just repeat the same bean/legume/protein night after night. Break up the week with vegetable-forward dishes built from the available produce — a hearty dinner salad, a roasted-vegetable plate, or a soup — and vary preparations, sauces, and spices.`;
+
+// Breakfast variety is different: eggs/dairy SHOULD recur (that's normal for
+// breakfast) — the rule is to vary the FORM, not to cap the egg.
+const BREAKFAST_VARIETY_RULES = `Breakfast variety rules:
+- Eggs and dairy SHOULD recur across the week — that is normal and expected for breakfast — but vary the FORM each day so no two mornings are the same dish (e.g. scramble, omelet, frittata, quiche, baked eggs, breakfast sandwich, French toast, pancakes/waffles, oatmeal, yogurt-and-fruit bowl).
+- Vary the supporting ingredients (vegetables folded into eggs, fruit, breakfast meat) day to day.
+- Every recipe must be a distinct breakfast — do not invent ingredients that aren't available or standard breakfast staples.`;
+
+function varietyRulesFor(mealType: MealType): string {
+  return mealType === 'breakfast' ? BREAKFAST_VARIETY_RULES : WEEKLY_VARIETY_RULES;
+}
 
 const RECIPE_SHAPE = `[
   {
@@ -638,7 +711,8 @@ export async function regenerateRecipe(
          r.ingredients?.some(i => i.toLowerCase().includes('salmon'))
   );
 
-  const proteinConstraint = buildProteinConstraint(ingredients, dietType);
+  const proteinConstraint = proteinConstraintFor(mealType, ingredients, dietType);
+  const staplesLine = staplesLineFor(mealType, dietType);
 
   const text = await callClaude([
     {
@@ -646,7 +720,7 @@ export async function regenerateRecipe(
       text: `${systemPrompt}
 
 Available ingredients: ${ingredients.join(', ')}
-You may also use common pantry staples (pepper, olive oil, garlic, lemon, herbs, and basic spices).
+${staplesLine}
 ${proteinConstraint}
 
 Generate exactly 1 new ${MEAL_LABEL[mealType]} recipe for ${dayToReplace}. ${mealDirective(mealType, dietType)}
@@ -702,7 +776,11 @@ async function generateMealForType(
   cuisine?: CuisineType
 ): Promise<Recipe[]> {
   const systemPrompt = buildSystemPrompt(dietType, glutenFree, lowSalt, diabetic, cuisine);
-  const proteinConstraint = buildProteinConstraint(ingredients, dietType);
+  const proteinConstraint = proteinConstraintFor(mealType, ingredients, dietType);
+  const staplesLine = staplesLineFor(mealType, dietType);
+  const usageLine = mealType === 'breakfast'
+    ? 'Use breakfast-appropriate dishes from what is available — vegetables from the list are welcome cooked into eggs (omelet, frittata, quiche, hash, shakshuka), but skip dinner-style savory mains and legume bases.'
+    : 'Each recipe must primarily use ingredients from the list above.';
 
   const text = await callClaude([
     {
@@ -710,12 +788,12 @@ async function generateMealForType(
       text: `${systemPrompt}
 
 Available ingredients: ${ingredients.join(', ')}
-You may also use common pantry staples (pepper, olive oil, garlic, lemon, herbs, and basic spices).
+${staplesLine}
 ${proteinConstraint}
 
-Generate exactly 7 ${MEAL_LABEL[mealType]} recipes, one per day (Monday–Sunday). ${mealDirective(mealType, dietType)} Each recipe must primarily use ingredients from the list above.
+Generate exactly 7 ${MEAL_LABEL[mealType]} recipes, one per day (Monday–Sunday). ${mealDirective(mealType, dietType)} ${usageLine}
 
-${WEEKLY_VARIETY_RULES}
+${varietyRulesFor(mealType)}
 
 ${NUTRITION_INSTRUCTION}${premiumNutritionBlock()}
 
