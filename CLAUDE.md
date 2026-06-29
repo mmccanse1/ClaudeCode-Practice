@@ -69,7 +69,10 @@ These items were flagged by the owner and should be addressed before or alongsid
 ## Next Session — Planned Review Pipeline
 
 Run in this order:
-1. `/dev-team-review` — implement all pending adjustments listed above before any testing
-2. `/stress-test` — hammer the fixed build
-3. `/dev-team-review` — catch anything the stress test surfaces
-4. `/user-panel-review` — **targeted trust check**: we removed health-based statements from the app (legal de-risking, Phase 8). Need to gauge how real users react to the shift in trust signals now that those claims are gone.
+1. Pantry rebuild (largest edit of the project — see pantry build notes below)
+2. Move cuisine type selector to the Home screen
+3. Google Play beta testing setup — build Android APK via Expo EAS Build, upload to Play Console internal testing track, invite friends/family by Gmail. Do NOT attempt Android Studio emulator again — use EAS Build + real devices instead.
+4. `/dev-team-review` — implement all pending adjustments listed above before any testing
+5. `/stress-test` — hammer the fixed build
+6. `/dev-team-review` — catch anything the stress test surfaces
+7. `/user-panel-review` — **targeted trust check**: we removed health-based statements from the app (legal de-risking, Phase 8). Need to gauge how real users react to the shift in trust signals now that those claims are gone.
