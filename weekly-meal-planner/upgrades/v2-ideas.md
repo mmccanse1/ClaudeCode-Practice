@@ -21,6 +21,27 @@ The original idea list below is kept for reference.
 
 ---
 
+## 🚨 NEAR-TERM, DATED — Imagen 4 shutdown + image-quota scaling + launch funding
+
+### ⏰ HARD DEADLINE: migrate off Imagen 4 by **Aug 17, 2026**
+The image proxy (`image-proxy/src/index.js`) calls `imagen-4.0-fast-generate-001`. **Imagen 4 is deprecated and Google shuts it down Aug 17, 2026.** After that, recipe images break unless migrated.
+- **Fix:** swap the model to **Gemini 2.5 Flash Image** (the recommended successor). Roughly a one-line change in `IMAGEN_URL` / the request body in the Worker (verify the endpoint + response field names — Gemini image responses differ from Imagen's `predictions[].bytesBase64Encoded`).
+- **Cost impact:** ~$0.02/image → **~$0.039/image (about 2×)**. Budget on the new price.
+
+### Image rate-limit bottleneck (today's placeholder/olive bug)
+- **Gemini Tier 1 Imagen = 10 images/minute (IPM).** A single Pro menu bursts past that → 429s → placeholder fallbacks. (Today's symptom: a fresh image succeeded seconds after a 429 = per-minute cap, not daily exhaustion.)
+- **Levers to raise it:** (a) **Tier 2 → 20 IPM** — auto-upgrades on cumulative billing spend (recent threshold ~$100 + 3 days; older docs say $250 + 30 days — verify live); (b) **quota-increase request** in Google Cloud Console → IAM & Admin → Quotas → Generative Language API (doesn't require leveling up); (c) the **shared KV cache** is the biggest lever — cached dishes don't count against IPM at all; (d) client throttling already added (concurrency 2 + ~1.1s batch gaps + 20s cooldown + day-scene retry).
+
+### Launch funding (recommendation)
+Model on the post-migration **$0.039/image**. Rough per-menu cost: **free dinner-only ≈ $0.30–0.40**, **full Pro menu (B/L/D + sides + scenes) ≈ $1.20–1.60** cold-cache; both drop as the shared cache warms.
+- **~$200 total to start: ~$150 Google/Gemini + ~$50 Anthropic.** The $150 Google spend also conveniently crosses the Tier 2 line (→ 20 IPM).
+- Both are prepaid/top-up-able — **don't over-fund**; watch real burn for 1–2 weeks of live users, then top up to match. True cost is entirely volume-driven.
+- Text gen (Claude Haiku) is cheap per menu; the dominant variable cost is images.
+
+Sources: [Gemini rate limits](https://ai.google.dev/gemini-api/docs/rate-limits) · [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing)
+
+---
+
 ## 🥔🍰 Stand-Alone Sides & Desserts (toggle: paired vs. solo)
 
 **The insight (owner, 2026-06-28):** *"If someone wants to just make a week's worth of side dishes, go ahead and let them. Maybe they came up with a main on their own. I'm certainly not one to limit a home cook!"* — same applies to desserts.
