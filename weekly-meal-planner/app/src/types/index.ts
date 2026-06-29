@@ -65,7 +65,7 @@ export interface MealPlan {
   pantryItems: string[];
 }
 
-export type DietType = 'mediterranean' | 'keto' | 'paleo' | 'vegetarian' | 'vegan';
+export type DietType = 'mediterranean' | 'keto' | 'paleo' | 'vegetarian' | 'vegan' | 'home_style';
 
 // World cuisines (Pro). A cuisine layers ON TOP of a diet: the diet decides WHAT
 // can go in, the cuisine decides HOW it's cooked and spiced. `undefined` means no

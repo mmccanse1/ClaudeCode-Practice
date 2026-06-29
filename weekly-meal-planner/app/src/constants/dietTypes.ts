@@ -75,4 +75,18 @@ export const DIET_TYPES: DietConfig[] = [
     ],
     source: 'Follows widely recognized vegan nutrition principles',
   },
+  {
+    id: 'home_style',
+    label: 'Home-Style',
+    tagline: 'Comforting everyday home cooking',
+    color: '#c77d3a',
+    accentColor: '#f9f0e6',
+    premium: false,
+    benefits: [
+      'Familiar, comforting dinners from the groceries you already have',
+      'No special diet — just balanced, satisfying home cooking',
+      'Pairs with any world cuisine for a home-style spin',
+    ],
+    source: 'Balanced everyday home cooking — no special dietary restrictions',
+  },
 ];

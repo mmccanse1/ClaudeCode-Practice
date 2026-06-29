@@ -45,6 +45,7 @@ const SAMPLE_PROTEINS: Record<DietType, string[]> = {
   paleo:         ['chicken breast', 'eggs', 'sweet potato', 'almonds'],
   vegetarian:    ['eggs', 'canned chickpeas', 'pasta', 'feta cheese'],
   vegan:         ['firm tofu', 'canned chickpeas', 'red lentils', 'quinoa'],
+  home_style:    ['chicken breast', 'ground beef', 'eggs', 'pasta'],
 };
 
 function samplePantryFor(diet: DietType): string[] {
