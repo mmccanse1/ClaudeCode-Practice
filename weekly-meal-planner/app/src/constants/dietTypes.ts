@@ -77,7 +77,7 @@ export const DIET_TYPES: DietConfig[] = [
   },
   {
     id: 'home_style',
-    label: 'Home-Style',
+    label: 'Homestyle',
     tagline: 'Comforting everyday home cooking',
     color: '#c77d3a',
     accentColor: '#f9f0e6',
