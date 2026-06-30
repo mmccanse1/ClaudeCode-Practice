@@ -68,7 +68,7 @@ These items were flagged by the owner and should be addressed before or alongsid
 
 1. **Pantry rebuild** — largest edit of the project. New data model: PantryItem objects with name, quantity, unit, category. Migration from string[] to PantryItem[] without losing existing user data. ScanReceipt integration needs to write quantities ("2 lbs chicken" → structured object). Menu generation prompt needs pantry formatted with quantities.
 2. **Move cuisine type selector to Home screen** — currently lives inside the scan/generation flow. Moving to Home means passing both `dietType` + `cuisineType` as nav params. Type change in `RootStackParamList` in `types/index.ts` — ripples wherever cuisine is read.
-3. **Google Play beta testing setup** — build Android APK via Expo EAS Build, upload to Play Console internal testing track, invite friends/family by Gmail. Do NOT attempt Android Studio emulator again — it has produced DLL errors three times. Use EAS Build + real devices instead. User's own device is iPhone so Android testing requires borrowing a device or using BrowserStack/Appetize.io.
+3. **Google Play beta testing setup** — full checklist in the Google Play Beta section below. Do NOT attempt Android Studio emulator again — it has produced DLL errors three times.
 4. `/dev-team-review` — implement all pending adjustments listed above before any testing
 5. `/stress-test` — hammer the fixed build
 6. `/dev-team-review` — catch anything the stress test surfaces
@@ -118,6 +118,60 @@ You'll know what's for dinner before you change your shoes.
 - **Cooklist:** VC-backed, hits paywall page 2, collects data, has licensed grocery database with product-accurate images. Ahead on pantry icon quality.
 - **Our advantages:** No sign-up friction, AI recipes built from actual user groceries (not fixed database), diet-aware personalization, genuinely free core feature.
 - **Image gap:** Barcode scanning via Open Food Facts covers packaged goods. Fresh produce/bulk items remain the unsolved gap — no one has cleanly solved this without a licensed database.
+
+---
+
+## Google Play Beta Testing — Full Setup Checklist
+
+### One-Time Setup (Do Once)
+- [ ] Pay $25 Google Play developer fee at play.google.com/console — one-time, any browser including iPhone
+- [ ] Create developer account (use personal Gmail — mmccanse@yahoo.com or a dedicated one)
+- [ ] Create new app in Play Console: "Weekly Meal Planner"
+- [ ] Fill in store listing basics (title, short description, category: Food & Drink) — doesn't need to be perfect yet
+- [ ] Accept all policy agreements
+
+### Build the APK (EAS Build — No Android Studio)
+- [ ] Install EAS CLI if not already: `npm install -g eas-cli`
+- [ ] Log in: `eas login`
+- [ ] Configure build: `eas build:configure` (run once, creates eas.json)
+- [ ] Build Android AAB (what Play Store requires): `eas build --platform android`
+- [ ] EAS builds in the cloud — no emulator, no local Android SDK needed. Takes ~10–15 min. Download the .aab file when done.
+
+### Upload to Play Console
+- [ ] In Play Console → Testing → Internal testing → Create new release
+- [ ] Upload the .aab file
+- [ ] Add release notes (e.g. "First internal test build — please try scanning a receipt and generating a menu")
+- [ ] Roll out to internal testing track
+
+### Invite Testers
+- [ ] In Play Console → Internal testing → Testers tab
+- [ ] Add Gmail addresses of friends/family (up to 100)
+- [ ] Copy the opt-in link Play Console generates
+- [ ] Send testers: the opt-in link + instructions below
+
+### Tester Onboarding Message (send this to testers)
+> "Hey — I built a meal planning app and I'd love your honest feedback before I launch it publicly. Here's how to get it:
+> 1. Make sure you're on an Android phone
+> 2. Click this link: [opt-in link from Play Console]
+> 3. Tap "Accept invite" then "Download on Google Play"
+> 4. Try scanning a grocery receipt (or just add a few items to your pantry manually) and generate a week of dinners
+> 5. Let me know what worked, what didn't, and anything that confused you
+> No account needed — it works right away."
+
+### What Testers Need
+- Android phone (any modern Android — doesn't need to be a specific model)
+- Google account (to accept the Play Store invite)
+- The opt-in link you send them
+
+### Testing Without an Android Device Yourself
+- BrowserStack (free trial) or Appetize.io (100 free minutes) let you run the app on a real cloud Android device from your browser
+- Use this to do a basic smoke test before sending to testers
+
+### Notes
+- Internal testing = invite-only, never shows in public Play Store search
+- Play Console dashboard accessible at play.google.com/console from any browser/iPhone
+- Install and crash data visible in Play Console in real time once testers start using it
+- Monetization (IAP/credits) does NOT need to be wired up for internal testing — test the core flow first
 
 ---
 
