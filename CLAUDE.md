@@ -118,3 +118,45 @@ You'll know what's for dinner before you change your shoes.
 - **Cooklist:** VC-backed, hits paywall page 2, collects data, has licensed grocery database with product-accurate images. Ahead on pantry icon quality.
 - **Our advantages:** No sign-up friction, AI recipes built from actual user groceries (not fixed database), diet-aware personalization, genuinely free core feature.
 - **Image gap:** Barcode scanning via Open Food Facts covers packaged goods. Fresh produce/bulk items remain the unsolved gap — no one has cleanly solved this without a licensed database.
+
+---
+
+## Business Model — UNRESOLVED (Decide Before Play Store Launch)
+
+### The Core Problem
+The "no account" positioning is great for trust but financially self-defeating at scale:
+- No account = no way to track credits or subscriptions server-side
+- No account = deleted app = lost purchase = refund dispute
+- No account = no email list, no re-engagement, no lapsed user recovery
+- No account = can't model LTV, can't justify paid acquisition
+- The credit model Ethan suggested **requires knowing who the user is to work**
+
+### The Middle Path (Recommended)
+Keep "no account" true for the **free tier** — scan a receipt, get 7 dinners, no sign-up ever.
+
+For **paid tier**: use Google/Apple store identity invisibly via **RevenueCat** (a library that manages purchase entitlements tied to the user's Google/Apple account). Users never create a "Weekly Meal Planner account." Their store account handles it silently. Marketing stays honest: *"No account to create."*
+
+### Monetization Options (Ranked)
+
+| Model | Year 1 (500 users, 50% convert) | Monthly cost at 500 users | Verdict |
+|---|---|---|---|
+| $4.99 one-time (current) | ~$1,250 total, done | ~$75/mo ongoing | Bleeds out by month 3 |
+| Credits ($1.99/pack) | Depends on recharge rate | ~$75/mo | Sustainable if 20% recharge monthly |
+| **$24.99/year (recommended)** | **~$6,247** | **~$75/mo** | **Best math, lowest resistance** |
+| $2.99/month | ~$8,970/year | ~$75/mo | Best ceiling, highest resistance |
+
+### User Panel Verdict on Subscription
+- **Devon (teacher, 34):** Won't pay $2.99/month yet — "subscriptions require trust built over time." Would consider annual. Keep one-time unlock, add subscription as a separate tier with extras (cloud backup, recipe history).
+- **Priya (nurse, 38):** Paused at monthly, but *"$24.99/year feels honest."* Value feels front-loaded — app goes quiet between Sunday meal plans. Would subscribe if it became a weekly cooking partner, not just a Sunday tool.
+
+### API Cost Reality
+- ~$10–15/month per 100 users at moderate usage (40% active, 2 menus/month)
+- Shared image cache (Cloudflare Worker) reduces Imagen costs as recipe catalog grows
+- At 1,000 users: ~$130/month in API costs. $50 Anthropic budget lasts under a month.
+- **Conclusion:** one-time purchase revenue is a spike; API costs are a compounding bleed.
+
+### Action Items (Next Budget Week)
+- [ ] Decide on monetization model before Play Store submission — this cannot wait
+- [ ] Research RevenueCat integration (free tier available, handles iOS + Android)
+- [ ] Build a proper business/financial model team to run projections
+- [ ] Consider $24.99/year as launch price with credits as a future add-on
