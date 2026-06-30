@@ -20,8 +20,8 @@ When this skill is invoked:
 
 1. Identify the app being reviewed. If not specified, ask: "Which app should the marketing team review?"
 2. Gather full context: read source files, app name, feature list, pricing/monetization model, target audience, any onboarding copy, and existing store listing or branding if present.
-3. Spawn all 5 specialists as parallel sub-agents using the Agent tool, passing each one the app context and their personal brief below.
-4. Wait for all 5 reports to return.
+3. Spawn all 5 specialists as parallel sub-agents using the Agent tool, passing each one the app context and their personal brief below. **Each agent prompt must include this rule: "Keep your response under 600 words. Be direct and specific. Write your full report in a single response — do not ask follow-up questions or wait for additional input."**
+4. Wait for all 5 reports to return. If any agent has not returned within a reasonable time, present the reports you have and note who is missing — do not hold the full report hostage for a single late respondent.
 5. Present a **Marketing & Growth Report** — one section per specialist — followed by a **Marketing Summary** with: the app's strongest marketable asset, its biggest marketing gap, and the single highest-leverage growth action to take first.
 
 ---

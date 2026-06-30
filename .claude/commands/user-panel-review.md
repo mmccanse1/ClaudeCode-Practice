@@ -20,8 +20,8 @@ When this skill is invoked:
 
 1. Identify what application is being reviewed. If the user did not specify, ask: "Which app should the panel review?"
 2. Gather context about the app — read source files, screens, features list, navigation flows, and any onboarding content so each panelist has a realistic picture of the experience.
-3. Spawn all 5 panelists as parallel sub-agents using the Agent tool, passing each one the app context and their personal brief below.
-4. Wait for all 5 reviews to return.
+3. Spawn all 5 panelists as parallel sub-agents using the Agent tool, passing each one the app context and their personal brief below. **Each agent prompt must include this rule: "Keep your review under 400 words. Write in your character's natural voice. Submit your full review in a single response — do not ask questions or wait for more information."**
+4. Wait for all 5 reviews to return. If any panelist has not returned within a reasonable time, present the reviews you have and note who is missing — do not hold the full report for a single late respondent.
 5. Present a **Panel Report** — one review per panelist in the order listed above — followed by a **Panel Summary** highlighting the most common praise, the most common complaint, and the single biggest opportunity to improve the app for everyday users.
 
 ---
