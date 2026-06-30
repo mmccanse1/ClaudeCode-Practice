@@ -58,21 +58,63 @@ These items were flagged by the owner and should be addressed before or alongsid
 
 ## Handoff Note — Next Session Startup
 
-1. Pull from branch `claude/git-pull-obhxu4`
-2. Read this file in full — all pending adjustments, implementation guidance, and priority order are documented here
-3. The dev team (previous session) produced detailed implementation specs for every item on the pending adjustments list — exact code changes, file locations, and QA checklists are all captured above
-4. Run `/dev-team-review` to implement all pending adjustments before stress testing
-5. Do NOT start with stress test — dev team implements first
+1. Pull from branch `claude/weekly-meal-planner-rs3zfh`
+2. Read this file in full
+3. Friday plan: pantry rebuild → cuisine move to home screen → Google Play beta setup
 
 ---
 
-## Next Session — Planned Review Pipeline
+## Next Session — Planned Build Order (Friday)
 
-Run in this order:
-1. Pantry rebuild (largest edit of the project — see pantry build notes below)
-2. Move cuisine type selector to the Home screen
-3. Google Play beta testing setup — build Android APK via Expo EAS Build, upload to Play Console internal testing track, invite friends/family by Gmail. Do NOT attempt Android Studio emulator again — use EAS Build + real devices instead.
+1. **Pantry rebuild** — largest edit of the project. New data model: PantryItem objects with name, quantity, unit, category. Migration from string[] to PantryItem[] without losing existing user data. ScanReceipt integration needs to write quantities ("2 lbs chicken" → structured object). Menu generation prompt needs pantry formatted with quantities.
+2. **Move cuisine type selector to Home screen** — currently lives inside the scan/generation flow. Moving to Home means passing both `dietType` + `cuisineType` as nav params. Type change in `RootStackParamList` in `types/index.ts` — ripples wherever cuisine is read.
+3. **Google Play beta testing setup** — build Android APK via Expo EAS Build, upload to Play Console internal testing track, invite friends/family by Gmail. Do NOT attempt Android Studio emulator again — it has produced DLL errors three times. Use EAS Build + real devices instead. User's own device is iPhone so Android testing requires borrowing a device or using BrowserStack/Appetize.io.
 4. `/dev-team-review` — implement all pending adjustments listed above before any testing
 5. `/stress-test` — hammer the fixed build
 6. `/dev-team-review` — catch anything the stress test surfaces
-7. `/user-panel-review` — **targeted trust check**: we removed health-based statements from the app (legal de-risking, Phase 8). Need to gauge how real users react to the shift in trust signals now that those claims are gone.
+7. `/user-panel-review` — targeted trust check post-legal copy changes
+
+---
+
+## App Store Description — Final Approved Version
+*(Session 2026-06-30 — reviewed by full marketing team + user panel, consensus draft)*
+
+**Weekly Meal Planner — Dinner Ideas from Your Grocery Receipt**
+
+Meal planner. Recipe generator. Dinner ideas from what you already bought. No subscription. No account required.
+
+---
+
+Snap your grocery receipt — or scan individual items straight into your pantry. Pick a diet — Mediterranean, Keto, Paleo, Vegetarian, Vegan, or Homestyle (no restrictions). Get 7 dinners built around what's actually in your kitchen.
+
+That's it. Three steps.
+
+One developer built this because the fridge-staring problem is real. You bought groceries. You just don't know what to make with them.
+
+Now you will.
+
+Each recipe comes with ingredients, steps, and nutrition info — calories, protein, carbs, fat. Something like: honey garlic salmon with roasted broccoli and rice. Swap any recipe you don't like. Save and share the ones you do. As you cook through the week, your pantry updates — so your next menu always starts from what you actually have left.
+
+No account to create. No paywall on the core feature. Your data isn't sold — this app exists because I wanted it to exist, not to profit from your information.
+
+You'll know what's for dinner before you change your shoes.
+
+---
+
+## App Store / Marketing Notes
+- **Subtitle (30 chars):** "Dinner Ideas from Your Receipt" or "AI Recipes from Your Groceries"
+- **Keywords to hit:** meal planner, recipe generator, dinner ideas, grocery list, meal prep, weekly dinner planner, recipe from ingredients, AI recipes, what to cook tonight
+- **Screenshot 1:** Receipt photo → recipe cards (the transformation). Non-negotiable.
+- **Screenshot 3:** Trust screen — "No account. No paywall. No data sold." bold, clean, white bg.
+- **App preview video:** 15–30 sec showing core flow. Lifts conversion 20–35% in Food & Drink category.
+- **Review prompt:** Trigger after first successful recipe generation — peak satisfaction moment.
+- **Primary category:** Food & Drink. **Secondary:** Lifestyle.
+- **Google Play:** $25 one-time fee (vs Apple $99/yr). Start here. Play Console accessible from any browser including iPhone.
+- **Diet label:** "Home-Style" renamed to "Homestyle" (no hyphen) in dietTypes.ts — committed to branch.
+
+---
+
+## Competitive Context
+- **Cooklist:** VC-backed, hits paywall page 2, collects data, has licensed grocery database with product-accurate images. Ahead on pantry icon quality.
+- **Our advantages:** No sign-up friction, AI recipes built from actual user groceries (not fixed database), diet-aware personalization, genuinely free core feature.
+- **Image gap:** Barcode scanning via Open Food Facts covers packaged goods. Fresh produce/bulk items remain the unsolved gap — no one has cleanly solved this without a licensed database.
