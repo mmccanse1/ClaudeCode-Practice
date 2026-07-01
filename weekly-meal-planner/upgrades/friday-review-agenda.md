@@ -64,6 +64,12 @@ Priority tiers, not just a re-listing. Full detail on every item is in the secti
 
 ## 🆕 New — From Today's Testing Session
 
+- **Thumbs up / thumbs down on recipes — local only, per-user (decided: local, not cross-user)**
+  - Owner's original idea had two parts: (1) per-user rating to bias that person's own future generations, and (2) cross-user "popular recipes" aggregation (X people liked it → treat as popular → prioritize popular + curated recipes over fresh AI generation).
+  - **Decided: build (1) only, for now.** Store a simple rating locally alongside saved recipes (same `AsyncStorage` pattern as everything else in the app today); bias that user's own future generation away from thumbs-down dishes and toward thumbs-up ones — reuses the same "inject a specific recipe, tell the AI to build the week around it" mechanism already noted for the curated recipe library.
+  - **(2) is explicitly deferred, not rejected.** Cross-user aggregation requires a real shared backend (server + database to count ratings across devices) — the app is currently 100% local `AsyncStorage`, no backend exists yet. Building server infrastructure just for recipe popularity, ahead of the Subscription Backend work already in Tier 5, would be backwards. When that backend eventually gets built (💳 Monetization section), popularity-aggregation and "prioritize popular/curated recipes before fresh AI generation" should be designed in as a requiremen of that build, not bolted on after — same dependency already noted for the curated recipe library's monetization angle.
+  - **Files this would touch (for the local-only version):** a new small rating store (mirrors `savedRecipesService.ts`/`savedMenusService.ts` pattern), a thumbs up/down control on `RecipeCard.tsx` or `RecipeDetailScreen.tsx`, and a lightweight read in `claudeService.ts`'s generation call to bias against disliked recipes.
+
 - **Delete button on saved recipe cards**
   - Owner request: add a delete option on saved recipe cards (Saved Recipes & Menus → Recipes tab) so users can remove ones they no longer want, not just add them.
   - Placement/style as specified: bottom of the card, green button, labeled "Delete Recipe."
@@ -185,7 +191,7 @@ Priority tiers, not just a re-listing. Full detail on every item is in the secti
 
 ## 💳 Monetization
 
-- **Subscription backend.** Replace hardcoded `IS_PREMIUM = false` with real payment status — Node/Express proxy + Google Play Billing + Apple IAP + Stripe.
+- **Subscription backend.** Replace hardcoded `IS_PREMIUM = false` with real payment status — Node/Express proxy + Google Play Billing + Apple IAP + Stripe. *Design in from the start:* curated-recipe content unlocks (🆕 New section) and cross-user recipe-popularity aggregation (🆕 New section — thumbs up/down) both need this same backend; build them into the schema/API now rather than retrofitting after payments ship.
 - **Gemini API reliability (pre-launch blocker, tied to the backend proxy).** Route calls server-side with a paid key + retry/backoff so free-tier 503s never reach the user. *(Partially addressed already — images now go through a Cloudflare Worker proxy + shared cache per the status note; confirm if this fully closes the item or if meal-gen still needs the same treatment.)*
 - **Promo / access codes.** Free premium unlock codes for family/friends/beta testers.
 - **Subscription promotions.** First-month-free trial, discounted annual plan, launch-week promo, referral program, seasonal pushes, bundle pricing for future diet tiers.
