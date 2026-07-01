@@ -15,6 +15,8 @@ Priority tiers, not just a re-listing. Full detail on every item is in the secti
 ### Tier 1 — Live, user-facing bugs
 2. **Recipe card preview photos never update (dinner/sides).** Core feature looks broken to any user browsing their week, even though the image generation itself works.
    - *Likely follow-up:* once root-caused, check whether breakfast/lunch cards and the Week Share card have the same stale-cache pattern, or if it's genuinely isolated to dinner/sides.
+2b. **Home-Style saved menu missing from the saved menu list.** Leading suspect: `saveMenu()`'s duplicate check compares recipe names only, not diet type — see 🆕 New section for full trace. Quick to verify live, quick to fix if confirmed.
+   - *Likely follow-up:* once fixed, spot-check the other 5 diets for the same silent-duplicate risk — this isn't Home-Style-specific, it just surfaces there first due to familiar dish naming.
 
 ### Tier 2 — Dated, external deadline (not urgent today, but needs a landing slot before Aug 17)
 3. **Imagen 4 → Gemini 2.5 Flash Image migration.** Hard shutdown Aug 17, 2026 — recipe images break entirely if this slips past that date.
@@ -50,6 +52,13 @@ Priority tiers, not just a re-listing. Full detail on every item is in the secti
 ---
 
 ## 🆕 New — From Today's Testing Session
+
+- **Home-Style saved menu doesn't show up in the saved menu list**
+  - Owner report: generated + saved a Home-Style menu; it's not appearing under Saved Recipes & Menus → Menus tab.
+  - **Leading suspect (code-confirmed, not yet live-reproduced):** `saveMenu()` in `savedMenusService.ts` (lines ~30–36) checks for duplicates by comparing only the *sorted list of recipe names* across all saved menus — it never checks `dietType`. If a Home-Style week happens to generate recipe names matching an already-saved menu from a different diet (plausible for Home-Style specifically, since it produces familiar comfort-food names — "Skillet Ground Beef and Mushroom," etc. — that could collide with names generated under another diet), `saveMenu()` silently returns `false` and nothing gets written to storage.
+  - **Compounding UI issue:** in `MealPlanScreen.handleSaveMenu()` (lines ~173–190), when `saved` comes back `false`, the app shows an "Already saved" alert *and* still sets `menuSaved(true)` — so the Save button visually flips to its "saved" state even though nothing new was persisted. This would make the failure invisible in the moment; the owner would only discover it later, when checking the actual Menus list.
+  - **Diet type itself is correctly wired** — confirmed `'home_style'` is in the `DietType` union (`types/index.ts`) and in `DIET_TYPES` (`dietTypes.ts`), and `SavedRecipesScreen`'s Menus tab renders `getSavedMenus()` with no diet filtering at all — so this isn't a home-style-specific exclusion, it's a cross-diet name-collision bug that would happen to any diet, just more likely to surface on Home-Style's familiar dish names.
+  - **Needs live confirmation Friday** (no simulator access in this environment to reproduce directly): try saving the same Home-Style menu again — if "Already saved" pops up even though the Menus list is empty/missing it, that confirms the duplicate-check theory. Fix, if confirmed: add `dietType` to the duplicate comparison in `saveMenu()`, and stop setting `menuSaved(true)` on a false save so the UI doesn't mask a no-op.
 
 - **Recipe card preview photos never update (Dinner + Sides only)**
   - Reproduced with a fresh session, 24 recipes generated — not the 70/hr image-quota issue, since a brand-new session still shows it.
