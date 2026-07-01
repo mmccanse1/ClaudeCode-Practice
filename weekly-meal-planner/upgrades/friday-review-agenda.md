@@ -4,6 +4,51 @@ Consolidated from live testing notes (today) + everything in `weekly-meal-planne
 
 ---
 
+## 🎯 Triage — Walk-In Order
+
+Priority tiers, not just a re-listing. Full detail on every item is in the sections below — this is the "what do we touch first" cheat sheet. Each line includes a likely follow-up so nothing dead-ends after the fix lands.
+
+### Tier 0 — Blocks the very next thing you're about to do
+1. **Pantry categorization rewrite (`categorizeItem()`).** You're starting the pantry visuals rebuild — this has to land first or the new visuals just make miscategorized items more visible, not less. Owner ruleset is confirmed and ready to implement (see 🧺 Pantry section).
+   - *Likely follow-up:* existing pantry items already saved under the old logic won't retroactively re-sort — decide whether to run a one-time re-categorization pass on stored data, or just let it apply going forward. Also decide the `SPICE_KEYWORDS`/`FRIDGE_KEYWORDS` replace-vs-layer question flagged in that section before writing code.
+
+### Tier 1 — Live, user-facing bugs
+2. **Recipe card preview photos never update (dinner/sides).** Core feature looks broken to any user browsing their week, even though the image generation itself works.
+   - *Likely follow-up:* once root-caused, check whether breakfast/lunch cards and the Week Share card have the same stale-cache pattern, or if it's genuinely isolated to dinner/sides.
+
+### Tier 2 — Dated, external deadline (not urgent today, but needs a landing slot before Aug 17)
+3. **Imagen 4 → Gemini 2.5 Flash Image migration.** Hard shutdown Aug 17, 2026 — recipe images break entirely if this slips past that date.
+   - *Likely follow-up:* re-test image quality/accuracy across all 5 cuisines + Home-Style post-migration (response field names differ from Imagen's), and update the cost model for the ~2× price jump.
+4. **Image rate-limit bottleneck / quota scaling.** Same problem area as #3 — worth deciding together rather than as two separate passes.
+   - *Likely follow-up:* once the shared cache + throttling levers are in, re-measure whether Tier 2 (20 IPM) upgrade is still needed or if the cache alone solves it.
+
+### Tier 3 — Small, already-decided changes (quick wins before the bigger builds)
+5. **Move cuisine selector: Scan screen → Home screen.** Already has a 5/5 user-panel verdict — this is "go build it," not "go discuss it."
+   - *Likely follow-up:* the ScanReceipt redesign spec (item in 🎨 UX section) was written assuming cuisine still lives on Scan — it doesn't mention a cuisine section at all. Revisit that spec's layout once cuisine moves, so the two pieces of work don't conflict.
+6. **Cuisine × diet/modifier compatibility-matrix gating (Phase 3).** Matrix data already exists in `cuisines-gladys.md` — this is wiring, not authoring.
+   - *Likely follow-up:* needs a pass testing every diet+modifier combo in the matrix (East Asian+Low-Salt, Classic Home-Style+Keto, etc.) to confirm hidden cuisines actually disappear from the picker rather than just failing silently at generation time.
+
+### Tier 4 — Decisions needed before any code gets written
+7. **Curated recipe library — direction, not implementation.** Owner is "seriously considering" but hasn't decided: monthly-cadence commitment vs. looser cadence, browse screen vs. folded into AI generation vs. both, and the legal read on monetizing it is still outstanding.
+   - *Likely follow-up:* once direction is picked, seed it with the two recipes already mentioned (ratatouille, French onion soup) as the first real test of the extraction → library → app pipeline before treating it as a repeatable monthly process.
+8. **Reference/suggested-dish database per cuisine.** Hard nudge vs. soft bias in the prompt is still an open call.
+   - *Likely follow-up:* whichever approach wins, it needs a regression check against the existing weekly-variety rules (e.g., "don't repeat the same spice base twice") so the nudged dish doesn't fight the app's own variety logic.
+9. **Stand-alone Sides & Desserts toggle ("pair" vs. "on their own").** Low implementation effort, but the UX toggle language/placement isn't decided.
+   - *Likely follow-up:* per the original spec, build desserts (3b) with this toggle from the start rather than retrofitting — so this decision should land before dessert prompt-module work begins, not after.
+
+### Tier 5 — The bigger builds (once Tiers 0–4 are clear)
+10. World Cuisine modules — full build-out of the Gladys spec (content is implementation-ready).
+11. Sides & Desserts premium content (Erika spec) — depends on the Tier 4 stand-alone-toggle decision landing first.
+12. Detailed/premium macros — *recheck base macros are actually displaying correctly first* (known possible regression per CLAUDE.md) before layering the premium panel on top of a maybe-broken base.
+13. ScanReceipt screen redesign — sequence after the cuisine-to-Home-screen move (Tier 3, #5) so the layout spec reflects the final screen contents.
+14. Pantry premium visuals (spice rack, shelf backgrounds) — blocked on Tier 0 by definition; also needs the "frozen" 4th bucket question resolved so the visuals have a taxonomy to represent.
+15. Subscription backend + monetization build-out — *likely follow-up:* if the curated recipe library (Tier 4, #7) becomes a Pro pitch, the backend needs to support content unlocks, not just generation-limit gating — worth designing both together rather than the backend first and recipes bolted on later.
+
+### Tier 6 — Deferred, no near-term action needed
+16. Additional diet types, promo/access codes, subscription promotions, per-diet multi-menu history.
+
+---
+
 ## 🆕 New — From Today's Testing Session
 
 - **Recipe card preview photos never update (Dinner + Sides only)**
