@@ -29,6 +29,29 @@ Consolidated from live testing notes (today) + everything in `weekly-meal-planne
   - Flagging this now because the visuals rebuild is about to start — rebuilding pantry shelf visuals on top of this categorization logic will just make the wrong-bucket problem more visible, not fix it. Worth deciding before the rebuild: patch the keyword lists (quick, still fragile for other compound product names) vs. add a `frozen` section + smarter matching (e.g., check for whole-word/prefix matches instead of raw substrings, or route through AI-based categorization at scan time instead of local keywords).
   - **Not scan-specific — confirmed it's a single choke point.** All three entry paths call the same `categorizeItem()`: manual typed entry (`PantryScreen.handleAdd` → `addPantryItem`), barcode scan (`PantryScreen.handleScanAdd` → `addPantryItem`), and receipt scan (`ScanReceiptScreen` → `addPantryItems`, batch version). There is no separate categorization logic per input method, so a manually-typed "salted butter" miscategorizes exactly the same way a scanned one does. Any fix needs to happen once, in `categorizeItem()` itself, not per-entry-point.
   - **Owner-confirmed expected result (test case for the fix):** "salted butter" → Refrigerated, not Spices & Seasonings. Any keyword-priority fix (e.g., checking fridge keywords before the generic `'salt'` spice match, or requiring word-boundary matches instead of raw substrings) should be checked against this case directly.
+  - **Owner-specified categorization rules (draft — for Friday, meant to replace the ad hoc keyword lists rather than patch them):**
+
+    **→ Refrigerated:**
+    - Anything dairy-based (milk, cheese, yogurt, cream, butter, etc.)
+    - Fresh vegetables, including root vegetables (carrots, potatoes, onions, etc.)
+    - Fresh fruits
+    - Juices
+    - Liquid beverages
+    - Salad dressings
+    - Condiments: ketchup, mustard (the prepared condiment), mayonnaise
+    - Raw protein: eggs, beef, poultry, pork, seafood
+    - Dairy-alternatives and their products, e.g. tofu, soy-based products such as alternative mayonnaise
+    - Alternative milks (oat milk, almond milk, etc.)
+    - Vegan refrigerated products generally
+
+    **→ Spices & Seasonings (explicit override — these go here even though they read as "sauce" or "fresh item"):**
+    - Sauces: Worcestershire, soy sauce, fish sauce
+    - Fresh herbs, e.g. parsley
+    - Mustard *seed* (distinct from prepared mustard — mustard condiment is Refrigerated, mustard seed is a spice)
+    - Cumin
+    - Tarragon — fresh or dried, both go to Spices & Seasonings (not just the dried form)
+
+    **Note for Friday discussion:** this draft has a deliberate tension worth confirming out loud — "fresh herbs" (parsley) and "mustard seed" land in Spices & Seasonings by function/culinary role, while "fresh vegetables" land in Refrigerated by the same fresh/raw logic. That's the owner's call as stated, not a categorization-logic error, but it means the eventual matcher needs an explicit herb/seed exception list rather than a single "fresh → refrigerated" rule, or fresh herbs will keep getting miscategorized right alongside vegetables. Also worth deciding: does this rule set replace `SPICE_KEYWORDS`/`FRIDGE_KEYWORDS` wholesale, or layer on top as a set of overrides checked first?
 
 ---
 
