@@ -20,6 +20,14 @@ Consolidated from live testing notes (today) + everything in `weekly-meal-planne
   - `cuisines-gladys.md` already has an "Example Dishes (Easy → Ambitious)" list per cuisine (e.g., Classic Home-Style lists meatloaf, pot roast, shepherd's pie, etc.) — the idea is to actually **use** those lists as a weighting/suggestion signal in the prompt, not just as spec documentation.
   - Open question for Friday: hard nudge ("include at least one dish from this list per week when the hero ingredient matches") vs. soft bias in the prompt? Same treatment for other cuisine modules (Indian, East Asian, Middle Eastern, Latin American)?
 
+- **Pantry item categorization is broken — flagged before starting the visuals rebuild**
+  - Live examples found scrolling the pantry: frozen pizza → Dry Goods, crispy fried onions → Refrigerated, (salted/unsalted) butter → Spices & Seasonings.
+  - Root cause (confirmed in `pantryService.ts` `categorizeItem()`): pure substring keyword-matching across only 3 fixed buckets (spices → refrigerated → dry_goods, first match wins, in that priority order).
+    - Butter: `SPICE_KEYWORDS` includes the bare word `'salt'` — "salted butter" / "unsalted butter" both contain "salt" as a substring, so they get caught by the spice check before the fridge list's `'butter'` entry is ever reached.
+    - Crispy fried onions: `'onion'` is a `FRIDGE_KEYWORDS` entry meant for fresh onions, but it substring-matches inside "fried onions" even though the product is a shelf-stable jarred/canned topping.
+    - Frozen pizza: doesn't match any spice or fridge keyword, so it falls through to the `dry_goods` default — and there's no "frozen" bucket in the taxonomy at all (only refrigerated / spices / dry_goods exist), so even a targeted fix needs a 4th section, not just a keyword tweak.
+  - Flagging this now because the visuals rebuild is about to start — rebuilding pantry shelf visuals on top of this categorization logic will just make the wrong-bucket problem more visible, not fix it. Worth deciding before the rebuild: patch the keyword lists (quick, still fragile for other compound product names) vs. add a `frozen` section + smarter matching (e.g., check for whole-word/prefix matches instead of raw substrings, or route through AI-based categorization at scan time instead of local keywords).
+
 ---
 
 ## 🚨 Dated / Time-Sensitive
