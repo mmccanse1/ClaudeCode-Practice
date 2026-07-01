@@ -4,6 +4,16 @@ Consolidated from live testing notes (today) + everything in `weekly-meal-planne
 
 ---
 
+## 🗣️ Open With This — Standing Process Discussion (not a ticket, just talk)
+
+**The pattern:** twice today, a value got hardcoded in a second place instead of derived from its single source of truth, and silently drifted out of sync when that source was updated.
+- Pantry: `SPICE_KEYWORDS` / `FRIDGE_KEYWORDS` — ad hoc keyword lists in `pantryService.ts`, unrelated to any central category config.
+- Home screen: `ALL_DIET_TYPES` in `currentMealPlanService.ts` — a hand-copied 5-diet array that drifted out of sync the moment `DIET_TYPES` (the real source of truth) grew to 6.
+
+**Why worth five minutes Friday:** these are cheap individually, but the shape of the bug will keep recurring — anywhere a list of diets/cuisines/categories gets typed out a second time instead of imported from its config file, the next addition (7th diet, 6th cuisine, whatever) will silently miss that spot again. Worth deciding whether to just grep for the pattern occasionally, or something more structural (e.g., a lint rule, or just a habit of `DIET_TYPES.map(d => d.id)` instead of hand-typing arrays). No need to solve it today — just flag it as a standing thing to watch for rather than treating each occurrence as a one-off surprise.
+
+---
+
 ## 🎯 Triage — Walk-In Order
 
 Priority tiers, not just a re-listing. Full detail on every item is in the sections below — this is the "what do we touch first" cheat sheet. Each line includes a likely follow-up so nothing dead-ends after the fix lands.
