@@ -29,6 +29,8 @@ Priority tiers, not just a re-listing. Full detail on every item is in the secti
    - *Likely follow-up:* the ScanReceipt redesign spec (item in 🎨 UX section) was written assuming cuisine still lives on Scan — it doesn't mention a cuisine section at all. Revisit that spec's layout once cuisine moves, so the two pieces of work don't conflict.
 6. **Cuisine × diet/modifier compatibility-matrix gating (Phase 3).** Matrix data already exists in `cuisines-gladys.md` — this is wiring, not authoring.
    - *Likely follow-up:* needs a pass testing every diet+modifier combo in the matrix (East Asian+Low-Salt, Classic Home-Style+Keto, etc.) to confirm hidden cuisines actually disappear from the picker rather than just failing silently at generation time.
+6b. **Delete button on saved recipe cards.** Backend (`unsaveRecipe`) already exists; just needs an `onDelete` prop on `RecipeCard` following the same pattern as the existing `onRefresh` prop, plus a confirm dialog matching the existing saved-menu delete pattern. Low risk, no dependencies — good one to knock out alongside the other Tier 3 items.
+   - *Likely follow-up:* once recipes can be deleted individually, double check the "X recipes saved" count on `SavedRecipesScreen` updates immediately (it already does via `setRecipes` after delete, per the saved-menus pattern, but confirm the recipes-tab wiring matches).
 
 ### Tier 4 — Decisions needed before any code gets written
 7. **Curated recipe library — direction, not implementation.** Owner is "seriously considering" but hasn't decided: monthly-cadence commitment vs. looser cadence, browse screen vs. folded into AI generation vs. both, and the legal read on monetizing it is still outstanding.
@@ -52,6 +54,14 @@ Priority tiers, not just a re-listing. Full detail on every item is in the secti
 ---
 
 ## 🆕 New — From Today's Testing Session
+
+- **Delete button on saved recipe cards**
+  - Owner request: add a delete option on saved recipe cards (Saved Recipes & Menus → Recipes tab) so users can remove ones they no longer want, not just add them.
+  - Placement/style as specified: bottom of the card, green button, labeled "Delete Recipe."
+  - **Low effort — the backend already exists.** `unsaveRecipe(recipe)` in `savedRecipesService.ts` is already built and already used (currently only wired to the bookmark toggle on `RecipeDetailScreen`). No new service logic needed, just a new UI entry point.
+  - **Implementation pattern already exists in the codebase to copy:** `RecipeCard.tsx` already supports an optional bottom-row action button via its `onRefresh` prop (conditionally rendered only when passed in). Adding an `onDelete?: () => void` prop the same way — rendered only when `SavedRecipesScreen` passes it in — means the delete button only ever shows up on the Saved Recipes list, not on cards during AI weekly generation or the Day/MealPlan views where "delete" wouldn't make sense.
+  - Should mirror the existing confirm-before-delete pattern already used for saved menus (`SavedRecipesScreen.handleDeleteMenu` uses `Alert.alert` with a Cancel/Delete choice) so recipe deletion has the same safety net.
+  - Green button color: reuse an existing app green rather than inventing a new one — Vegetarian (`#2d6a4f`) or Vegan (`#40916c`) from `dietTypes.ts` are the closest existing brand greens.
 
 - **Home-Style saved menu doesn't show up in the saved menu list**
   - Owner report: generated + saved a Home-Style menu; it's not appearing under Saved Recipes & Menus → Menus tab.
