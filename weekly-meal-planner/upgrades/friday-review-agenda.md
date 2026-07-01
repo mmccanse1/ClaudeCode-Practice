@@ -53,6 +53,8 @@ Consolidated from live testing notes (today) + everything in `weekly-meal-planne
 
     **Note for Friday discussion:** this draft has a deliberate tension worth confirming out loud — "fresh herbs" (parsley) and "mustard seed" land in Spices & Seasonings by function/culinary role, while "fresh vegetables" land in Refrigerated by the same fresh/raw logic. That's the owner's call as stated, not a categorization-logic error, but it means the eventual matcher needs an explicit herb/seed exception list rather than a single "fresh → refrigerated" rule, or fresh herbs will keep getting miscategorized right alongside vegetables. Also worth deciding: does this rule set replace `SPICE_KEYWORDS`/`FRIDGE_KEYWORDS` wholesale, or layer on top as a set of overrides checked first?
 
+    **✅ CONFIRMED — owner agrees, include in the code rewrite.** When `categorizeItem()` in `pantryService.ts` is rewritten, this ruleset (both lists above, including the explicit herb/seed exception list) is the spec to implement — not just patch notes to discuss. The herb/seed-vs-vegetable exception list must be built as explicit overrides checked ahead of any general "fresh → refrigerated" matching, or parsley/mustard seed/cumin/tarragon will fall back into Refrigerated via a generic fresh-produce rule.
+
 ---
 
 ## 🚨 Dated / Time-Sensitive
