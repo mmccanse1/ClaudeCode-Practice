@@ -33,6 +33,8 @@ Consolidated from live testing notes (today) + everything in `weekly-meal-planne
 ## 🍽️ Content & Cuisine
 
 - **World Cuisine modules (Gladys spec) — implementation-ready.** Indian/South Asian, East Asian, Middle Eastern, Latin American, Classic Home-Style. Includes system-prompt text, pantry staples, techniques, example dishes, and a cuisine × diet compatibility matrix (e.g., Classic Home-Style excluded for Keto/Low-Salt/Diabetic).
+- **Move the cuisine selector from Scan screen → Home screen, beside the diet picker.** *(Recovered from PR #22's "Still to come" list — user-panel verdict was 5/5 in favor, but this never got its own session or a note file, which is why it was missing.)* Cuisine currently lives as a Pro-gated selector on `ScanReceiptScreen`; the panel wants it promoted to a peer of the diet picker on the Home screen instead.
+- **Cuisine × diet/modifier compatibility-matrix gating (Phase 3) — still pending.** Also flagged in PR #22 as "to follow" and never implemented. The matrix itself already exists in `cuisines-gladys.md` (e.g., East Asian excluded for Low-Salt/Paleo) — it just isn't wired into the cuisine picker's filtering logic yet.
 - **Reference/suggested-dish database** — see "New" section above; ties directly into the example-dish lists already in this spec.
 - **Sides & Desserts premium content (Erika spec) — implementation-ready.** 5 sides/week + 3 desserts/week (not full 7-day sets). Prompt modules, per-diet examples, keto/diabetic sweetener rules, lightweight pairing logic (no formal matrix).
 - **Stand-alone Sides & Desserts toggle.** Let users generate sides/desserts without forcing a paired dinner — "Pair to my dinners" ⇄ "Make on their own" toggle. Low implementation effort; most of the backend seam already exists.
