@@ -2,122 +2,160 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>THE OREGON TRAIL</title>
+<title>The Oregon Trail</title>
 <style>
   :root{
-    --black:#000000;
-    --white:#f0f0f0;
-    --green:#38cb38;
-    --violet:#cb38cb;
-    --orange:#cb7638;
-    --blue:#3876cb;
-    --red:#cb3838;
+    --face:#c0c0c0;
+    --face-light:#dfdfdf;
+    --hi:#ffffff;
+    --sh:#808080;
+    --sh-dark:#404040;
+    --titleblue1:#0a246a;
+    --titleblue2:#3a6ea5;
+    --text:#000000;
+    --link:#000080;
   }
   *{box-sizing:border-box;}
   html,body{
-    margin:0;padding:0;height:100%;
-    background:var(--black);
-    color:var(--green);
-    font-family:'Courier New',Courier,monospace;
-    font-weight:bold;
-    letter-spacing:1px;
-    image-rendering:pixelated;
+    margin:0;padding:0;min-height:100%;
+    background:#008080;
+    color:var(--text);
+    font-family:Tahoma,'Segoe UI',Verdana,Arial,sans-serif;
+    font-size:13px;
   }
-  #game{
-    max-width:820px;margin:0 auto;padding:16px;
-    min-height:100vh;
+  body{padding:22px 10px;}
+  #win{
+    max-width:820px;margin:0 auto;
+    background:var(--face);
+    border:2px solid;
+    border-color:var(--hi) var(--sh-dark) var(--sh-dark) var(--hi);
+    box-shadow:1px 1px 0 #000, 3px 3px 8px rgba(0,0,0,0.5);
   }
+  .titlebar{
+    background:linear-gradient(90deg,var(--titleblue1),var(--titleblue2));
+    color:#fff;font-weight:bold;font-size:14px;
+    padding:4px 6px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .titlebar .tleft{display:flex;align-items:center;gap:6px;}
+  .titlebar .ticon{
+    width:16px;height:16px;background:#e8b23c;border:1px solid #7a5a10;display:inline-block;
+  }
+  .winbtns{display:flex;gap:3px;}
+  .winbtns span{
+    width:16px;height:14px;background:var(--face);border:1px solid;
+    border-color:var(--hi) var(--sh-dark) var(--sh-dark) var(--hi);
+    font-size:10px;line-height:12px;text-align:center;color:#000;font-weight:bold;
+  }
+  .menubar{
+    background:var(--face);border-bottom:1px solid var(--sh);
+    padding:3px 8px;font-size:12px;display:flex;gap:16px;color:#000;
+  }
+  .content{padding:10px;}
   h1,h2,h3{
-    text-transform:uppercase;
-    text-align:center;
-    color:var(--orange);
-    text-shadow:2px 2px 0 var(--black);
-    letter-spacing:3px;
+    margin:6px 0;color:#5a2d0c;
+    text-shadow:1px 1px 0 #e8c99a;
   }
-  h1{font-size:2.1em;border-bottom:4px double var(--green);padding-bottom:10px;}
+  h1{font-size:1.5em;text-align:center;}
+  h2{font-size:1.15em;}
   .screen{display:none;}
   .screen.active{display:block;}
-  .panel{
-    border:3px solid var(--green);
-    padding:14px;margin:10px 0;
-    background:#001400;
+  fieldset.panel{
+    border:2px solid;
+    border-color:var(--sh) var(--hi) var(--hi) var(--sh);
+    background:var(--face-light);
+    margin:8px 0;padding:10px;
   }
-  p, li, label{font-size:15px;line-height:1.5em;}
-  .flavor{color:var(--violet);font-style:italic;}
+  legend{padding:0 6px;font-weight:bold;color:#000;font-size:12px;}
+  p, li, label{font-size:13px;line-height:1.5em;}
+  .flavor{color:#3a3a7a;font-style:italic;}
+  .unlimited{color:#8a5a00;font-weight:bold;}
   button{
-    font-family:inherit;font-weight:bold;letter-spacing:1px;
-    background:var(--black);color:var(--white);
-    border:2px solid var(--green);
-    padding:10px 14px;margin:6px 6px 6px 0;
-    cursor:pointer;font-size:14px;text-transform:uppercase;
+    font-family:inherit;font-weight:normal;
+    background:var(--face);color:#000;
+    border:2px solid;
+    border-color:var(--hi) var(--sh-dark) var(--sh-dark) var(--hi);
+    padding:6px 12px;margin:4px 6px 4px 0;
+    cursor:pointer;font-size:12px;
   }
-  button:hover{background:var(--green);color:var(--black);}
-  button:disabled{opacity:0.35;cursor:not-allowed;}
-  button.primary{border-color:var(--orange);color:var(--orange);}
-  button.primary:hover{background:var(--orange);color:var(--black);}
-  button.danger{border-color:var(--red);color:var(--red);}
-  button.danger:hover{background:var(--red);color:var(--black);}
+  button:active{
+    border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
+    padding:7px 11px 5px 13px;
+  }
+  button:disabled{opacity:0.45;cursor:not-allowed;}
+  button.primary{font-weight:bold;color:#0a246a;}
+  button.danger{color:#8a1010;}
   input[type=text]{
-    font-family:inherit;background:#001a00;color:var(--white);
-    border:2px solid var(--green);padding:8px;font-size:14px;width:220px;
+    font-family:inherit;background:#fff;color:#000;
+    border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
+    padding:5px;font-size:13px;width:220px;
   }
   select{
-    font-family:inherit;background:#001a00;color:var(--white);
-    border:2px solid var(--green);padding:8px;font-size:14px;
+    font-family:inherit;background:#fff;color:#000;
+    border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
+    padding:4px;font-size:13px;
   }
-  table{width:100%;border-collapse:collapse;margin:8px 0;}
-  td,th{padding:4px 6px;border-bottom:1px solid #114411;text-align:left;font-size:14px;}
-  th{color:var(--orange);}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  table{width:100%;border-collapse:collapse;margin:6px 0;background:#fff;}
+  td,th{padding:5px 7px;border:1px solid var(--sh);text-align:left;font-size:12px;}
+  th{background:var(--face);color:#000;}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .stat{
-    border:1px solid var(--blue);color:var(--blue);
-    padding:4px 8px;margin:3px;display:inline-block;font-size:13px;
+    border:1px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
+    background:#fff;
+    padding:4px 8px;margin:3px;display:inline-block;font-size:12px;
   }
-  .money{color:var(--orange);font-weight:bold;}
-  .unlimited{color:var(--orange);}
   .center{text-align:center;}
   .log{
-    max-height:160px;overflow-y:auto;
-    border:1px solid #114411;padding:8px;background:#000a00;
-    font-size:13px;color:#9ad89a;
+    max-height:150px;overflow-y:auto;
+    border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
+    padding:6px;background:#fff;
+    font-size:12px;color:#222;font-family:'Courier New',monospace;
   }
-  .log div{margin-bottom:3px;}
-  #huntCanvas{
-    background:#87b56b;border:3px solid var(--green);cursor:crosshair;display:block;margin:0 auto;
+  .log div{margin-bottom:2px;}
+  canvas{display:block;margin:0 auto;image-rendering:auto;}
+  #sceneTitle{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);}
+  #trailMapCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);margin-bottom:6px;background:#fff;}
+  #huntCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);cursor:crosshair;}
+  #riverCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);}
+  #graveCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);}
+  #winCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);}
+  .members-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .footer-note{color:#333;font-size:11px;text-align:center;margin-top:10px;padding:6px;border-top:1px solid var(--sh);}
+  .statusbar{
+    border-top:1px solid var(--hi);background:var(--face);padding:3px 8px;font-size:11px;color:#333;
+    display:flex;justify-content:space-between;
   }
-  .tombstone{
-    text-align:center;font-size:60px;color:var(--white);margin:10px 0;
-  }
-  .healthbar{height:10px;background:#222;border:1px solid #333;width:100%;}
-  .healthfill{height:100%;background:var(--green);}
-  .wide{width:100%;}
-  .members-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .footer-note{color:#557755;font-size:11px;text-align:center;margin-top:20px;}
 </style>
 </head>
 <body>
-<div id="game">
+<div id="win">
+  <div class="titlebar">
+    <div class="tleft"><span class="ticon"></span> The Oregon Trail</div>
+    <div class="winbtns"><span>_</span><span>&#9633;</span><span>&times;</span></div>
+  </div>
+  <div class="menubar"><span>File</span><span>Trail</span><span>Options</span><span>Help</span></div>
 
-  <h1>The Oregon Trail</h1>
-  <div class="center flavor" style="margin-bottom:10px;">Independence, Missouri &mdash; 1848</div>
+  <div class="content" id="game">
 
   <!-- TITLE -->
   <div class="screen active" id="screen-title">
-    <div class="panel center">
+    <h1>The Oregon Trail</h1>
+    <canvas id="sceneTitle" width="760" height="220"></canvas>
+    <fieldset class="panel">
+      <legend>Independence, Missouri &mdash; 1848</legend>
       <p>You are about to set off on the trail to Oregon in a covered wagon
       with a party of five. You will face rivers, storms, broken axles,
       thieves, and disease. Do you have what it takes to reach the
       Willamette Valley?</p>
       <p class="unlimited">A wealthy relative has left you an unlimited fortune.
       Money will never be a problem &mdash; everything else in the West still can be.</p>
-      <button class="primary" onclick="goTo('occupation')">Begin Journey</button>
-    </div>
+      <div class="center"><button class="primary" onclick="goTo('occupation')">Begin Journey</button></div>
+    </fieldset>
   </div>
 
   <!-- OCCUPATION -->
   <div class="screen" id="screen-occupation">
-    <div class="panel">
-      <h2>Choose Your Occupation</h2>
+    <fieldset class="panel">
+      <legend>Choose Your Occupation</legend>
       <p class="flavor">Your occupation no longer limits your funds &mdash; but it still
       determines how the history books score your journey.</p>
       <table>
@@ -126,13 +164,13 @@
         <tr><td>Carpenter</td><td>x2</td><td><button onclick="chooseOccupation('Carpenter',2)">Choose</button></td></tr>
         <tr><td>Farmer</td><td>x3</td><td><button onclick="chooseOccupation('Farmer',3)">Choose</button></td></tr>
       </table>
-    </div>
+    </fieldset>
   </div>
 
   <!-- NAMES -->
   <div class="screen" id="screen-names">
-    <div class="panel">
-      <h2>Name Your Party</h2>
+    <fieldset class="panel">
+      <legend>Name Your Party</legend>
       <p>Enter your name and the names of four companions.</p>
       <div class="row"><label style="width:120px;">You:</label><input type="text" id="name0" value="Charlie"></div>
       <div class="row"><label style="width:120px;">Companion 2:</label><input type="text" id="name1" value="Sam"></div>
@@ -141,13 +179,13 @@
       <div class="row"><label style="width:120px;">Companion 5:</label><input type="text" id="name4" value="Lee"></div>
       <br>
       <button class="primary" onclick="setNames()">Continue</button>
-    </div>
+    </fieldset>
   </div>
 
   <!-- MONTH -->
   <div class="screen" id="screen-month">
-    <div class="panel">
-      <h2>Choose a Month to Depart</h2>
+    <fieldset class="panel">
+      <legend>Choose a Month to Depart</legend>
       <p class="flavor">Leave too early and the ground is still muddy from spring rains.
       Leave too late and you may be trapped by snow in the mountains.</p>
       <table>
@@ -158,25 +196,25 @@
         <tr><td>June</td><td>Warmer, rivers lower</td><td><button onclick="chooseMonth('June',3)">Choose</button></td></tr>
         <tr><td>July</td><td>Late start &mdash; risk of early mountain snow</td><td><button onclick="chooseMonth('July',4)">Choose</button></td></tr>
       </table>
-    </div>
+    </fieldset>
   </div>
 
   <!-- STORE -->
   <div class="screen" id="screen-store">
-    <div class="panel">
-      <h2>Matt's General Store &mdash; Independence, MO</h2>
+    <fieldset class="panel">
+      <legend>Matt's General Store &mdash; Independence, MO</legend>
       <p class="center unlimited">Funds available: UNLIMITED $</p>
       <table>
         <tr><th>Item</th><th>Price</th><th>You Have</th><th>Buy</th></tr>
         <tr>
-          <td>Oxen (per pair)</td><td>$40</td><td id="have-oxen">0</td>
+          <td>&#128004; Oxen (per pair)</td><td>$40</td><td id="have-oxen">0</td>
           <td>
             <button onclick="buy('oxen',2)">+2</button>
             <button onclick="buy('oxen',6)">+6</button>
           </td>
         </tr>
         <tr>
-          <td>Food (lbs)</td><td>$0.20/lb</td><td id="have-food">0</td>
+          <td>&#127838; Food (lbs)</td><td>$0.20/lb</td><td id="have-food">0</td>
           <td>
             <button onclick="buy('food',100)">+100</button>
             <button onclick="buy('food',500)">+500</button>
@@ -184,57 +222,64 @@
           </td>
         </tr>
         <tr>
-          <td>Ammunition (boxes of 20)</td><td>$1</td><td id="have-ammo">0</td>
+          <td>&#128299; Ammunition (boxes of 20)</td><td>$1</td><td id="have-ammo">0</td>
           <td>
             <button onclick="buy('ammo',5)">+5</button>
             <button onclick="buy('ammo',20)">+20</button>
           </td>
         </tr>
         <tr>
-          <td>Clothing (sets)</td><td>$1</td><td id="have-clothing">0</td>
+          <td>&#128085; Clothing (sets)</td><td>$1</td><td id="have-clothing">0</td>
           <td>
             <button onclick="buy('clothing',5)">+5</button>
             <button onclick="buy('clothing',15)">+15</button>
           </td>
         </tr>
         <tr>
-          <td>Spare Wagon Wheels</td><td>$10</td><td id="have-wheels">0</td>
+          <td>&#9899; Spare Wagon Wheels</td><td>$10</td><td id="have-wheels">0</td>
           <td><button onclick="buy('wheels',3)">+3</button></td>
         </tr>
         <tr>
-          <td>Spare Axles</td><td>$10</td><td id="have-axles">0</td>
+          <td>&#128295; Spare Axles</td><td>$10</td><td id="have-axles">0</td>
           <td><button onclick="buy('axles',3)">+3</button></td>
         </tr>
         <tr>
-          <td>Spare Tongues</td><td>$10</td><td id="have-tongues">0</td>
+          <td>&#128736; Spare Tongues</td><td>$10</td><td id="have-tongues">0</td>
           <td><button onclick="buy('tongues',3)">+3</button></td>
         </tr>
       </table>
-      <p class="flavor" id="store-warning" style="display:none;color:var(--red);">
-        You'll want at least 2 oxen, some food, and a few spares before you set off.
+      <p class="flavor" id="store-warning" style="display:none;color:#8a1010;">
+        You'll want at least 2 oxen and some food before you set off.
       </p>
-      <button class="primary" onclick="finishShopping()">Head for the Trail</button>
-    </div>
+      <div class="center"><button class="primary" onclick="finishShopping()">Head for the Trail</button></div>
+    </fieldset>
   </div>
 
   <!-- TRAVEL -->
   <div class="screen" id="screen-travel">
-    <div class="panel">
+    <canvas id="trailMapCanvas" width="760" height="90"></canvas>
+    <fieldset class="panel">
+      <legend>Trail Status</legend>
       <div class="row" style="justify-content:space-between;">
         <div class="stat" id="stat-date">Date: -</div>
         <div class="stat" id="stat-miles">Miles: 0 / 2040</div>
         <div class="stat" id="stat-weather">Weather: -</div>
       </div>
       <div class="row">
-        <div class="stat">Food: <span id="stat-food">0</span> lbs</div>
-        <div class="stat">Oxen: <span id="stat-oxen">0</span></div>
-        <div class="stat">Ammo: <span id="stat-ammo">0</span> bullets</div>
+        <div class="stat">&#127838; Food: <span id="stat-food">0</span> lbs</div>
+        <div class="stat">&#128004; Oxen: <span id="stat-oxen">0</span></div>
+        <div class="stat">&#128299; Ammo: <span id="stat-ammo">0</span></div>
         <div class="stat">Spares (W/A/T): <span id="stat-spares">0/0/0</span></div>
       </div>
-      <h3 style="margin-bottom:4px;">Party Health</h3>
-      <div class="members-grid" id="party-status"></div>
+    </fieldset>
 
-      <h3>Pace &amp; Rations</h3>
+    <fieldset class="panel">
+      <legend>Party Health</legend>
+      <div class="members-grid" id="party-status"></div>
+    </fieldset>
+
+    <fieldset class="panel">
+      <legend>Pace &amp; Rations</legend>
       <div class="row">
         <label>Pace:</label>
         <select id="pace-select" onchange="setPace(this.value)">
@@ -249,103 +294,110 @@
           <option value="bareBones">Bare Bones</option>
         </select>
       </div>
+    </fieldset>
 
-      <h3>Trail Log</h3>
+    <fieldset class="panel">
+      <legend>Trail Log</legend>
       <div class="log" id="trail-log"></div>
+    </fieldset>
 
-      <div class="row" style="margin-top:10px;">
-        <button class="primary" onclick="continueTrail()">Continue on the Trail</button>
-        <button onclick="goHunting()">Go Hunting</button>
-        <button onclick="checkSupplies()">Check Supplies</button>
-      </div>
+    <div class="row" style="margin-top:6px;">
+      <button class="primary" onclick="continueTrail()">Continue on the Trail</button>
+      <button onclick="goHunting()">Go Hunting</button>
+      <button onclick="checkSupplies()">Check Supplies</button>
     </div>
   </div>
 
   <!-- HUNTING -->
   <div class="screen" id="screen-hunt">
-    <div class="panel center">
-      <h2>Hunting</h2>
-      <p class="flavor">Click the animals to shoot. Each shot costs 1 bullet. You can carry
-      up to 100 lbs of meat back to the wagon.</p>
+    <fieldset class="panel center">
+      <legend>Hunting</legend>
+      <p class="flavor">Aim with your mouse and click to fire. Each shot costs 1 bullet.
+      You can carry up to 100 lbs of meat back to the wagon.</p>
       <div class="row" style="justify-content:center;">
         <div class="stat">Time: <span id="hunt-time">20</span>s</div>
-        <div class="stat">Ammo: <span id="hunt-ammo">0</span></div>
+        <div class="stat">&#128299; Ammo: <span id="hunt-ammo">0</span></div>
         <div class="stat">Meat: <span id="hunt-meat">0</span> lbs</div>
       </div>
       <canvas id="huntCanvas" width="760" height="320"></canvas>
       <br>
       <button class="danger" onclick="endHunt()">Leave Hunting Ground</button>
-    </div>
+    </fieldset>
   </div>
 
   <!-- RIVER -->
   <div class="screen" id="screen-river">
-    <div class="panel">
-      <h2 id="river-name">River Crossing</h2>
+    <fieldset class="panel">
+      <legend id="river-name">River Crossing</legend>
+      <canvas id="riverCanvas" width="760" height="180"></canvas>
       <p id="river-desc" class="flavor"></p>
       <div class="row">
         <div class="stat">Depth: <span id="river-depth">-</span> ft</div>
         <div class="stat">Width: <span id="river-width">-</span> ft</div>
       </div>
-      <div class="row" style="margin-top:10px;">
+      <div class="row" style="margin-top:8px;">
         <button class="primary" onclick="crossRiver('ford')">Ford the River</button>
         <button class="primary" onclick="crossRiver('float')">Caulk the Wagon &amp; Float It</button>
         <button class="primary" onclick="crossRiver('ferry')">Take the Ferry</button>
         <button onclick="crossRiver('wait')">Wait a Day</button>
       </div>
-    </div>
+    </fieldset>
   </div>
 
   <!-- LANDMARK -->
   <div class="screen" id="screen-landmark">
-    <div class="panel center">
-      <h2 id="landmark-name">Landmark</h2>
+    <fieldset class="panel center">
+      <legend id="landmark-name">Landmark</legend>
       <p id="landmark-text" class="flavor"></p>
       <button class="primary" onclick="leaveLandmark()">Continue Trail</button>
-    </div>
+    </fieldset>
   </div>
 
   <!-- EVENT -->
   <div class="screen" id="screen-event">
-    <div class="panel center">
-      <h2 id="event-title">Event</h2>
+    <fieldset class="panel center">
+      <legend id="event-title">Event</legend>
       <p id="event-text"></p>
       <button class="primary" onclick="leaveEvent()">Continue Trail</button>
-    </div>
+    </fieldset>
   </div>
 
   <!-- DEATH -->
   <div class="screen" id="screen-death">
-    <div class="panel center">
-      <div class="tombstone">&#128128;</div>
-      <h2>In Memory of</h2>
-      <p id="death-name" style="font-size:1.4em;color:var(--white);"></p>
+    <fieldset class="panel center">
+      <legend>In Memory of</legend>
+      <canvas id="graveCanvas" width="760" height="200"></canvas>
+      <p id="death-name" style="font-size:1.3em;font-weight:bold;"></p>
       <p id="death-epitaph" class="flavor"></p>
       <button class="primary" onclick="leaveDeath()">Continue</button>
-    </div>
+    </fieldset>
   </div>
 
   <!-- GAME OVER (all dead) -->
   <div class="screen" id="screen-gameover">
-    <div class="panel center">
-      <h2>The Journey Ends Here</h2>
+    <fieldset class="panel center">
+      <legend>The Journey Ends Here</legend>
+      <canvas id="graveCanvasFinal" width="760" height="200"></canvas>
       <p id="gameover-text"></p>
       <button class="primary" onclick="resetGame()">Start a New Journey</button>
-    </div>
+    </fieldset>
   </div>
 
   <!-- WIN -->
   <div class="screen" id="screen-win">
-    <div class="panel center">
-      <h2>You Made It to the Willamette Valley!</h2>
+    <fieldset class="panel center">
+      <legend>You Made It to the Willamette Valley!</legend>
+      <canvas id="winCanvas" width="760" height="220"></canvas>
       <p id="win-summary"></p>
       <h3 id="win-rank"></h3>
-      <p id="win-score" style="font-size:1.3em;color:var(--white);"></p>
+      <p id="win-score" style="font-size:1.2em;font-weight:bold;"></p>
       <button class="primary" onclick="resetGame()">Play Again</button>
-    </div>
+    </fieldset>
   </div>
 
-  <div class="footer-note">Unofficial homage to the 1985 MECC "Oregon Trail" &mdash; fan-made, browser edition.</div>
+  <div class="footer-note">Unofficial fan-made homage in the style of the mid-1990s "Oregon Trail" for Windows &mdash; browser edition, no relation to MECC/The Learning Company.</div>
+  </div>
+  <div class="statusbar"><span>Ready</span><span id="statusbar-right">The Oregon Trail 95</span></div>
 </div>
 
 <script>
@@ -464,6 +516,7 @@ function goTo(name){
 function resetGame(){
   state = newState();
   goTo('title');
+  drawTitleScene();
 }
 resetGame();
 
@@ -576,13 +629,14 @@ function renderTravel(){
   const grid=document.getElementById('party-status');
   grid.innerHTML = state.party.map(m=>{
     const status = m.health<=0 ? "DECEASED" : m.health>80?"Good":m.health>55?"Fair":m.health>30?"Poor":"Very Poor";
-    const color = m.health<=0 ? "#555" : m.health>55 ? "var(--green)" : m.health>30 ? "var(--orange)" : "var(--red)";
-    return `<div class="stat" style="border-color:${color};color:${color};">
+    const color = m.health<=0 ? "#777" : m.health>55 ? "#1a6b1a" : m.health>30 ? "#8a5a00" : "#8a1010";
+    return `<div class="stat" style="color:${color};">
       ${m.name}: ${status} ${m.health>0?`(${m.health})`:''}
     </div>`;
   }).join('');
 
   document.getElementById('trail-log').innerHTML = state.log.map(l=>`<div>&gt; ${l}</div>`).join('');
+  drawTrailMap();
 }
 
 function continueTrail(){
@@ -715,6 +769,7 @@ function showDeath(member){
   document.getElementById('death-name').textContent=member.name;
   document.getElementById('death-epitaph').textContent=EPITAPHS[Math.floor(Math.random()*EPITAPHS.length)];
   goTo('death');
+  drawGraveyard('graveCanvas', member.name);
 }
 function leaveDeath(){
   if(alivePartyCount()===0){
@@ -728,6 +783,7 @@ function showGameOver(text){
   state.finished=true;
   document.getElementById('gameover-text').textContent=text;
   goTo('gameover');
+  drawGraveyard('graveCanvasFinal', null);
 }
 
 /* ---------------------------------------------------------
@@ -745,6 +801,7 @@ function showRiver(lm){
   document.getElementById('river-depth').textContent=currentRiver.depth;
   document.getElementById('river-width').textContent=currentRiver.width;
   goTo('river');
+  drawRiverScene(currentRiver.depth);
 }
 
 function crossRiver(method){
@@ -754,6 +811,7 @@ function crossRiver(method){
     state.day++;
     r.depth = Math.max(1, r.depth - (Math.random()<0.5?1:0));
     document.getElementById('river-depth').textContent=r.depth;
+    drawRiverScene(r.depth);
     addLog(`Day ${state.day}: You wait a day at ${r.name} hoping the water recedes.`);
     return; // stay on river screen
   }
@@ -812,6 +870,7 @@ function goHunting(){
   if(state.ammo<=0){ addLog("You're out of ammunition and can't go hunting."); renderTravel(); return; }
   huntState={
     timeLeft:20, meat:0, animals:[], lastSpawn:0, startTs:null, running:true,
+    mouseX:380, mouseY:160, bang:null,
   };
   document.getElementById('hunt-time').textContent=huntState.timeLeft;
   document.getElementById('hunt-ammo').textContent=state.ammo;
@@ -820,6 +879,11 @@ function goHunting(){
   const canvas=document.getElementById('huntCanvas');
   const ctx=canvas.getContext('2d');
   canvas.onclick = (e)=>handleShot(e, canvas);
+  canvas.onmousemove = (e)=>{
+    const rect=canvas.getBoundingClientRect();
+    huntState.mouseX = e.clientX-rect.left;
+    huntState.mouseY = e.clientY-rect.top;
+  };
   huntAnimId = requestAnimationFrame(ts=>huntLoop(ts, canvas, ctx));
 }
 
@@ -831,10 +895,40 @@ function spawnAnimal(){
   ];
   const k=kinds[Math.floor(Math.random()*kinds.length)];
   const dir = Math.random()<0.5?1:-1;
-  const y = 40+Math.random()*220;
+  const y = 130+Math.random()*140;
   huntState.animals.push({
-    ...k, x: dir===1?-k.w:760+k.w, y, dir, dead:false,
+    ...k, x: dir===1?-k.w:760+k.w, y, dir, dead:false, legPhase:Math.random()*10,
   });
+}
+
+function drawAnimal(ctx, a){
+  ctx.save();
+  ctx.translate(a.x+a.w/2, a.y+a.h/2);
+  if(a.dir===-1) ctx.scale(-1,1);
+  const w=a.w, h=a.h;
+  // legs
+  ctx.strokeStyle="#2a1c0f"; ctx.lineWidth=2;
+  const legOffset = Math.sin(a.legPhase)*3;
+  ctx.beginPath();
+  ctx.moveTo(-w*0.28,h*0.3); ctx.lineTo(-w*0.28+legOffset,h*0.5);
+  ctx.moveTo(w*0.28,h*0.3); ctx.lineTo(w*0.28-legOffset,h*0.5);
+  ctx.stroke();
+  a.legPhase += 0.3;
+  // body
+  ctx.fillStyle=a.color;
+  ctx.beginPath();
+  ctx.ellipse(0,0,w/2,h/2.6,0,0,Math.PI*2);
+  ctx.fill();
+  // head
+  ctx.beginPath();
+  ctx.ellipse(w*0.42,-h*0.12,w*0.18,h*0.22,0,0,Math.PI*2);
+  ctx.fill();
+  // eye
+  ctx.fillStyle="#000";
+  ctx.beginPath();
+  ctx.arc(w*0.48,-h*0.16,1.6,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
 }
 
 function huntLoop(ts, canvas, ctx){
@@ -849,20 +943,62 @@ function huntLoop(ts, canvas, ctx){
     huntState.lastSpawn=elapsed;
   }
 
-  ctx.fillStyle="#87b56b";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.strokeStyle="#5a7a45";
-  for(let i=0;i<canvas.width;i+=40){ ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,canvas.height);ctx.stroke(); }
+  // sky
+  const sky=ctx.createLinearGradient(0,0,0,140);
+  sky.addColorStop(0,"#7ab8e6"); sky.addColorStop(1,"#cfe8f5");
+  ctx.fillStyle=sky; ctx.fillRect(0,0,canvas.width,140);
+  // sun
+  ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(660,45,32,0,Math.PI*2); ctx.fill();
+  // distant hills
+  ctx.fillStyle="#8fae6a";
+  ctx.beginPath(); ctx.moveTo(0,140);
+  for(let x=0;x<=760;x+=40){ ctx.lineTo(x, 120+Math.sin(x*0.02)*10); }
+  ctx.lineTo(760,140); ctx.closePath(); ctx.fill();
+  // ground
+  const ground=ctx.createLinearGradient(0,140,0,320);
+  ground.addColorStop(0,"#8fae5a"); ground.addColorStop(1,"#5e7d3a");
+  ctx.fillStyle=ground; ctx.fillRect(0,140,canvas.width,180);
+  // grass tufts
+  ctx.strokeStyle="#3f5a26"; ctx.lineWidth=1.5;
+  for(let i=0;i<40;i++){
+    const gx=(i*53+((elapsed*8)|0))%800-20, gy=150+((i*37)%160);
+    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(gx-3,gy-8); ctx.moveTo(gx,gy); ctx.lineTo(gx+3,gy-8);
+    ctx.stroke();
+  }
 
   huntState.animals.forEach(a=>{
     if(a.dead) return;
     a.x += a.speed*a.dir*2;
-    ctx.fillStyle=a.color;
-    ctx.fillRect(a.x, a.y, a.w, a.h);
-    ctx.fillStyle="#000";
-    ctx.fillRect(a.dir===1?a.x+a.w-6:a.x, a.y+4, 6,6); // eye/head marker
+    drawAnimal(ctx, a);
   });
   huntState.animals = huntState.animals.filter(a=>!a.dead && a.x>-100 && a.x<canvas.width+100);
+
+  // crosshair
+  const mx=huntState.mouseX, my=huntState.mouseY;
+  ctx.strokeStyle="#c81818"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(mx,my,14,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(mx-20,my); ctx.lineTo(mx-6,my); ctx.moveTo(mx+6,my); ctx.lineTo(mx+20,my);
+  ctx.moveTo(mx,my-20); ctx.lineTo(mx,my-6); ctx.moveTo(mx,my+6); ctx.lineTo(mx,my+20);
+  ctx.stroke();
+
+  // BANG flash
+  if(huntState.bang){
+    const age = performance.now()-huntState.bang.t;
+    if(age<350){
+      ctx.save();
+      ctx.globalAlpha = 1-age/350;
+      ctx.fillStyle="#fff200";
+      ctx.strokeStyle="#000";
+      ctx.font="bold 26px Arial";
+      ctx.textAlign="center";
+      ctx.lineWidth=3;
+      ctx.strokeText("BANG!", huntState.bang.x, huntState.bang.y);
+      ctx.fillText("BANG!", huntState.bang.x, huntState.bang.y);
+      ctx.restore();
+    } else {
+      huntState.bang=null;
+    }
+  }
 
   if(huntState.timeLeft<=0 || state.ammo<=0){
     endHunt();
@@ -878,6 +1014,7 @@ function handleShot(e, canvas){
   const x=e.clientX-rect.left, y=e.clientY-rect.top;
   state.ammo--;
   document.getElementById('hunt-ammo').textContent=state.ammo;
+  huntState.bang={x,y,t:performance.now()};
   for(const a of huntState.animals){
     if(a.dead) continue;
     if(x>=a.x && x<=a.x+a.w && y>=a.y && y<=a.y+a.h){
@@ -900,6 +1037,187 @@ function endHunt(){
   huntState=null;
   goTo('travel');
   renderTravel();
+}
+
+/* ---------------------------------------------------------
+   CANVAS SCENES
+--------------------------------------------------------- */
+function drawWagon(ctx, x, y, scale, color){
+  ctx.save();
+  ctx.translate(x,y); ctx.scale(scale,scale);
+  // wheels
+  ctx.fillStyle="#2a1c0f";
+  ctx.beginPath(); ctx.arc(-14,14,9,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(14,14,9,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#6b4226";
+  ctx.beginPath(); ctx.arc(-14,14,4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(14,14,4,0,Math.PI*2); ctx.fill();
+  // bed
+  ctx.fillStyle=color||"#8a5a2c";
+  ctx.fillRect(-22,0,44,14);
+  // canvas cover (arc)
+  ctx.fillStyle="#f2ead8";
+  ctx.beginPath();
+  ctx.moveTo(-20,0);
+  ctx.quadraticCurveTo(0,-24,20,0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle="#c9bda0"; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(-10,-2); ctx.quadraticCurveTo(0,-20,10,-2); ctx.stroke();
+  ctx.restore();
+}
+
+function drawTitleScene(){
+  const c=document.getElementById('sceneTitle');
+  if(!c) return;
+  const ctx=c.getContext('2d');
+  const w=c.width,h=c.height;
+  const sky=ctx.createLinearGradient(0,0,0,h*0.6);
+  sky.addColorStop(0,"#4d84c9"); sky.addColorStop(1,"#cfe6f5");
+  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(w-90,55,36,0,Math.PI*2); ctx.fill();
+  // mountains
+  ctx.fillStyle="#7a8fa8";
+  ctx.beginPath(); ctx.moveTo(0,h*0.55);
+  ctx.lineTo(120,h*0.28); ctx.lineTo(240,h*0.55);
+  ctx.lineTo(380,h*0.22); ctx.lineTo(520,h*0.55);
+  ctx.lineTo(650,h*0.32); ctx.lineTo(w,h*0.55);
+  ctx.closePath(); ctx.fill();
+  // hills
+  ctx.fillStyle="#7a9b57";
+  ctx.beginPath(); ctx.moveTo(0,h);
+  for(let x=0;x<=w;x+=40){ ctx.lineTo(x, h*0.68+Math.sin(x*0.02)*14); }
+  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+  ctx.fillStyle="#6a8a49";
+  ctx.beginPath(); ctx.moveTo(0,h);
+  for(let x=0;x<=w;x+=40){ ctx.lineTo(x, h*0.8+Math.sin(x*0.03+2)*10); }
+  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+  // trail path
+  ctx.strokeStyle="#c9a26b"; ctx.lineWidth=10; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(-10,h*0.95); ctx.quadraticCurveTo(w*0.4,h*0.8,w*0.62,h*0.86); ctx.stroke();
+  // wagon
+  drawWagon(ctx, w*0.6, h*0.8, 1.6, "#8a5a2c");
+}
+
+function drawTrailMap(){
+  const c=document.getElementById('trailMapCanvas');
+  if(!c) return;
+  const ctx=c.getContext('2d');
+  const w=c.width,h=c.height;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle="#eef3e0"; ctx.fillRect(0,0,w,h);
+  const pad=20;
+  const lineY=h/2+6;
+  ctx.strokeStyle="#c9a26b"; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.moveTo(pad,lineY); ctx.lineTo(w-pad,lineY); ctx.stroke();
+
+  // landmark ticks
+  ctx.fillStyle="#5a2d0c"; ctx.font="9px Tahoma,sans-serif";
+  LANDMARKS.forEach(lm=>{
+    const x = pad + (w-2*pad)*(lm.mile/TRAIL_END_MILES);
+    ctx.fillStyle = lm.type==='river' ? "#2a6cad" : (lm.type==='fort' ? "#8a1010" : "#5a2d0c");
+    ctx.beginPath(); ctx.arc(x,lineY,3.5,0,Math.PI*2); ctx.fill();
+  });
+
+  // wagon marker
+  const progress = Math.min(1, state.miles/TRAIL_END_MILES);
+  const wx = pad + (w-2*pad)*progress;
+  drawWagon(ctx, wx, lineY-16, 0.8, "#8a5a2c");
+
+  ctx.fillStyle="#333"; ctx.font="10px Tahoma,sans-serif"; ctx.textAlign="left";
+  ctx.fillText("Independence, MO", pad-4, h-6);
+  ctx.textAlign="right";
+  ctx.fillText("Willamette Valley", w-pad+4, h-6);
+}
+
+function drawRiverScene(depth){
+  const c=document.getElementById('riverCanvas');
+  if(!c) return;
+  const ctx=c.getContext('2d');
+  const w=c.width,h=c.height;
+  const sky=ctx.createLinearGradient(0,0,0,h*0.4);
+  sky.addColorStop(0,"#8fc0e6"); sky.addColorStop(1,"#dff0f7");
+  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h*0.4);
+  // far bank
+  ctx.fillStyle="#7a9b57"; ctx.fillRect(0,h*0.3,w,h*0.15);
+  // water
+  const waterDark = Math.min(0.55, 0.15+depth*0.06);
+  const water=ctx.createLinearGradient(0,h*0.4,0,h*0.85);
+  water.addColorStop(0,`rgba(60,120,170,${0.55+waterDark*0.3})`);
+  water.addColorStop(1,`rgba(30,80,130,${0.7+waterDark*0.3})`);
+  ctx.fillStyle=water; ctx.fillRect(0,h*0.4,w,h*0.45);
+  ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.lineWidth=2;
+  const waveCount = 4+Math.min(6,depth);
+  for(let i=0;i<waveCount;i++){
+    const yy=h*0.45+i*(h*0.35/waveCount);
+    ctx.beginPath();
+    for(let x=0;x<=w;x+=20){ ctx.lineTo(x, yy+Math.sin(x*0.05+i)*4); }
+    ctx.stroke();
+  }
+  // near bank
+  ctx.fillStyle="#8fae5a"; ctx.fillRect(0,h*0.82,w,h*0.18);
+  // wagon at edge
+  drawWagon(ctx, w*0.22, h*0.78, 1.4, "#8a5a2c");
+  // depth marker text
+  ctx.fillStyle="#0a246a"; ctx.font="bold 13px Tahoma,sans-serif"; ctx.textAlign="left";
+  ctx.fillText(depth<=2?"Shallow crossing":depth<=4?"Moderate current":"Deep, dangerous current", 14, 20);
+}
+
+function drawGraveyard(canvasId, name){
+  const c=document.getElementById(canvasId);
+  if(!c) return;
+  const ctx=c.getContext('2d');
+  const w=c.width,h=c.height;
+  const sky=ctx.createLinearGradient(0,0,0,h*0.55);
+  sky.addColorStop(0,"#8a6a8a"); sky.addColorStop(1,"#e8c9a0");
+  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle="#c98a4a"; ctx.beginPath(); ctx.arc(w*0.8,h*0.35,26,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#5e7d3a";
+  ctx.beginPath(); ctx.moveTo(0,h);
+  for(let x=0;x<=w;x+=40){ ctx.lineTo(x, h*0.62+Math.sin(x*0.02)*10); }
+  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+  // wooden cross
+  const cx=w/2, cy=h*0.55;
+  ctx.strokeStyle="#4a2f18"; ctx.lineWidth=10; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(cx,cy-46); ctx.lineTo(cx,cy+40); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-26,cy-26); ctx.lineTo(cx+26,cy-26); ctx.stroke();
+  if(name){
+    ctx.fillStyle="#fff"; ctx.font="bold 12px Tahoma,sans-serif"; ctx.textAlign="center";
+    ctx.fillText(name, cx, cy-32);
+  }
+  // small extra graves in background
+  ctx.strokeStyle="#3a2410"; ctx.lineWidth=5;
+  [ [cx-140,cy+10,20], [cx+150,cy+16,26] ].forEach(([gx,gy,gh])=>{
+    ctx.beginPath(); ctx.moveTo(gx,gy-gh); ctx.lineTo(gx,gy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gx-gh*0.5,gy-gh*0.6); ctx.lineTo(gx+gh*0.5,gy-gh*0.6); ctx.stroke();
+  });
+}
+
+function drawWinScene(){
+  const c=document.getElementById('winCanvas');
+  if(!c) return;
+  const ctx=c.getContext('2d');
+  const w=c.width,h=c.height;
+  const sky=ctx.createLinearGradient(0,0,0,h*0.6);
+  sky.addColorStop(0,"#8fd0f0"); sky.addColorStop(1,"#e9f7e0");
+  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h);
+  ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(w-100,50,34,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#4f7a3a";
+  ctx.beginPath(); ctx.moveTo(0,h);
+  for(let x=0;x<=w;x+=40){ ctx.lineTo(x, h*0.55+Math.sin(x*0.02)*16); }
+  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+  // little cabin
+  ctx.fillStyle="#7a5230"; ctx.fillRect(w*0.5-30,h*0.62,60,40);
+  ctx.fillStyle="#4a3320"; ctx.beginPath(); ctx.moveTo(w*0.5-38,h*0.62); ctx.lineTo(w*0.5,h*0.5); ctx.lineTo(w*0.5+38,h*0.62); ctx.closePath(); ctx.fill();
+  // wagon parked
+  drawWagon(ctx, w*0.25, h*0.78, 1.3, "#8a5a2c");
+  // trees
+  function tree(x,y,s){
+    ctx.fillStyle="#3f6b2a";
+    ctx.beginPath(); ctx.moveTo(x,y-30*s); ctx.lineTo(x-16*s,y); ctx.lineTo(x+16*s,y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#4a3320"; ctx.fillRect(x-3*s,y,6*s,10*s);
+  }
+  tree(w*0.85,h*0.85,1.1); tree(w*0.92,h*0.9,0.8); tree(w*0.1,h*0.9,0.9);
 }
 
 /* ---------------------------------------------------------
@@ -927,6 +1245,7 @@ function showWin(){
   document.getElementById('win-rank').textContent="Rank: "+rank;
   document.getElementById('win-score').textContent="Final Score: "+finalScore;
   goTo('win');
+  drawWinScene();
 }
 </script>
 </body>
