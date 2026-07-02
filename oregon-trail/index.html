@@ -5,399 +5,500 @@
 <title>The Oregon Trail</title>
 <style>
   :root{
-    --face:#c0c0c0;
-    --face-light:#dfdfdf;
-    --hi:#ffffff;
-    --sh:#808080;
-    --sh-dark:#404040;
-    --titleblue1:#0a246a;
-    --titleblue2:#3a6ea5;
-    --text:#000000;
-    --link:#000080;
+    --parch:#efe2b8;
+    --parch-dark:#e2d09a;
+    --parch-line:#c9b06a;
+    --teal1:#4aa08c;
+    --teal2:#2f7566;
+    --wood1:#7a5330;
+    --wood2:#5a3b20;
+    --wood-edge:#3a2410;
+    --brass1:#f0d488;
+    --brass2:#b8863a;
+    --ink:#3a2410;
+    --ink-soft:#5a4326;
   }
   *{box-sizing:border-box;}
   html,body{
     margin:0;padding:0;min-height:100%;
-    background:#008080;
-    color:var(--text);
-    font-family:Tahoma,'Segoe UI',Verdana,Arial,sans-serif;
-    font-size:13px;
+    background:#1f6b5c;
+    background-image:radial-gradient(circle at 50% 30%, #2b7d6c, #164e43);
+    color:var(--ink);
+    font-family:'Book Antiqua','Palatino Linotype',Palatino,Georgia,serif;
+    font-size:14px;
   }
-  body{padding:22px 10px;}
+  body{padding:20px 10px;}
   #win{
-    max-width:820px;margin:0 auto;
-    background:var(--face);
-    border:2px solid;
-    border-color:var(--hi) var(--sh-dark) var(--sh-dark) var(--hi);
-    box-shadow:1px 1px 0 #000, 3px 3px 8px rgba(0,0,0,0.5);
+    max-width:880px;margin:0 auto;
+    background:var(--wood2);
+    border:3px solid var(--wood-edge);
+    border-radius:4px;
+    box-shadow:2px 2px 0 #000, 4px 4px 14px rgba(0,0,0,0.55);
+    overflow:hidden;
   }
   .titlebar{
-    background:linear-gradient(90deg,var(--titleblue1),var(--titleblue2));
-    color:#fff;font-weight:bold;font-size:14px;
-    padding:4px 6px;display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(180deg,var(--teal1),var(--teal2));
+    color:#f4ecd0;font-weight:bold;font-size:15px;
+    padding:5px 8px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:2px solid var(--wood-edge);
+    text-shadow:1px 1px 0 #1c4d43;letter-spacing:.5px;
   }
-  .titlebar .tleft{display:flex;align-items:center;gap:6px;}
-  .titlebar .ticon{
-    width:16px;height:16px;background:#e8b23c;border:1px solid #7a5a10;display:inline-block;
+  .titlebar .tleft{display:flex;align-items:center;gap:7px;}
+  .titlebar .globe{
+    width:18px;height:18px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#8fd0f0,#2b6ea0 70%);
+    border:1px solid #12303f;display:inline-block;
   }
-  .winbtns{display:flex;gap:3px;}
+  .winbtns{display:flex;gap:4px;}
   .winbtns span{
-    width:16px;height:14px;background:var(--face);border:1px solid;
-    border-color:var(--hi) var(--sh-dark) var(--sh-dark) var(--hi);
-    font-size:10px;line-height:12px;text-align:center;color:#000;font-weight:bold;
+    width:17px;height:15px;
+    background:linear-gradient(180deg,#e8dcb8,#c8b684);
+    border:1px solid var(--wood-edge);
+    font-size:10px;line-height:13px;text-align:center;color:#3a2410;font-weight:bold;
   }
-  .menubar{
-    background:var(--face);border-bottom:1px solid var(--sh);
-    padding:3px 8px;font-size:12px;display:flex;gap:16px;color:#000;
+  .menustrip{
+    background:var(--parch-dark);border-bottom:2px solid var(--wood-edge);
+    padding:3px 10px;font-size:12px;display:flex;gap:16px;color:var(--ink);
+    font-family:Tahoma,'Segoe UI',sans-serif;
   }
-  .content{padding:10px;}
-  h1,h2,h3{
-    margin:6px 0;color:#5a2d0c;
-    text-shadow:1px 1px 0 #e8c99a;
+  .menustrip span.mi{cursor:default;}
+  #sound-toggle{margin-left:auto;cursor:pointer;font-weight:bold;}
+
+  .frame{display:flex;align-items:stretch;background:var(--parch);}
+  .sidebar{
+    width:96px;flex:0 0 96px;
+    background:
+      repeating-linear-gradient(90deg,#7a5330 0px,#7a5330 5px,#6a4527 5px,#6a4527 10px,#815a35 10px,#815a35 15px);
+    border-right:3px solid var(--wood-edge);
+    padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:8px;
   }
-  h1{font-size:1.5em;text-align:center;}
-  h2{font-size:1.15em;}
+  .sb-plaque{
+    width:100%;background:linear-gradient(180deg,#c79a5a,#8a5f2c);
+    border:2px solid;border-color:#e0b878 #3a2410 #3a2410 #e0b878;
+    text-align:center;font-size:10px;color:#2a1c0e;font-weight:bold;
+    padding:3px 2px;font-family:Tahoma,sans-serif;
+  }
+  .readout{
+    width:100%;background:#0d2e14;color:#78ff88;
+    font-family:'Courier New',monospace;font-size:10px;
+    border:2px solid;border-color:#04120a #2f6a34 #2f6a34 #04120a;
+    padding:4px;line-height:1.4;text-shadow:0 0 3px #4dff66;
+  }
+  #sideThumb{
+    width:82px;height:56px;border:2px solid;
+    border-color:#3a2410 #d8b070 #d8b070 #3a2410;background:#7ab0d8;display:block;
+  }
+  .sb-icon{
+    width:64px;height:38px;margin-top:2px;
+    background:linear-gradient(180deg,#c79a5a,#8a5f2c);
+    border:2px solid;border-color:#e0b878 #3a2410 #3a2410 #e0b878;
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+    color:#2a1c0e;
+  }
+
+  .content{flex:1;min-width:0;padding:12px 14px;background:var(--parch);}
+
+  h1,h2,h3{margin:6px 0;color:#5a2d0c;}
+  h2{font-size:1.15em;font-variant:small-caps;letter-spacing:.5px;}
+  h3{font-size:1.02em;font-variant:small-caps;}
   .screen{display:none;}
   .screen.active{display:block;}
-  fieldset.panel{
-    border:2px solid;
-    border-color:var(--sh) var(--hi) var(--hi) var(--sh);
-    background:var(--face-light);
-    margin:8px 0;padding:10px;
+
+  .panel{
+    background:var(--parch);
+    border:2px solid var(--parch-line);
+    box-shadow:inset 0 0 0 2px #d8c48a, 0 1px 3px rgba(60,40,10,0.3);
+    margin:8px 0;padding:12px 14px;border-radius:2px;
   }
-  legend{padding:0 6px;font-weight:bold;color:#000;font-size:12px;}
-  p, li, label{font-size:13px;line-height:1.5em;}
-  .flavor{color:#3a3a7a;font-style:italic;}
-  .unlimited{color:#8a5a00;font-weight:bold;}
+  .panel > .panel-title{
+    font-weight:bold;font-variant:small-caps;color:#5a2d0c;font-size:1.05em;
+    border-bottom:1px solid var(--parch-line);margin:-2px 0 8px;padding-bottom:4px;letter-spacing:.5px;
+  }
+  p, li, label{font-size:13.5px;line-height:1.55em;color:var(--ink);}
+  .flavor{color:#6a4020;font-style:italic;}
+  .unlimited{color:#7a4a00;font-weight:bold;}
+
   button{
-    font-family:inherit;font-weight:normal;
-    background:var(--face);color:#000;
-    border:2px solid;
-    border-color:var(--hi) var(--sh-dark) var(--sh-dark) var(--hi);
-    padding:6px 12px;margin:4px 6px 4px 0;
-    cursor:pointer;font-size:12px;
+    font-family:'Book Antiqua',Georgia,serif;font-size:13px;color:#2a1c0e;
+    background:linear-gradient(180deg,#e6cf92,#c39a52);
+    border:2px solid;border-color:#f0dca6 #6a4a1c #6a4a1c #f0dca6;
+    padding:6px 13px;margin:4px 6px 4px 0;cursor:pointer;border-radius:3px;
   }
-  button:active{
-    border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
-    padding:7px 11px 5px 13px;
-  }
+  button:hover{background:linear-gradient(180deg,#f0dca0,#cfa85e);}
+  button:active{border-color:#6a4a1c #f0dca6 #f0dca6 #6a4a1c;}
   button:disabled{opacity:0.45;cursor:not-allowed;}
-  button.primary{font-weight:bold;color:#0a246a;}
-  button.danger{color:#8a1010;}
+  button.primary{font-weight:bold;color:#4a2400;
+    background:linear-gradient(180deg,#f0d488,#c98f34);}
+  button.danger{color:#7a1010;}
+
   input[type=text]{
-    font-family:inherit;background:#fff;color:#000;
-    border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
+    font-family:inherit;background:#fbf4dc;color:#2a1c0e;
+    border:2px solid;border-color:#8a6a3a #e8d6a0 #e8d6a0 #8a6a3a;
     padding:5px;font-size:13px;width:220px;
   }
   select{
-    font-family:inherit;background:#fff;color:#000;
-    border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
-    padding:4px;font-size:13px;
+    font-family:inherit;background:#fbf4dc;color:#2a1c0e;
+    border:2px solid;border-color:#8a6a3a #e8d6a0 #e8d6a0 #8a6a3a;padding:4px;font-size:13px;
   }
-  table{width:100%;border-collapse:collapse;margin:6px 0;background:#fff;}
-  td,th{padding:5px 7px;border:1px solid var(--sh);text-align:left;font-size:12px;}
-  th{background:var(--face);color:#000;}
+  table{width:100%;border-collapse:collapse;margin:6px 0;background:#fbf4dc;}
+  td,th{padding:5px 8px;border:1px solid var(--parch-line);text-align:left;font-size:12.5px;}
+  th{background:var(--parch-dark);color:#4a2400;font-variant:small-caps;}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .stat{
-    border:1px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
-    background:#fff;
-    padding:4px 8px;margin:3px;display:inline-block;font-size:12px;
+    border:1px solid #b89a5a;background:#fbf4dc;
+    padding:4px 8px;margin:3px;display:inline-block;font-size:12.5px;color:#3a2410;
   }
   .center{text-align:center;}
   .log{
-    max-height:150px;overflow-y:auto;
-    border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);
-    padding:6px;background:#fff;
-    font-size:12px;color:#222;font-family:'Courier New',monospace;
+    max-height:120px;overflow-y:auto;
+    border:2px solid;border-color:#8a6a3a #e8d6a0 #e8d6a0 #8a6a3a;
+    padding:6px;background:#fbf4dc;
+    font-size:12px;color:#3a2410;font-family:'Courier New',monospace;
   }
   .log div{margin-bottom:2px;}
-  canvas{display:block;margin:0 auto;image-rendering:auto;}
-  #sceneTitle{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);}
-  #trailMapCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);margin-bottom:6px;background:#fff;}
-  #huntCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);cursor:crosshair;}
-  #riverCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);}
-  #graveCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);}
-  #winCanvas{border:2px solid;border-color:var(--sh-dark) var(--hi) var(--hi) var(--sh-dark);}
-  .members-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-  .footer-note{color:#333;font-size:11px;text-align:center;margin-top:10px;padding:6px;border-top:1px solid var(--sh);}
-  .statusbar{
-    border-top:1px solid var(--hi);background:var(--face);padding:3px 8px;font-size:11px;color:#333;
-    display:flex;justify-content:space-between;
+  canvas{display:block;margin:0 auto;}
+  #sceneTitle,#travelScene,#trailMapCanvas,#huntCanvas,#riverCanvas,
+  #graveCanvas,#graveCanvasFinal,#winCanvas,#storeScene,#landmarkScene,#eventScene{
+    border:3px solid var(--wood-edge);border-radius:2px;
+    box-shadow:inset 0 0 0 1px #a9884a;
   }
+  #huntCanvas{cursor:crosshair;}
+  .wagon-readout{display:grid;grid-template-columns:1fr 1fr;gap:2px 18px;font-size:13px;}
+  .wagon-readout .lbl{color:#5a4326;}
+  .wagon-readout .val{text-align:right;font-weight:bold;color:#3a2410;}
+  .members-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+
+  .toolbar{
+    display:flex;align-items:center;justify-content:center;gap:14px;
+    background:linear-gradient(180deg,#8a5f34,#5e3d20);
+    border-top:3px solid var(--wood-edge);padding:8px;
+  }
+  .rbtn{
+    width:48px;height:48px;border-radius:50%;
+    background:radial-gradient(circle at 35% 28%,var(--brass1),var(--brass2) 62%,#7a561f);
+    border:2px solid #4a3212;color:#3a2410;font-size:19px;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    box-shadow:inset 1px 1px 2px #ffe9b0, inset -1px -1px 3px #6a4a1c, 1px 1px 3px rgba(0,0,0,.5);
+  }
+  .rbtn:hover{filter:brightness(1.08);}
+  .rbtn:active{box-shadow:inset -1px -1px 2px #ffe9b0, inset 1px 1px 3px #6a4a1c;}
+  .rbtn span{font-size:8px;font-family:Tahoma,sans-serif;margin-top:1px;font-weight:bold;}
+
+  .statusbar{
+    background:var(--parch-dark);border-top:2px solid var(--wood-edge);
+    padding:3px 10px;font-size:11px;color:#5a4326;display:flex;justify-content:space-between;
+    font-family:Tahoma,sans-serif;
+  }
+  .footer-note{color:#6a5230;font-size:11px;text-align:center;margin-top:10px;padding-top:6px;border-top:1px solid var(--parch-line);}
 </style>
 </head>
 <body>
 <div id="win">
   <div class="titlebar">
-    <div class="tleft"><span class="ticon"></span> The Oregon Trail</div>
+    <div class="tleft"><span class="globe"></span> The Oregon Trail</div>
     <div class="winbtns"><span>_</span><span>&#9633;</span><span>&times;</span></div>
   </div>
-  <div class="menubar"><span>File</span><span>Trail</span><span>Options</span><span>Help</span><span id="sound-toggle" style="margin-left:auto;cursor:pointer;" onclick="toggleSound()">&#128266; Sound: On</span></div>
-
-  <div class="content" id="game">
-
-  <!-- TITLE -->
-  <div class="screen active" id="screen-title">
-    <h1>The Oregon Trail</h1>
-    <canvas id="sceneTitle" width="760" height="220"></canvas>
-    <fieldset class="panel">
-      <legend>Independence, Missouri &mdash; 1848</legend>
-      <p>You are about to set off on the trail to Oregon in a covered wagon
-      with a party of five. You will face rivers, storms, broken axles,
-      thieves, and disease. Do you have what it takes to reach the
-      Willamette Valley?</p>
-      <p class="unlimited">A wealthy relative has left you an unlimited fortune.
-      Money will never be a problem &mdash; everything else in the West still can be.</p>
-      <div class="center"><button class="primary" onclick="Sound.startMusic();goTo('occupation')">Begin Journey</button></div>
-    </fieldset>
+  <div class="menustrip">
+    <span class="mi">File</span><span class="mi">Edit</span><span class="mi">Game</span><span class="mi">Help</span>
+    <span id="sound-toggle" onclick="toggleSound()">&#128266; Sound: On</span>
   </div>
 
-  <!-- OCCUPATION -->
-  <div class="screen" id="screen-occupation">
-    <fieldset class="panel">
-      <legend>Choose Your Occupation</legend>
-      <p class="flavor">Your occupation no longer limits your funds &mdash; but it still
-      determines how the history books score your journey.</p>
-      <table>
-        <tr><th>Occupation</th><th>Score Multiplier</th><th></th></tr>
-        <tr><td>Banker</td><td>x1</td><td><button onclick="chooseOccupation('Banker',1)">Choose</button></td></tr>
-        <tr><td>Carpenter</td><td>x2</td><td><button onclick="chooseOccupation('Carpenter',2)">Choose</button></td></tr>
-        <tr><td>Farmer</td><td>x3</td><td><button onclick="chooseOccupation('Farmer',3)">Choose</button></td></tr>
-      </table>
-    </fieldset>
-  </div>
+  <div class="frame">
+    <div class="sidebar">
+      <div class="sb-plaque">TRAIL</div>
+      <canvas id="sideThumb" width="82" height="56"></canvas>
+      <div class="readout" id="side-readout">DAY 0<br>MI 0<br>---</div>
+      <div class="sb-icon" title="Compass">&#129517;</div>
+      <div class="sb-icon" title="Wagon">&#128666;</div>
+    </div>
 
-  <!-- NAMES -->
-  <div class="screen" id="screen-names">
-    <fieldset class="panel">
-      <legend>Name Your Party</legend>
-      <p>Enter your name and the names of four companions.</p>
-      <div class="row"><label style="width:120px;">You:</label><input type="text" id="name0" value="Charlie"></div>
-      <div class="row"><label style="width:120px;">Companion 2:</label><input type="text" id="name1" value="Sam"></div>
-      <div class="row"><label style="width:120px;">Companion 3:</label><input type="text" id="name2" value="Robin"></div>
-      <div class="row"><label style="width:120px;">Companion 4:</label><input type="text" id="name3" value="Jamie"></div>
-      <div class="row"><label style="width:120px;">Companion 5:</label><input type="text" id="name4" value="Lee"></div>
-      <br>
-      <button class="primary" onclick="setNames()">Continue</button>
-    </fieldset>
-  </div>
+    <div class="content" id="game">
 
-  <!-- MONTH -->
-  <div class="screen" id="screen-month">
-    <fieldset class="panel">
-      <legend>Choose a Month to Depart</legend>
-      <p class="flavor">Leave too early and the ground is still muddy from spring rains.
-      Leave too late and you may be trapped by snow in the mountains.</p>
-      <table>
-        <tr><th>Month</th><th>Conditions</th><th></th></tr>
-        <tr><td>March</td><td>Muddy trails, slower going</td><td><button onclick="chooseMonth('March',0)">Choose</button></td></tr>
-        <tr><td>April</td><td>Good grass, mild weather</td><td><button onclick="chooseMonth('April',1)">Choose</button></td></tr>
-        <tr><td>May</td><td>Ideal conditions</td><td><button onclick="chooseMonth('May',2)">Choose</button></td></tr>
-        <tr><td>June</td><td>Warmer, rivers lower</td><td><button onclick="chooseMonth('June',3)">Choose</button></td></tr>
-        <tr><td>July</td><td>Late start &mdash; risk of early mountain snow</td><td><button onclick="chooseMonth('July',4)">Choose</button></td></tr>
-      </table>
-    </fieldset>
-  </div>
-
-  <!-- STORE -->
-  <div class="screen" id="screen-store">
-    <fieldset class="panel">
-      <legend>Matt's General Store &mdash; Independence, MO</legend>
-      <p class="center unlimited">Funds available: UNLIMITED $</p>
-      <table>
-        <tr><th>Item</th><th>Price</th><th>You Have</th><th>Buy</th></tr>
-        <tr>
-          <td>&#128004; Oxen (per pair)</td><td>$40</td><td id="have-oxen">0</td>
-          <td>
-            <button onclick="buy('oxen',2)">+2</button>
-            <button onclick="buy('oxen',6)">+6</button>
-          </td>
-        </tr>
-        <tr>
-          <td>&#127838; Food (lbs)</td><td>$0.20/lb</td><td id="have-food">0</td>
-          <td>
-            <button onclick="buy('food',100)">+100</button>
-            <button onclick="buy('food',500)">+500</button>
-            <button onclick="buy('food',1000)">+1000</button>
-          </td>
-        </tr>
-        <tr>
-          <td>&#128299; Ammunition (boxes of 20)</td><td>$1</td><td id="have-ammo">0</td>
-          <td>
-            <button onclick="buy('ammo',5)">+5</button>
-            <button onclick="buy('ammo',20)">+20</button>
-          </td>
-        </tr>
-        <tr>
-          <td>&#128085; Clothing (sets)</td><td>$1</td><td id="have-clothing">0</td>
-          <td>
-            <button onclick="buy('clothing',5)">+5</button>
-            <button onclick="buy('clothing',15)">+15</button>
-          </td>
-        </tr>
-        <tr>
-          <td>&#9899; Spare Wagon Wheels</td><td>$10</td><td id="have-wheels">0</td>
-          <td><button onclick="buy('wheels',3)">+3</button></td>
-        </tr>
-        <tr>
-          <td>&#128295; Spare Axles</td><td>$10</td><td id="have-axles">0</td>
-          <td><button onclick="buy('axles',3)">+3</button></td>
-        </tr>
-        <tr>
-          <td>&#128736; Spare Tongues</td><td>$10</td><td id="have-tongues">0</td>
-          <td><button onclick="buy('tongues',3)">+3</button></td>
-        </tr>
-      </table>
-      <p class="flavor" id="store-warning" style="display:none;color:#8a1010;">
-        You'll want at least 2 oxen and some food before you set off.
-      </p>
-      <div class="center"><button class="primary" onclick="finishShopping()">Head for the Trail</button></div>
-    </fieldset>
-  </div>
-
-  <!-- TRAVEL -->
-  <div class="screen" id="screen-travel">
-    <canvas id="trailMapCanvas" width="760" height="90"></canvas>
-    <fieldset class="panel">
-      <legend>Trail Status</legend>
-      <div class="row" style="justify-content:space-between;">
-        <div class="stat" id="stat-date">Date: -</div>
-        <div class="stat" id="stat-miles">Miles: 0 / 2040</div>
-        <div class="stat" id="stat-weather">Weather: -</div>
+    <!-- TITLE -->
+    <div class="screen active" id="screen-title">
+      <canvas id="sceneTitle" width="720" height="250"></canvas>
+      <div class="panel">
+        <div class="panel-title">Independence, Missouri &mdash; 1848</div>
+        <p>You are about to set off on the trail to Oregon in a covered wagon
+        with a party of five. You will face rivers, storms, broken axles,
+        thieves, and disease. Do you have what it takes to reach the
+        Willamette Valley?</p>
+        <p class="unlimited">A wealthy relative has left you an unlimited fortune.
+        Money will never be a problem &mdash; everything else in the West still can be.</p>
+        <div class="center"><button class="primary" onclick="Sound.startMusic();goTo('occupation')">Begin Journey</button></div>
       </div>
-      <div class="row">
-        <div class="stat">&#127838; Food: <span id="stat-food">0</span> lbs</div>
-        <div class="stat">&#128004; Oxen: <span id="stat-oxen">0</span></div>
-        <div class="stat">&#128299; Ammo: <span id="stat-ammo">0</span></div>
-        <div class="stat">Spares (W/A/T): <span id="stat-spares">0/0/0</span></div>
+    </div>
+
+    <!-- OCCUPATION -->
+    <div class="screen" id="screen-occupation">
+      <div class="panel">
+        <div class="panel-title">Choose Your Occupation</div>
+        <p class="flavor">Your occupation no longer limits your funds &mdash; but it still
+        determines how the history books score your journey.</p>
+        <table>
+          <tr><th>Occupation</th><th>Score Multiplier</th><th></th></tr>
+          <tr><td>Banker</td><td>x1</td><td><button onclick="chooseOccupation('Banker',1)">Choose</button></td></tr>
+          <tr><td>Carpenter</td><td>x2</td><td><button onclick="chooseOccupation('Carpenter',2)">Choose</button></td></tr>
+          <tr><td>Farmer</td><td>x3</td><td><button onclick="chooseOccupation('Farmer',3)">Choose</button></td></tr>
+        </table>
       </div>
-    </fieldset>
+    </div>
 
-    <fieldset class="panel">
-      <legend>Party Health</legend>
-      <div class="members-grid" id="party-status"></div>
-    </fieldset>
-
-    <fieldset class="panel">
-      <legend>Pace &amp; Rations</legend>
-      <div class="row">
-        <label>Pace:</label>
-        <select id="pace-select" onchange="setPace(this.value)">
-          <option value="steady">Steady</option>
-          <option value="strenuous">Strenuous</option>
-          <option value="grueling">Grueling</option>
-        </select>
-        <label>Rations:</label>
-        <select id="ration-select" onchange="setRation(this.value)">
-          <option value="filling">Filling</option>
-          <option value="meager">Meager</option>
-          <option value="bareBones">Bare Bones</option>
-        </select>
+    <!-- NAMES -->
+    <div class="screen" id="screen-names">
+      <div class="panel">
+        <div class="panel-title">Name Your Party</div>
+        <p>Enter your name and the names of four companions.</p>
+        <div class="row"><label style="width:120px;">You:</label><input type="text" id="name0" value="Charlie"></div>
+        <div class="row"><label style="width:120px;">Companion 2:</label><input type="text" id="name1" value="Sam"></div>
+        <div class="row"><label style="width:120px;">Companion 3:</label><input type="text" id="name2" value="Robin"></div>
+        <div class="row"><label style="width:120px;">Companion 4:</label><input type="text" id="name3" value="Jamie"></div>
+        <div class="row"><label style="width:120px;">Companion 5:</label><input type="text" id="name4" value="Lee"></div>
+        <br>
+        <button class="primary" onclick="setNames()">Continue</button>
       </div>
-    </fieldset>
+    </div>
 
-    <fieldset class="panel">
-      <legend>Trail Log</legend>
-      <div class="log" id="trail-log"></div>
-    </fieldset>
+    <!-- MONTH -->
+    <div class="screen" id="screen-month">
+      <div class="panel">
+        <div class="panel-title">Choose a Month to Depart</div>
+        <p class="flavor">Leave too early and the ground is still muddy from spring rains.
+        Leave too late and you may be trapped by snow in the mountains.</p>
+        <table>
+          <tr><th>Month</th><th>Conditions</th><th></th></tr>
+          <tr><td>March</td><td>Muddy trails, slower going</td><td><button onclick="chooseMonth('March',0)">Choose</button></td></tr>
+          <tr><td>April</td><td>Good grass, mild weather</td><td><button onclick="chooseMonth('April',1)">Choose</button></td></tr>
+          <tr><td>May</td><td>Ideal conditions</td><td><button onclick="chooseMonth('May',2)">Choose</button></td></tr>
+          <tr><td>June</td><td>Warmer, rivers lower</td><td><button onclick="chooseMonth('June',3)">Choose</button></td></tr>
+          <tr><td>July</td><td>Late start &mdash; risk of early mountain snow</td><td><button onclick="chooseMonth('July',4)">Choose</button></td></tr>
+        </table>
+      </div>
+    </div>
 
-    <div class="row" style="margin-top:6px;">
-      <button class="primary" onclick="continueTrail()">Continue on the Trail</button>
-      <button onclick="goHunting()">Go Hunting</button>
-      <button onclick="checkSupplies()">Check Supplies</button>
+    <!-- STORE -->
+    <div class="screen" id="screen-store">
+      <canvas id="storeScene" width="720" height="180"></canvas>
+      <div class="panel">
+        <div class="panel-title">Matt's General Store &mdash; Independence, MO</div>
+        <p class="center unlimited">Funds available: UNLIMITED $</p>
+        <table>
+          <tr><th>Item</th><th>Price</th><th>You Have</th><th>Buy</th></tr>
+          <tr>
+            <td>&#128004; Oxen (per pair)</td><td>$40</td><td id="have-oxen">0</td>
+            <td>
+              <button onclick="buy('oxen',2)">+2</button>
+              <button onclick="buy('oxen',6)">+6</button>
+            </td>
+          </tr>
+          <tr>
+            <td>&#127838; Food (lbs)</td><td>$0.20/lb</td><td id="have-food">0</td>
+            <td>
+              <button onclick="buy('food',100)">+100</button>
+              <button onclick="buy('food',500)">+500</button>
+              <button onclick="buy('food',1000)">+1000</button>
+            </td>
+          </tr>
+          <tr>
+            <td>&#128299; Ammunition (boxes of 20)</td><td>$1</td><td id="have-ammo">0</td>
+            <td>
+              <button onclick="buy('ammo',5)">+5</button>
+              <button onclick="buy('ammo',20)">+20</button>
+            </td>
+          </tr>
+          <tr>
+            <td>&#128085; Clothing (sets)</td><td>$1</td><td id="have-clothing">0</td>
+            <td>
+              <button onclick="buy('clothing',5)">+5</button>
+              <button onclick="buy('clothing',15)">+15</button>
+            </td>
+          </tr>
+          <tr>
+            <td>&#9899; Spare Wagon Wheels</td><td>$10</td><td id="have-wheels">0</td>
+            <td><button onclick="buy('wheels',3)">+3</button></td>
+          </tr>
+          <tr>
+            <td>&#128295; Spare Axles</td><td>$10</td><td id="have-axles">0</td>
+            <td><button onclick="buy('axles',3)">+3</button></td>
+          </tr>
+          <tr>
+            <td>&#128736; Spare Tongues</td><td>$10</td><td id="have-tongues">0</td>
+            <td><button onclick="buy('tongues',3)">+3</button></td>
+          </tr>
+        </table>
+        <p class="flavor" id="store-warning" style="display:none;color:#8a1010;">
+          You'll want at least 2 oxen and some food before you set off.
+        </p>
+        <div class="center"><button class="primary" onclick="finishShopping()">Head for the Trail</button></div>
+      </div>
+    </div>
+
+    <!-- TRAVEL -->
+    <div class="screen" id="screen-travel">
+      <canvas id="travelScene" width="720" height="200"></canvas>
+      <canvas id="trailMapCanvas" width="720" height="54"></canvas>
+      <div class="panel">
+        <div class="panel-title" id="travel-datehdr">On the Trail</div>
+        <div class="row" style="justify-content:space-between;align-items:flex-start;">
+          <div style="min-width:210px;">
+            <div class="row">
+              <div class="stat" id="stat-date">Date: -</div>
+              <div class="stat" id="stat-weather">Weather: -</div>
+            </div>
+            <div class="row">
+              <div class="stat" id="stat-miles">Miles: 0 / 2040</div>
+            </div>
+          </div>
+          <div style="flex:1;min-width:230px;">
+            <div class="panel-title" style="font-size:.95em;">Wagon</div>
+            <div class="wagon-readout">
+              <div class="lbl">Food</div><div class="val"><span id="stat-food">0</span> lbs</div>
+              <div class="lbl">Health</div><div class="val" id="stat-health">Good</div>
+              <div class="lbl">Rations</div><div class="val" id="stat-rations">Filling</div>
+              <div class="lbl">Pace</div><div class="val" id="stat-pace">Steady</div>
+              <div class="lbl">Oxen</div><div class="val" id="stat-oxen">0</div>
+              <div class="lbl">Ammunition</div><div class="val" id="stat-ammo">0</div>
+              <div class="lbl">Spares (W/A/T)</div><div class="val" id="stat-spares">0/0/0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Party Health</div>
+        <div class="members-grid" id="party-status"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Pace &amp; Rations</div>
+        <div class="row">
+          <label>Pace:</label>
+          <select id="pace-select" onchange="setPace(this.value)">
+            <option value="steady">Steady</option>
+            <option value="strenuous">Strenuous</option>
+            <option value="grueling">Grueling</option>
+          </select>
+          <label>Rations:</label>
+          <select id="ration-select" onchange="setRation(this.value)">
+            <option value="filling">Filling</option>
+            <option value="meager">Meager</option>
+            <option value="bareBones">Bare Bones</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Trail Log</div>
+        <div class="log" id="trail-log"></div>
+      </div>
+
+      <div class="row" style="margin-top:6px;">
+        <button class="primary" onclick="continueTrail()">Continue on the Trail</button>
+        <button onclick="goHunting()">Go Hunting</button>
+        <button onclick="checkSupplies()">Check Supplies</button>
+      </div>
+    </div>
+
+    <!-- HUNTING -->
+    <div class="screen" id="screen-hunt">
+      <div class="panel center">
+        <div class="panel-title">Hunting</div>
+        <p class="flavor">Aim with your mouse and click to fire. Each shot costs 1 bullet.
+        You can carry up to 100 lbs of meat back to the wagon.</p>
+        <div class="row" style="justify-content:center;">
+          <div class="stat">Time: <span id="hunt-time">20</span>s</div>
+          <div class="stat">&#128299; Ammo: <span id="hunt-ammo">0</span></div>
+          <div class="stat">Meat: <span id="hunt-meat">0</span> lbs</div>
+        </div>
+        <canvas id="huntCanvas" width="720" height="320"></canvas>
+        <br>
+        <button class="danger" onclick="endHunt()">Leave Hunting Ground</button>
+      </div>
+    </div>
+
+    <!-- RIVER -->
+    <div class="screen" id="screen-river">
+      <div class="panel">
+        <div class="panel-title" id="river-name">River Crossing</div>
+        <canvas id="riverCanvas" width="720" height="200"></canvas>
+        <p id="river-desc" class="flavor"></p>
+        <div class="row">
+          <div class="stat">Depth: <span id="river-depth">-</span> ft</div>
+          <div class="stat">Width: <span id="river-width">-</span> ft</div>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <button class="primary" onclick="crossRiver('ford')">Ford the River</button>
+          <button class="primary" onclick="crossRiver('float')">Caulk the Wagon &amp; Float It</button>
+          <button class="primary" onclick="crossRiver('ferry')">Take the Ferry</button>
+          <button onclick="crossRiver('wait')">Wait a Day</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LANDMARK -->
+    <div class="screen" id="screen-landmark">
+      <div class="panel center">
+        <div class="panel-title" id="landmark-name">Landmark</div>
+        <canvas id="landmarkScene" width="720" height="230"></canvas>
+        <p id="landmark-text" class="flavor"></p>
+        <button class="primary" onclick="leaveLandmark()">Continue Trail</button>
+      </div>
+    </div>
+
+    <!-- EVENT -->
+    <div class="screen" id="screen-event">
+      <div class="panel center">
+        <div class="panel-title" id="event-title">Event</div>
+        <canvas id="eventScene" width="340" height="150"></canvas>
+        <p id="event-text"></p>
+        <button class="primary" onclick="leaveEvent()">Continue Trail</button>
+      </div>
+    </div>
+
+    <!-- DEATH -->
+    <div class="screen" id="screen-death">
+      <div class="panel center">
+        <div class="panel-title">In Memory of</div>
+        <canvas id="graveCanvas" width="720" height="210"></canvas>
+        <p id="death-name" style="font-size:1.25em;font-weight:bold;"></p>
+        <p id="death-epitaph" class="flavor"></p>
+        <button class="primary" onclick="leaveDeath()">Continue</button>
+      </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div class="screen" id="screen-gameover">
+      <div class="panel center">
+        <div class="panel-title">The Journey Ends Here</div>
+        <canvas id="graveCanvasFinal" width="720" height="210"></canvas>
+        <p id="gameover-text"></p>
+        <button class="primary" onclick="resetGame()">Start a New Journey</button>
+      </div>
+    </div>
+
+    <!-- WIN -->
+    <div class="screen" id="screen-win">
+      <div class="panel center">
+        <div class="panel-title">You Made It to the Willamette Valley!</div>
+        <canvas id="winCanvas" width="720" height="230"></canvas>
+        <p id="win-summary"></p>
+        <h3 id="win-rank"></h3>
+        <p id="win-score" style="font-size:1.15em;font-weight:bold;"></p>
+        <button class="primary" onclick="resetGame()">Play Again</button>
+      </div>
+    </div>
+
+    <div class="footer-note">Unofficial fan-made homage in the style of the mid-1990s "Oregon Trail" for Windows &mdash; original art &amp; audio, no relation to MECC / The Learning Company.</div>
     </div>
   </div>
 
-  <!-- HUNTING -->
-  <div class="screen" id="screen-hunt">
-    <fieldset class="panel center">
-      <legend>Hunting</legend>
-      <p class="flavor">Aim with your mouse and click to fire. Each shot costs 1 bullet.
-      You can carry up to 100 lbs of meat back to the wagon.</p>
-      <div class="row" style="justify-content:center;">
-        <div class="stat">Time: <span id="hunt-time">20</span>s</div>
-        <div class="stat">&#128299; Ammo: <span id="hunt-ammo">0</span></div>
-        <div class="stat">Meat: <span id="hunt-meat">0</span> lbs</div>
-      </div>
-      <canvas id="huntCanvas" width="760" height="320"></canvas>
-      <br>
-      <button class="danger" onclick="endHunt()">Leave Hunting Ground</button>
-    </fieldset>
+  <div class="toolbar">
+    <div class="rbtn" title="Trail Map" onclick="toolbarMap()">&#128506;<span>MAP</span></div>
+    <div class="rbtn" title="Hunt" onclick="toolbarHunt()">&#127993;<span>HUNT</span></div>
+    <div class="rbtn" title="Supplies" onclick="toolbarSupplies()">&#127890;<span>PACK</span></div>
+    <div class="rbtn" title="Toggle Sound" onclick="toggleSound()">&#128266;<span>SND</span></div>
   </div>
-
-  <!-- RIVER -->
-  <div class="screen" id="screen-river">
-    <fieldset class="panel">
-      <legend id="river-name">River Crossing</legend>
-      <canvas id="riverCanvas" width="760" height="180"></canvas>
-      <p id="river-desc" class="flavor"></p>
-      <div class="row">
-        <div class="stat">Depth: <span id="river-depth">-</span> ft</div>
-        <div class="stat">Width: <span id="river-width">-</span> ft</div>
-      </div>
-      <div class="row" style="margin-top:8px;">
-        <button class="primary" onclick="crossRiver('ford')">Ford the River</button>
-        <button class="primary" onclick="crossRiver('float')">Caulk the Wagon &amp; Float It</button>
-        <button class="primary" onclick="crossRiver('ferry')">Take the Ferry</button>
-        <button onclick="crossRiver('wait')">Wait a Day</button>
-      </div>
-    </fieldset>
-  </div>
-
-  <!-- LANDMARK -->
-  <div class="screen" id="screen-landmark">
-    <fieldset class="panel center">
-      <legend id="landmark-name">Landmark</legend>
-      <p id="landmark-text" class="flavor"></p>
-      <button class="primary" onclick="leaveLandmark()">Continue Trail</button>
-    </fieldset>
-  </div>
-
-  <!-- EVENT -->
-  <div class="screen" id="screen-event">
-    <fieldset class="panel center">
-      <legend id="event-title">Event</legend>
-      <p id="event-text"></p>
-      <button class="primary" onclick="leaveEvent()">Continue Trail</button>
-    </fieldset>
-  </div>
-
-  <!-- DEATH -->
-  <div class="screen" id="screen-death">
-    <fieldset class="panel center">
-      <legend>In Memory of</legend>
-      <canvas id="graveCanvas" width="760" height="200"></canvas>
-      <p id="death-name" style="font-size:1.3em;font-weight:bold;"></p>
-      <p id="death-epitaph" class="flavor"></p>
-      <button class="primary" onclick="leaveDeath()">Continue</button>
-    </fieldset>
-  </div>
-
-  <!-- GAME OVER (all dead) -->
-  <div class="screen" id="screen-gameover">
-    <fieldset class="panel center">
-      <legend>The Journey Ends Here</legend>
-      <canvas id="graveCanvasFinal" width="760" height="200"></canvas>
-      <p id="gameover-text"></p>
-      <button class="primary" onclick="resetGame()">Start a New Journey</button>
-    </fieldset>
-  </div>
-
-  <!-- WIN -->
-  <div class="screen" id="screen-win">
-    <fieldset class="panel center">
-      <legend>You Made It to the Willamette Valley!</legend>
-      <canvas id="winCanvas" width="760" height="220"></canvas>
-      <p id="win-summary"></p>
-      <h3 id="win-rank"></h3>
-      <p id="win-score" style="font-size:1.2em;font-weight:bold;"></p>
-      <button class="primary" onclick="resetGame()">Play Again</button>
-    </fieldset>
-  </div>
-
-  <div class="footer-note">Unofficial fan-made homage in the style of the mid-1990s "Oregon Trail" for Windows &mdash; browser edition, no relation to MECC/The Learning Company.</div>
-  </div>
-  <div class="statusbar"><span>Ready</span><span id="statusbar-right">The Oregon Trail 95</span></div>
+  <div class="statusbar"><span>Ready</span><span>The Oregon Trail</span></div>
 </div>
 
 <script>
@@ -413,14 +514,14 @@ const LANDMARKS = [
   {name:"Chimney Rock", mile:554, type:"landmark", text:"A strange spire of rock rises out of the plains, visible for days before you reach it. Many pioneers carve their names into the soft stone at its base."},
   {name:"Fort Laramie", mile:640, type:"fort", text:"A major trading post. Traders here offer good prices on supplies and repairs."},
   {name:"Independence Rock", mile:830, type:"landmark", text:"Known as the 'Great Register of the Desert' &mdash; thousands of pioneer names are carved into this massive granite dome. If you arrive by Independence Day, tradition says you're on a good pace for Oregon."},
-  {name:"South Pass", mile:932, type:"landmark", text:"You cross the Continental Divide. From here, the rivers finally begin to flow toward the Pacific."},
+  {name:"South Pass", mile:932, type:"mountain", text:"You cross the Continental Divide. From here, the rivers finally begin to flow toward the Pacific."},
   {name:"Green River Crossing", mile:1000, type:"river"},
   {name:"Fort Bridger", mile:1050, type:"fort", text:"A rundown trading post run by mountain men. Prices are steep, but repairs are available."},
   {name:"Soda Springs", mile:1180, type:"landmark", text:"Naturally carbonated springs bubble up from the ground. The party takes a moment to marvel at the fizzing water."},
   {name:"Fort Hall", mile:1225, type:"fort", text:"A Hudson's Bay Company post. You can restock here before the harder country ahead."},
   {name:"Snake River Crossing", mile:1400, type:"river"},
   {name:"Fort Boise", mile:1500, type:"fort", text:"The last major fort before the mountains. Rest up &mdash; the Blue Mountains lie ahead."},
-  {name:"Blue Mountains", mile:1700, type:"landmark", text:"A grueling climb through dense forest and steep grades. The wagon creaks under the strain."},
+  {name:"Blue Mountains", mile:1700, type:"mountain", text:"A grueling climb through dense forest and steep grades. The wagon creaks under the strain."},
   {name:"The Dalles", mile:1930, type:"landmark", text:"The Columbia River comes into view. From here, some pioneers raft the rapids; others take the rough Barlow Road around Mt. Hood."},
 ];
 
@@ -488,12 +589,13 @@ const RANDOM_EVENTS = [
 ];
 
 let state = null;
+let travelAnimId=null, travelPhase=0;
 
 function newState(){
   return {
     occupation:null, multiplier:1,
     month:null, monthIndex:2,
-    party:[], // {name, health}
+    party:[],
     oxen:0, food:0, ammo:0, clothing:0, wheels:0, axles:0, tongues:0,
     miles:0, day:0,
     pace:"steady", ration:"filling",
@@ -508,15 +610,18 @@ function newState(){
    NAVIGATION
 --------------------------------------------------------- */
 function goTo(name){
+  if(name!=='travel') stopTravelAnim();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
   window.scrollTo(0,0);
 }
+function activeScreen(){ const s=document.querySelector('.screen.active'); return s?s.id:''; }
 
 function resetGame(){
   state = newState();
   goTo('title');
   drawTitleScene();
+  updateSidebar();
 }
 resetGame();
 
@@ -527,7 +632,6 @@ function chooseOccupation(name, mult){
   state.occupation=name; state.multiplier=mult;
   goTo('names');
 }
-
 function setNames(){
   state.party=[];
   for(let i=0;i<5;i++){
@@ -536,20 +640,18 @@ function setNames(){
   }
   goTo('month');
 }
-
 function chooseMonth(name, idx){
   state.month=name; state.monthIndex=idx;
   goTo('store');
   refreshStore();
+  drawStoreScene();
 }
-
 // 'ammo' purchases are in boxes of 20 bullets; everything else is 1:1
 function buy(item, amount){
   if(item==='ammo'){ state.ammo += amount*20; }
   else { state[item]+=amount; }
   refreshStore();
 }
-
 function refreshStore(){
   document.getElementById('have-oxen').textContent=state.oxen;
   document.getElementById('have-food').textContent=state.food;
@@ -559,7 +661,6 @@ function refreshStore(){
   document.getElementById('have-axles').textContent=state.axles;
   document.getElementById('have-tongues').textContent=state.tongues;
 }
-
 function finishShopping(){
   if(state.oxen<2 || state.food<100){
     document.getElementById('store-warning').style.display='block';
@@ -573,70 +674,80 @@ function finishShopping(){
 /* ---------------------------------------------------------
    TRAVEL LOOP
 --------------------------------------------------------- */
-function setPace(v){ state.pace=v; }
-function setRation(v){ state.ration=v; }
+function setPace(v){ state.pace=v; renderTravel(); }
+function setRation(v){ state.ration=v; renderTravel(); }
 
 function randomAliveMember(s){
   const alive=s.party.filter(m=>m.health>0);
   if(alive.length===0) return null;
   return alive[Math.floor(Math.random()*alive.length)];
 }
-
 function addLog(msg){
   state.log.unshift(msg);
   if(state.log.length>60) state.log.pop();
   const logEl=document.getElementById('trail-log');
-  if(logEl){
-    logEl.innerHTML = state.log.map(l=>`<div>&gt; ${l}</div>`).join('');
-  }
+  if(logEl){ logEl.innerHTML = state.log.map(l=>`<div>&gt; ${l}</div>`).join(''); }
 }
-
 function paceMiles(){
   const base = {steady:15, strenuous:20, grueling:25}[state.pace];
-  const variance = (Math.random()*0.4-0.2); // +/-20%
+  const variance = (Math.random()*0.4-0.2);
   let miles = base*(1+variance);
   if(state.oxen<2) miles=0;
   else if(state.oxen<4) miles*=0.7;
   return Math.max(0, Math.round(miles));
 }
+function rationFoodPerPerson(){ return {filling:3, meager:2, bareBones:1}[state.ration]; }
+function paceHealthRisk(){ return {steady:0, strenuous:2, grueling:5}[state.pace]; }
+function rationHealthRisk(){ return {filling:0, meager:2, bareBones:5}[state.ration]; }
+function alivePartyCount(){ return state.party.filter(m=>m.health>0).length; }
 
-function rationFoodPerPerson(){
-  return {filling:3, meager:2, bareBones:1}[state.ration];
+function healthLabel(h){ return h>80?"Good":h>55?"Fair":h>30?"Poor":h>0?"Very Poor":"Deceased"; }
+function paceLabel(){ return {steady:"Steady",strenuous:"Strenuous",grueling:"Grueling"}[state.pace]; }
+function rationLabel(){ return {filling:"Filling",meager:"Meager",bareBones:"Bare Bones"}[state.ration]; }
+function avgHealth(){
+  const alive=state.party.filter(m=>m.health>0);
+  if(!alive.length) return 0;
+  return Math.round(alive.reduce((a,m)=>a+m.health,0)/alive.length);
 }
+const WEATHERS=["Clear","Cloudy","Rainy","Hot","Cold","Windy"];
+function currentWeather(){ return WEATHERS[state.day % WEATHERS.length]; }
 
-function paceHealthRisk(){
-  return {steady:0, strenuous:2, grueling:5}[state.pace];
-}
-
-function rationHealthRisk(){
-  return {filling:0, meager:2, bareBones:5}[state.ration];
-}
-
-function alivePartyCount(){
-  return state.party.filter(m=>m.health>0).length;
+function updateSidebar(){
+  const ro=document.getElementById('side-readout');
+  if(ro){
+    if(state.party.length){
+      ro.innerHTML = `DAY ${state.day}<br>MI ${state.miles}<br>${(state.month||'').toUpperCase()}`;
+    } else {
+      ro.innerHTML = `DAY 0<br>MI 0<br>READY`;
+    }
+  }
+  drawSideThumb();
 }
 
 function renderTravel(){
-  document.getElementById('stat-date').textContent = "Day: "+state.day;
+  document.getElementById('travel-datehdr').textContent = `${state.month||''} ${state.day? '(Day '+state.day+')':''} 1848`;
+  document.getElementById('stat-date').textContent = "Date: Day "+state.day;
   document.getElementById('stat-miles').textContent = `Miles: ${state.miles} / ${TRAIL_END_MILES}`;
-  const weathers=["Clear","Cloudy","Rainy","Hot","Cold","Windy"];
-  document.getElementById('stat-weather').textContent = "Weather: "+weathers[state.day % weathers.length];
+  document.getElementById('stat-weather').textContent = "Weather: "+currentWeather();
   document.getElementById('stat-food').textContent = state.food;
+  document.getElementById('stat-health').textContent = healthLabel(avgHealth());
+  document.getElementById('stat-rations').textContent = rationLabel();
+  document.getElementById('stat-pace').textContent = paceLabel();
   document.getElementById('stat-oxen').textContent = state.oxen;
   document.getElementById('stat-ammo').textContent = state.ammo;
   document.getElementById('stat-spares').textContent = `${state.wheels}/${state.axles}/${state.tongues}`;
 
   const grid=document.getElementById('party-status');
   grid.innerHTML = state.party.map(m=>{
-    const status = m.health<=0 ? "DECEASED" : m.health>80?"Good":m.health>55?"Fair":m.health>30?"Poor":"Very Poor";
+    const status = healthLabel(m.health);
     const color = m.health<=0 ? "#777" : m.health>55 ? "#1a6b1a" : m.health>30 ? "#8a5a00" : "#8a1010";
-    return `<div class="stat" style="color:${color};">
-      ${m.name}: ${status} ${m.health>0?`(${m.health})`:''}
-    </div>`;
+    return `<div class="stat" style="color:${color};">${m.name}: ${status} ${m.health>0?`(${m.health})`:''}</div>`;
   }).join('');
 
   document.getElementById('trail-log').innerHTML = state.log.map(l=>`<div>&gt; ${l}</div>`).join('');
   drawTrailMap();
+  updateSidebar();
+  if(activeScreen()==='screen-travel') startTravelAnim();
 }
 
 function continueTrail(){
@@ -657,26 +768,22 @@ function continueTrail(){
       continue;
     }
 
-    // move
     const miles = paceMiles();
     state.miles = Math.min(TRAIL_END_MILES, state.miles+miles);
 
-    // consume food
     const eaten = rationFoodPerPerson()*alivePartyCount();
     state.food = Math.max(0, state.food-eaten);
 
-    // health effects
     const risk = paceHealthRisk()+rationHealthRisk();
     state.party.forEach(m=>{
       if(m.health<=0) return;
       let delta = -risk - Math.floor(Math.random()*3);
-      if(state.food<=0) delta -= 8; // starving
+      if(state.food<=0) delta -= 8;
       if(state.ration==='filling') delta += 2;
-      delta += Math.floor(Math.random()*3); // small natural recovery chance
+      delta += Math.floor(Math.random()*3);
       m.health = Math.min(100, Math.max(0, m.health+delta));
     });
 
-    // check for new deaths
     const justDied = state.party.find(m=>m.health<=0 && !m.mourned);
     if(justDied){
       justDied.mourned=true;
@@ -685,14 +792,12 @@ function continueTrail(){
       return;
     }
 
-    // check game over (all dead)
     if(alivePartyCount()===0){
       renderTravel();
       showGameOver("Every member of your party has perished on the trail. The wagon sits abandoned, another silent monument along the Oregon Trail.");
       return;
     }
 
-    // random event
     if(Math.random()<0.10){
       const ev = weightedRandomEvent();
       const msg = ev.apply(state);
@@ -702,25 +807,16 @@ function continueTrail(){
       return;
     }
 
-    // landmark / river check
     const nextLm = LANDMARKS[state.landmarkIndex];
     if(nextLm && state.miles>=nextLm.mile){
       state.landmarkIndex++;
       renderTravel();
-      if(nextLm.type==='river'){
-        showRiver(nextLm);
-      } else {
-        showLandmark(nextLm);
-      }
+      if(nextLm.type==='river'){ showRiver(nextLm); }
+      else { showLandmark(nextLm); }
       return;
     }
 
-    // arrival
-    if(state.miles>=TRAIL_END_MILES){
-      renderTravel();
-      showWin();
-      return;
-    }
+    if(state.miles>=TRAIL_END_MILES){ renderTravel(); showWin(); return; }
   }
   addLog(`-- A week passes. ${state.miles} miles traveled so far. --`);
   renderTravel();
@@ -729,25 +825,22 @@ function continueTrail(){
 function weightedRandomEvent(){
   const total = RANDOM_EVENTS.reduce((a,e)=>a+e.weight,0);
   let r=Math.random()*total;
-  for(const e of RANDOM_EVENTS){
-    if(r<e.weight) return e;
-    r-=e.weight;
-  }
+  for(const e of RANDOM_EVENTS){ if(r<e.weight) return e; r-=e.weight; }
   return RANDOM_EVENTS[0];
 }
-
 function checkSupplies(){
   addLog(`Supply check &mdash; Food: ${state.food} lbs, Oxen: ${state.oxen}, Ammo: ${state.ammo}, Spares W/A/T: ${state.wheels}/${state.axles}/${state.tongues}.`);
   renderTravel();
 }
 
 /* ---------------------------------------------------------
-   EVENTS / LANDMARKS / DEATH SCREENS
+   EVENTS / LANDMARKS / DEATH
 --------------------------------------------------------- */
 function showEvent(title, text){
   document.getElementById('event-title').textContent=title;
   document.getElementById('event-text').textContent=text;
   goTo('event');
+  drawEventScene(title);
 }
 function leaveEvent(){ goTo('travel'); renderTravel(); }
 
@@ -755,6 +848,7 @@ function showLandmark(lm){
   document.getElementById('landmark-name').textContent=lm.name;
   document.getElementById('landmark-text').innerHTML=lm.text||"You pass a notable point along the trail.";
   goTo('landmark');
+  drawLandmarkScene(lm);
 }
 function leaveLandmark(){ goTo('travel'); renderTravel(); }
 
@@ -775,11 +869,8 @@ function showDeath(member){
 function leaveDeath(){
   if(alivePartyCount()===0){
     showGameOver("Every member of your party has perished on the trail. The wagon sits abandoned, another silent monument along the Oregon Trail.");
-  } else {
-    goTo('travel'); renderTravel();
-  }
+  } else { goTo('travel'); renderTravel(); }
 }
-
 function showGameOver(text){
   state.finished=true;
   document.getElementById('gameover-text').textContent=text;
@@ -788,15 +879,11 @@ function showGameOver(text){
 }
 
 /* ---------------------------------------------------------
-   RIVER CROSSING
+   RIVER
 --------------------------------------------------------- */
 let currentRiver=null;
 function showRiver(lm){
-  currentRiver = {
-    name: lm.name,
-    depth: 1+Math.floor(Math.random()*7),
-    width: 200+Math.floor(Math.random()*800),
-  };
+  currentRiver = { name: lm.name, depth: 1+Math.floor(Math.random()*7), width: 200+Math.floor(Math.random()*800) };
   document.getElementById('river-name').textContent=lm.name;
   document.getElementById('river-desc').textContent="The wagon rolls to a stop at the water's edge. How will you get across?";
   document.getElementById('river-depth').textContent=currentRiver.depth;
@@ -805,7 +892,6 @@ function showRiver(lm){
   drawRiverScene(currentRiver.depth);
   Sound.startRiver();
 }
-
 function crossRiver(method){
   const r=currentRiver;
   let msg="";
@@ -815,20 +901,16 @@ function crossRiver(method){
     document.getElementById('river-depth').textContent=r.depth;
     drawRiverScene(r.depth);
     addLog(`Day ${state.day}: You wait a day at ${r.name} hoping the water recedes.`);
-    return; // stay on river screen
+    return;
   }
-
   if(method==='ford'){
-    if(r.depth<=2){
-      msg=`You ford the ${r.name} without trouble.`;
-    } else if(r.depth<=4){
+    if(r.depth<=2){ msg=`You ford the ${r.name} without trouble.`; }
+    else if(r.depth<=4){
       if(Math.random()<0.4){
         const lost=Math.min(state.food, 30+Math.floor(Math.random()*80));
         state.food-=lost;
         msg=`The crossing is rough. Water pours into the wagon bed and you lose ${lost} lbs of food, but everyone makes it across.`;
-      } else {
-        msg=`You ford the ${r.name} successfully, though it's a tense crossing.`;
-      }
+      } else { msg=`You ford the ${r.name} successfully, though it's a tense crossing.`; }
     } else {
       if(Math.random()<0.5){
         const m=randomAliveMember(state);
@@ -845,18 +927,11 @@ function crossRiver(method){
       const lost=Math.min(state.food, 40+Math.floor(Math.random()*60));
       state.food-=lost;
       msg=`You caulk the wagon bed and float it across, but it takes on water. You lose ${lost} lbs of food.`;
-    } else {
-      msg=`You caulk the wagon and float it across the ${r.name} without incident.`;
-    }
+    } else { msg=`You caulk the wagon and float it across the ${r.name} without incident.`; }
   } else if(method==='ferry'){
-    if(Math.random()<0.85){
-      msg=`You pay for passage on the ferry and cross the ${r.name} safely and quickly.`;
-    } else {
-      state.day+=1;
-      msg=`The ferry is busy with other pioneers. You wait a day, then cross safely.`;
-    }
+    if(Math.random()<0.85){ msg=`You pay for passage on the ferry and cross the ${r.name} safely and quickly.`; }
+    else { state.day+=1; msg=`The ferry is busy with other pioneers. You wait a day, then cross safely.`; }
   }
-
   addLog(msg);
   renderTravel();
   Sound.stopRiver();
@@ -865,17 +940,14 @@ function crossRiver(method){
 }
 
 /* ---------------------------------------------------------
-   HUNTING MINIGAME
+   HUNTING
 --------------------------------------------------------- */
 let huntState=null;
 let huntAnimId=null;
 
 function goHunting(){
   if(state.ammo<=0){ addLog("You're out of ammunition and can't go hunting."); renderTravel(); return; }
-  huntState={
-    timeLeft:20, meat:0, animals:[], lastSpawn:0, startTs:null, running:true,
-    mouseX:380, mouseY:160, bang:null,
-  };
+  huntState={ timeLeft:20, meat:0, animals:[], lastSpawn:0, startTs:null, running:true, mouseX:380, mouseY:160, bang:null };
   document.getElementById('hunt-time').textContent=huntState.timeLeft;
   document.getElementById('hunt-ammo').textContent=state.ammo;
   document.getElementById('hunt-meat').textContent=0;
@@ -883,14 +955,9 @@ function goHunting(){
   const canvas=document.getElementById('huntCanvas');
   const ctx=canvas.getContext('2d');
   canvas.onclick = (e)=>handleShot(e, canvas);
-  canvas.onmousemove = (e)=>{
-    const rect=canvas.getBoundingClientRect();
-    huntState.mouseX = e.clientX-rect.left;
-    huntState.mouseY = e.clientY-rect.top;
-  };
+  canvas.onmousemove = (e)=>{ const rect=canvas.getBoundingClientRect(); huntState.mouseX=e.clientX-rect.left; huntState.mouseY=e.clientY-rect.top; };
   huntAnimId = requestAnimationFrame(ts=>huntLoop(ts, canvas, ctx));
 }
-
 function spawnAnimal(){
   const kinds=[
     {type:'rabbit', w:26, h:18, color:'#8a6f4d', speed:2.6, weight:25},
@@ -899,18 +966,14 @@ function spawnAnimal(){
   ];
   const k=kinds[Math.floor(Math.random()*kinds.length)];
   const dir = Math.random()<0.5?1:-1;
-  const y = 130+Math.random()*140;
-  huntState.animals.push({
-    ...k, x: dir===1?-k.w:760+k.w, y, dir, dead:false, legPhase:Math.random()*10,
-  });
+  const y = 150+Math.random()*130;
+  huntState.animals.push({ ...k, x: dir===1?-k.w:760+k.w, y, dir, dead:false, legPhase:Math.random()*10 });
 }
-
 function drawAnimal(ctx, a){
   ctx.save();
   ctx.translate(a.x+a.w/2, a.y+a.h/2);
   if(a.dir===-1) ctx.scale(-1,1);
   const w=a.w, h=a.h;
-  // legs
   ctx.strokeStyle="#2a1c0f"; ctx.lineWidth=2;
   const legOffset = Math.sin(a.legPhase)*3;
   ctx.beginPath();
@@ -918,23 +981,12 @@ function drawAnimal(ctx, a){
   ctx.moveTo(w*0.28,h*0.3); ctx.lineTo(w*0.28-legOffset,h*0.5);
   ctx.stroke();
   a.legPhase += 0.3;
-  // body
   ctx.fillStyle=a.color;
-  ctx.beginPath();
-  ctx.ellipse(0,0,w/2,h/2.6,0,0,Math.PI*2);
-  ctx.fill();
-  // head
-  ctx.beginPath();
-  ctx.ellipse(w*0.42,-h*0.12,w*0.18,h*0.22,0,0,Math.PI*2);
-  ctx.fill();
-  // eye
-  ctx.fillStyle="#000";
-  ctx.beginPath();
-  ctx.arc(w*0.48,-h*0.16,1.6,0,Math.PI*2);
-  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0,0,w/2,h/2.6,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(w*0.42,-h*0.12,w*0.18,h*0.22,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#000"; ctx.beginPath(); ctx.arc(w*0.48,-h*0.16,1.6,0,Math.PI*2); ctx.fill();
   ctx.restore();
 }
-
 function huntLoop(ts, canvas, ctx){
   if(!huntState || !huntState.running) return;
   if(!huntState.startTs) huntState.startTs=ts;
@@ -942,75 +994,50 @@ function huntLoop(ts, canvas, ctx){
   huntState.timeLeft = Math.max(0, 20-Math.floor(elapsed));
   document.getElementById('hunt-time').textContent=huntState.timeLeft;
 
-  if(elapsed - huntState.lastSpawn > 1.1 && huntState.animals.length<6){
-    spawnAnimal();
-    huntState.lastSpawn=elapsed;
-  }
+  if(elapsed - huntState.lastSpawn > 1.1 && huntState.animals.length<6){ spawnAnimal(); huntState.lastSpawn=elapsed; }
 
-  // sky
-  const sky=ctx.createLinearGradient(0,0,0,140);
+  const sky=ctx.createLinearGradient(0,0,0,150);
   sky.addColorStop(0,"#7ab8e6"); sky.addColorStop(1,"#cfe8f5");
-  ctx.fillStyle=sky; ctx.fillRect(0,0,canvas.width,140);
-  // sun
-  ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(660,45,32,0,Math.PI*2); ctx.fill();
-  // distant hills
+  ctx.fillStyle=sky; ctx.fillRect(0,0,canvas.width,150);
+  ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(650,42,30,0,Math.PI*2); ctx.fill();
   ctx.fillStyle="#8fae6a";
-  ctx.beginPath(); ctx.moveTo(0,140);
-  for(let x=0;x<=760;x+=40){ ctx.lineTo(x, 120+Math.sin(x*0.02)*10); }
-  ctx.lineTo(760,140); ctx.closePath(); ctx.fill();
-  // ground
-  const ground=ctx.createLinearGradient(0,140,0,320);
+  ctx.beginPath(); ctx.moveTo(0,150);
+  for(let x=0;x<=720;x+=40){ ctx.lineTo(x, 128+Math.sin(x*0.02)*10); }
+  ctx.lineTo(720,150); ctx.closePath(); ctx.fill();
+  const ground=ctx.createLinearGradient(0,150,0,320);
   ground.addColorStop(0,"#8fae5a"); ground.addColorStop(1,"#5e7d3a");
-  ctx.fillStyle=ground; ctx.fillRect(0,140,canvas.width,180);
-  // grass tufts
+  ctx.fillStyle=ground; ctx.fillRect(0,150,canvas.width,170);
   ctx.strokeStyle="#3f5a26"; ctx.lineWidth=1.5;
   for(let i=0;i<40;i++){
-    const gx=(i*53+((elapsed*8)|0))%800-20, gy=150+((i*37)%160);
-    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(gx-3,gy-8); ctx.moveTo(gx,gy); ctx.lineTo(gx+3,gy-8);
-    ctx.stroke();
+    const gx=(i*53+((elapsed*8)|0))%760-20, gy=160+((i*37)%150);
+    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(gx-3,gy-8); ctx.moveTo(gx,gy); ctx.lineTo(gx+3,gy-8); ctx.stroke();
   }
 
-  huntState.animals.forEach(a=>{
-    if(a.dead) return;
-    a.x += a.speed*a.dir*2;
-    drawAnimal(ctx, a);
-  });
+  huntState.animals.forEach(a=>{ if(a.dead) return; a.x += a.speed*a.dir*2; drawAnimal(ctx, a); });
   huntState.animals = huntState.animals.filter(a=>!a.dead && a.x>-100 && a.x<canvas.width+100);
 
-  // crosshair
   const mx=huntState.mouseX, my=huntState.mouseY;
   ctx.strokeStyle="#c81818"; ctx.lineWidth=2;
   ctx.beginPath(); ctx.arc(mx,my,14,0,Math.PI*2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(mx-20,my); ctx.lineTo(mx-6,my); ctx.moveTo(mx+6,my); ctx.lineTo(mx+20,my);
+  ctx.beginPath();
+  ctx.moveTo(mx-20,my); ctx.lineTo(mx-6,my); ctx.moveTo(mx+6,my); ctx.lineTo(mx+20,my);
   ctx.moveTo(mx,my-20); ctx.lineTo(mx,my-6); ctx.moveTo(mx,my+6); ctx.lineTo(mx,my+20);
   ctx.stroke();
 
-  // BANG flash
   if(huntState.bang){
     const age = performance.now()-huntState.bang.t;
     if(age<350){
-      ctx.save();
-      ctx.globalAlpha = 1-age/350;
-      ctx.fillStyle="#fff200";
-      ctx.strokeStyle="#000";
-      ctx.font="bold 26px Arial";
-      ctx.textAlign="center";
-      ctx.lineWidth=3;
+      ctx.save(); ctx.globalAlpha = 1-age/350;
+      ctx.fillStyle="#fff200"; ctx.strokeStyle="#000"; ctx.font="bold 26px Arial"; ctx.textAlign="center"; ctx.lineWidth=3;
       ctx.strokeText("BANG!", huntState.bang.x, huntState.bang.y);
       ctx.fillText("BANG!", huntState.bang.x, huntState.bang.y);
       ctx.restore();
-    } else {
-      huntState.bang=null;
-    }
+    } else { huntState.bang=null; }
   }
 
-  if(huntState.timeLeft<=0 || state.ammo<=0){
-    endHunt();
-    return;
-  }
+  if(huntState.timeLeft<=0 || state.ammo<=0){ endHunt(); return; }
   huntAnimId=requestAnimationFrame(ts2=>huntLoop(ts2, canvas, ctx));
 }
-
 function handleShot(e, canvas){
   if(!huntState || !huntState.running) return;
   if(state.ammo<=0) return;
@@ -1032,7 +1059,6 @@ function handleShot(e, canvas){
     }
   }
 }
-
 function endHunt(){
   if(!huntState) { goTo('travel'); return; }
   huntState.running=false;
@@ -1047,182 +1073,355 @@ function endHunt(){
 /* ---------------------------------------------------------
    CANVAS SCENES
 --------------------------------------------------------- */
-function drawWagon(ctx, x, y, scale, color){
+function sky(ctx,w,h,top,bottom,horizon){
+  const g=ctx.createLinearGradient(0,0,0,horizon||h*0.6);
+  g.addColorStop(0,top); g.addColorStop(1,bottom);
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+}
+function clouds(ctx,w,drift){
+  ctx.save(); ctx.fillStyle="rgba(255,255,255,0.85)";
+  for(let i=0;i<4;i++){
+    const cx=((i*220 + drift) % (w+160)) - 80;
+    const cy=28+i*10;
+    ctx.beginPath();
+    ctx.ellipse(cx,cy,34,14,0,0,Math.PI*2);
+    ctx.ellipse(cx+28,cy+4,26,11,0,0,Math.PI*2);
+    ctx.ellipse(cx-26,cy+5,22,10,0,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+function rollingHills(ctx,w,h,baseY,color,amp,phase){
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.moveTo(0,h);
+  for(let x=0;x<=w;x+=20){ ctx.lineTo(x, baseY+Math.sin(x*0.012+ (phase||0))*amp); }
+  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+}
+function drawWagon(ctx, x, y, scale, color, wheelPhase){
   ctx.save();
   ctx.translate(x,y); ctx.scale(scale,scale);
-  // wheels
   ctx.fillStyle="#2a1c0f";
-  ctx.beginPath(); ctx.arc(-14,14,9,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(14,14,9,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle="#6b4226";
-  ctx.beginPath(); ctx.arc(-14,14,4,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(14,14,4,0,Math.PI*2); ctx.fill();
-  // bed
-  ctx.fillStyle=color||"#8a5a2c";
-  ctx.fillRect(-22,0,44,14);
-  // canvas cover (arc)
+  [[-14,14],[14,14]].forEach(([wx,wy])=>{
+    ctx.beginPath(); ctx.arc(wx,wy,9,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#6b4226"; ctx.beginPath(); ctx.arc(wx,wy,4,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#3a2410"; ctx.lineWidth=1;
+    const p=wheelPhase||0;
+    for(let s=0;s<6;s++){ const a=p+s*Math.PI/3; ctx.beginPath(); ctx.moveTo(wx,wy); ctx.lineTo(wx+Math.cos(a)*8, wy+Math.sin(a)*8); ctx.stroke(); }
+    ctx.fillStyle="#2a1c0f";
+  });
+  ctx.fillStyle=color||"#8a5a2c"; ctx.fillRect(-22,0,44,14);
   ctx.fillStyle="#f2ead8";
-  ctx.beginPath();
-  ctx.moveTo(-20,0);
-  ctx.quadraticCurveTo(0,-24,20,0);
-  ctx.closePath();
-  ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-20,0); ctx.quadraticCurveTo(0,-24,20,0); ctx.closePath(); ctx.fill();
   ctx.strokeStyle="#c9bda0"; ctx.lineWidth=1.2;
   ctx.beginPath(); ctx.moveTo(-10,-2); ctx.quadraticCurveTo(0,-20,10,-2); ctx.stroke();
   ctx.restore();
 }
+function drawOx(ctx,x,y,s,phase){
+  ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+  const lo=Math.sin(phase)*2.5;
+  ctx.strokeStyle="#3a2412"; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(-7,6); ctx.lineTo(-7+lo,16);
+  ctx.moveTo(7,6); ctx.lineTo(7-lo,16);
+  ctx.stroke();
+  ctx.fillStyle="#8a6a44"; ctx.beginPath(); ctx.ellipse(0,0,14,8,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#6f5236"; ctx.beginPath(); ctx.ellipse(-15,-2,6,5,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#e8dcc0"; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(-18,-6); ctx.lineTo(-22,-9); ctx.moveTo(-16,-6); ctx.lineTo(-20,-10); ctx.stroke();
+  ctx.restore();
+}
+function drawOxenWagon(ctx,x,y,s,phase,wheelPhase){
+  // team of two oxen ahead of the wagon
+  drawOx(ctx, x-44*s, y+7*s, s, phase);
+  drawOx(ctx, x-70*s, y+7*s, s, phase+1.6);
+  // yoke/tongue line
+  ctx.save(); ctx.strokeStyle="#4a3018"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(x-22*s,y+6*s); ctx.lineTo(x-58*s,y+7*s); ctx.stroke(); ctx.restore();
+  drawWagon(ctx, x, y, s*1.05, "#8a5a2c", wheelPhase);
+}
 
 function drawTitleScene(){
-  const c=document.getElementById('sceneTitle');
-  if(!c) return;
-  const ctx=c.getContext('2d');
-  const w=c.width,h=c.height;
-  const sky=ctx.createLinearGradient(0,0,0,h*0.6);
-  sky.addColorStop(0,"#4d84c9"); sky.addColorStop(1,"#cfe6f5");
-  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h);
-  ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(w-90,55,36,0,Math.PI*2); ctx.fill();
-  // mountains
-  ctx.fillStyle="#7a8fa8";
-  ctx.beginPath(); ctx.moveTo(0,h*0.55);
-  ctx.lineTo(120,h*0.28); ctx.lineTo(240,h*0.55);
-  ctx.lineTo(380,h*0.22); ctx.lineTo(520,h*0.55);
-  ctx.lineTo(650,h*0.32); ctx.lineTo(w,h*0.55);
-  ctx.closePath(); ctx.fill();
-  // hills
-  ctx.fillStyle="#7a9b57";
-  ctx.beginPath(); ctx.moveTo(0,h);
-  for(let x=0;x<=w;x+=40){ ctx.lineTo(x, h*0.68+Math.sin(x*0.02)*14); }
-  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
-  ctx.fillStyle="#6a8a49";
-  ctx.beginPath(); ctx.moveTo(0,h);
-  for(let x=0;x<=w;x+=40){ ctx.lineTo(x, h*0.8+Math.sin(x*0.03+2)*10); }
-  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
-  // trail path
-  ctx.strokeStyle="#c9a26b"; ctx.lineWidth=10; ctx.lineCap="round";
-  ctx.beginPath(); ctx.moveTo(-10,h*0.95); ctx.quadraticCurveTo(w*0.4,h*0.8,w*0.62,h*0.86); ctx.stroke();
-  // wagon
-  drawWagon(ctx, w*0.6, h*0.8, 1.6, "#8a5a2c");
+  const c=document.getElementById('sceneTitle'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  sky(ctx,w,h,"#4d84c9","#dcecf5",h*0.62);
+  clouds(ctx,w,40);
+  ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(w-90,52,34,0,Math.PI*2); ctx.fill();
+  // bluffs
+  ctx.fillStyle="#b08850";
+  ctx.beginPath(); ctx.moveTo(0,h*0.6);
+  ctx.lineTo(90,h*0.34); ctx.lineTo(180,h*0.6); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(520,h*0.6); ctx.lineTo(620,h*0.3); ctx.lineTo(720,h*0.6); ctx.closePath(); ctx.fill();
+  rollingHills(ctx,w,h,h*0.66,"#7a9b57",14,0);
+  rollingHills(ctx,w,h,h*0.8,"#6a8a49",10,2);
+  // trail
+  ctx.strokeStyle="#c9a26b"; ctx.lineWidth=12; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(-10,h*0.96); ctx.quadraticCurveTo(w*0.35,h*0.82,w*0.58,h*0.9); ctx.stroke();
+  // a lone tree
+  ctx.fillStyle="#4a3320"; ctx.fillRect(w*0.16-3,h*0.72,6,20);
+  ctx.fillStyle="#3f6b2a"; ctx.beginPath(); ctx.arc(w*0.16,h*0.7,16,0,Math.PI*2); ctx.fill();
+  drawOxenWagon(ctx, w*0.62, h*0.86, 1.5, 0, 0);
+  // embossed gold title
+  ctx.save();
+  ctx.textAlign="center"; ctx.font="bold 46px Georgia,serif";
+  const grad=ctx.createLinearGradient(0,20,0,80);
+  grad.addColorStop(0,"#fff0b0"); grad.addColorStop(0.5,"#e8b23c"); grad.addColorStop(1,"#9a6a12");
+  ctx.lineWidth=5; ctx.strokeStyle="#5a3a08";
+  ctx.strokeText("The Oregon Trail", w/2, 58);
+  ctx.fillStyle=grad; ctx.fillText("The Oregon Trail", w/2, 58);
+  ctx.restore();
+}
+
+function startTravelAnim(){
+  if(travelAnimId) return;
+  const loop=()=>{ travelPhase+=1; drawTravelScene(); travelAnimId=requestAnimationFrame(loop); };
+  loop();
+}
+function stopTravelAnim(){ if(travelAnimId){ cancelAnimationFrame(travelAnimId); travelAnimId=null; } }
+
+function weatherTint(){
+  const wthr=currentWeather();
+  if(wthr==='Rainy') return {top:"#6f7f8c",bot:"#aebac2"};
+  if(wthr==='Cloudy') return {top:"#7f9bb5",bot:"#c8d4dc"};
+  if(wthr==='Hot') return {top:"#6fa8d8",bot:"#f0e6c0"};
+  if(wthr==='Cold') return {top:"#8fb6d8",bot:"#e4eef5"};
+  return {top:"#4d90cf",bot:"#dcecf5"};
+}
+function nextLandmarkSilhouette(ctx,w,h){
+  const lm=LANDMARKS[state.landmarkIndex];
+  if(!lm) return;
+  const x=w*0.78, baseY=h*0.62;
+  if(lm.type==='fort'){
+    ctx.fillStyle="#8a5030"; ctx.fillRect(x-24,baseY-30,48,30);
+    ctx.fillStyle="#6a3c22"; for(let i=0;i<4;i++) ctx.fillRect(x-24+i*14,baseY-38,8,8);
+  } else if(lm.type==='mountain'){
+    ctx.fillStyle="#7a8fa8"; ctx.beginPath(); ctx.moveTo(x-40,baseY); ctx.lineTo(x,baseY-52); ctx.lineTo(x+40,baseY); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.beginPath(); ctx.moveTo(x-10,baseY-38); ctx.lineTo(x,baseY-52); ctx.lineTo(x+10,baseY-38); ctx.closePath(); ctx.fill();
+  } else if(lm.type==='river'){
+    ctx.fillStyle="rgba(60,120,170,0.6)"; ctx.fillRect(x-40,baseY-6,80,14);
+  } else {
+    // rock spire
+    ctx.fillStyle="#b89a6a"; ctx.beginPath(); ctx.moveTo(x-10,baseY); ctx.lineTo(x-3,baseY-48); ctx.lineTo(x+3,baseY-48); ctx.lineTo(x+10,baseY); ctx.closePath(); ctx.fill();
+  }
+}
+function drawTravelScene(){
+  const c=document.getElementById('travelScene'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  const t=weatherTint();
+  sky(ctx,w,h,t.top,t.bot,h*0.62);
+  clouds(ctx,w, travelPhase*0.4);
+  if(currentWeather()!=='Rainy' && currentWeather()!=='Cloudy'){
+    ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(w-80,44,26,0,Math.PI*2); ctx.fill();
+  }
+  rollingHills(ctx,w,h,h*0.6,"#8aa863",13,0);
+  nextLandmarkSilhouette(ctx,w,h);
+  rollingHills(ctx,w,h,h*0.72,"#79994f",11, 1.5);
+  // ground
+  const g=ctx.createLinearGradient(0,h*0.72,0,h);
+  g.addColorStop(0,"#8fae5a"); g.addColorStop(1,"#5e7d3a");
+  ctx.fillStyle=g; ctx.fillRect(0,h*0.72,w,h*0.28);
+  // trail receding
+  ctx.strokeStyle="#c9a26b"; ctx.lineWidth=14; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(-10,h*0.98); ctx.quadraticCurveTo(w*0.4,h*0.82,w*0.85,h*0.8); ctx.stroke();
+  // rain
+  if(currentWeather()==='Rainy'){
+    ctx.strokeStyle="rgba(200,220,235,0.55)"; ctx.lineWidth=1;
+    for(let i=0;i<60;i++){ const rx=(i*61+travelPhase*6)%w, ry=(i*29+travelPhase*9)%h; ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx-4,ry+10); ctx.stroke(); }
+  }
+  // oxen + wagon walking in place (front-left), wheels turning
+  const bob=Math.sin(travelPhase*0.15)*1.5;
+  drawOxenWagon(ctx, w*0.34, h*0.9+bob, 1.5, travelPhase*0.15, travelPhase*0.12);
 }
 
 function drawTrailMap(){
-  const c=document.getElementById('trailMapCanvas');
-  if(!c) return;
-  const ctx=c.getContext('2d');
-  const w=c.width,h=c.height;
-  ctx.clearRect(0,0,w,h);
-  ctx.fillStyle="#eef3e0"; ctx.fillRect(0,0,w,h);
-  const pad=20;
-  const lineY=h/2+6;
-  ctx.strokeStyle="#c9a26b"; ctx.lineWidth=5;
-  ctx.beginPath(); ctx.moveTo(pad,lineY); ctx.lineTo(w-pad,lineY); ctx.stroke();
-
-  // landmark ticks
-  ctx.fillStyle="#5a2d0c"; ctx.font="9px Tahoma,sans-serif";
+  const c=document.getElementById('trailMapCanvas'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  ctx.fillStyle="#efe2b8"; ctx.fillRect(0,0,w,h);
+  const pad=18, lineY=h*0.55;
+  ctx.strokeStyle="#c9a26b"; ctx.lineWidth=4;
+  ctx.setLineDash([6,5]); ctx.beginPath(); ctx.moveTo(pad,lineY); ctx.lineTo(w-pad,lineY); ctx.stroke(); ctx.setLineDash([]);
   LANDMARKS.forEach(lm=>{
     const x = pad + (w-2*pad)*(lm.mile/TRAIL_END_MILES);
-    ctx.fillStyle = lm.type==='river' ? "#2a6cad" : (lm.type==='fort' ? "#8a1010" : "#5a2d0c");
-    ctx.beginPath(); ctx.arc(x,lineY,3.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = lm.type==='river' ? "#2a6cad" : (lm.type==='fort' ? "#8a1010" : (lm.type==='mountain' ? "#5a5a6a" : "#5a2d0c"));
+    ctx.beginPath(); ctx.arc(x,lineY,3.2,0,Math.PI*2); ctx.fill();
   });
+  const progress=Math.min(1,state.miles/TRAIL_END_MILES);
+  const wx=pad+(w-2*pad)*progress;
+  drawWagon(ctx, wx, lineY-9, 0.6, "#8a5a2c", 0);
+  ctx.fillStyle="#5a4326"; ctx.font="9px Tahoma,sans-serif";
+  ctx.textAlign="left"; ctx.fillText("Independence", pad-2, h-4);
+  ctx.textAlign="right"; ctx.fillText("Oregon", w-pad+2, h-4);
+}
 
-  // wagon marker
-  const progress = Math.min(1, state.miles/TRAIL_END_MILES);
-  const wx = pad + (w-2*pad)*progress;
-  drawWagon(ctx, wx, lineY-16, 0.8, "#8a5a2c");
+function drawSideThumb(){
+  const c=document.getElementById('sideThumb'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  sky(ctx,w,h,"#6fa8d8","#cfe4f0",h*0.6);
+  ctx.fillStyle="#7a9b57"; ctx.fillRect(0,h*0.6,w,h*0.4);
+  ctx.strokeStyle="#c9a26b"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,h*0.9); ctx.quadraticCurveTo(w*0.5,h*0.7,w,h*0.82); ctx.stroke();
+  drawWagon(ctx, w*0.55, h*0.78, 0.5, "#8a5a2c", 0);
+}
 
-  ctx.fillStyle="#333"; ctx.font="10px Tahoma,sans-serif"; ctx.textAlign="left";
-  ctx.fillText("Independence, MO", pad-4, h-6);
-  ctx.textAlign="right";
-  ctx.fillText("Willamette Valley", w-pad+4, h-6);
+function drawStoreScene(){
+  const c=document.getElementById('storeScene'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  // warm wooden interior
+  const bg=ctx.createLinearGradient(0,0,0,h);
+  bg.addColorStop(0,"#a5743e"); bg.addColorStop(1,"#6f4a24");
+  ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+  // plank walls
+  ctx.strokeStyle="rgba(60,36,16,0.5)"; ctx.lineWidth=1;
+  for(let y=10;y<h*0.7;y+=16){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+  // floor
+  ctx.fillStyle="#5a3b20"; ctx.fillRect(0,h*0.72,w,h*0.28);
+  // shelves with goods
+  ctx.fillStyle="#7a5330"; ctx.fillRect(40,30,220,110);
+  ctx.strokeStyle="#3a2410"; ctx.lineWidth=2; ctx.strokeRect(40,30,220,110);
+  for(let r=0;r<3;r++){ ctx.beginPath(); ctx.moveTo(40,30+r*37); ctx.lineTo(260,30+r*37); ctx.stroke(); }
+  const jarCols=["#c98a4a","#8ab0c9","#c9b84a","#a5713b","#7a9b57","#b85a5a"];
+  for(let r=0;r<3;r++) for(let i=0;i<6;i++){
+    ctx.fillStyle=jarCols[(r*6+i)%jarCols.length];
+    ctx.fillRect(50+i*35, 36+r*37, 22, 26);
+  }
+  // barrels
+  for(let i=0;i<3;i++){
+    const bx=340+i*90, by=h*0.62;
+    ctx.fillStyle="#8a5a2c"; ctx.beginPath(); ctx.ellipse(bx,by,26,40,0,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#3a2410"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(bx-24,by-10); ctx.lineTo(bx+24,by-10); ctx.moveTo(bx-24,by+12); ctx.lineTo(bx+24,by+12); ctx.stroke();
+  }
+  // shopkeeper
+  ctx.fillStyle="#3a2a5a"; ctx.fillRect(600,70,34,70);
+  ctx.fillStyle="#e8c9a0"; ctx.beginPath(); ctx.arc(617,58,14,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#5a3b20"; ctx.beginPath(); ctx.arc(617,50,15,Math.PI,0); ctx.fill();
+  // hanging sign
+  ctx.fillStyle="#e8d6a0"; ctx.fillRect(300,14,120,26); ctx.strokeStyle="#3a2410"; ctx.strokeRect(300,14,120,26);
+  ctx.fillStyle="#3a2410"; ctx.font="bold 13px Georgia,serif"; ctx.textAlign="center"; ctx.fillText("GENERAL STORE",360,32);
+}
+
+function drawLandmarkScene(lm){
+  const c=document.getElementById('landmarkScene'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  sky(ctx,w,h,"#5a93cc","#dcecf5",h*0.6);
+  clouds(ctx,w,20);
+  ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(w-80,50,28,0,Math.PI*2); ctx.fill();
+  rollingHills(ctx,w,h,h*0.62,"#7a9b57",14,0);
+  const cx=w*0.5, baseY=h*0.78;
+  if(lm.type==='fort'){
+    // stockade / brick fort
+    ctx.fillStyle="#9a4a30"; ctx.fillRect(cx-120,baseY-90,240,90);
+    ctx.fillStyle="#7a3820";
+    for(let i=0;i<8;i++) ctx.fillRect(cx-120+i*30, baseY-102, 18, 14);
+    ctx.fillStyle="#3a2a1a";
+    ctx.fillRect(cx-18,baseY-46,36,46);
+    ctx.strokeStyle="#5a3b20"; ctx.lineWidth=2; ctx.strokeRect(cx-120,baseY-90,240,90);
+    // flag
+    ctx.strokeStyle="#4a3018"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx,baseY-90); ctx.lineTo(cx,baseY-120); ctx.stroke();
+    ctx.fillStyle="#b83030"; ctx.fillRect(cx,baseY-120,26,16);
+  } else if(lm.type==='mountain'){
+    ctx.fillStyle="#7a8fa8";
+    ctx.beginPath(); ctx.moveTo(cx-160,baseY); ctx.lineTo(cx-60,baseY-120); ctx.lineTo(cx+30,baseY); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(cx-30,baseY); ctx.lineTo(cx+80,baseY-150); ctx.lineTo(cx+180,baseY); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#fff";
+    ctx.beginPath(); ctx.moveTo(cx+56,baseY-118); ctx.lineTo(cx+80,baseY-150); ctx.lineTo(cx+104,baseY-118); ctx.closePath(); ctx.fill();
+  } else if(lm.name.indexOf('Rock')>=0 || lm.name.indexOf('Chimney')>=0){
+    ctx.fillStyle="#c2a06a";
+    ctx.beginPath(); ctx.moveTo(cx-30,baseY); ctx.lineTo(cx-10,baseY-130); ctx.lineTo(cx+8,baseY-130); ctx.lineTo(cx+30,baseY); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#a9884a"; ctx.fillRect(cx-46,baseY-24,92,24);
+  } else {
+    // generic prairie / springs
+    ctx.fillStyle="#5a93b8"; ctx.beginPath(); ctx.ellipse(cx,baseY-6,90,20,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#3f6b2a"; for(let i=0;i<5;i++){ const tx=cx-120+i*60; ctx.beginPath(); ctx.arc(tx,baseY-30,16,0,Math.PI*2); ctx.fill(); ctx.fillStyle="#4a3320"; ctx.fillRect(tx-3,baseY-30,6,24); ctx.fillStyle="#3f6b2a"; }
+  }
+  ctx.fillStyle="#8fae5a"; ctx.fillRect(0,baseY,w,h-baseY);
+  drawOxenWagon(ctx, w*0.22, baseY+12, 1.1, 0, 0);
+}
+
+function drawEventScene(title){
+  const c=document.getElementById('eventScene'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  sky(ctx,w,h,"#7a9bc0","#dce6ef",h*0.6);
+  ctx.fillStyle="#7a9b57"; ctx.fillRect(0,h*0.62,w,h*0.38);
+  const t=title.toLowerCase();
+  ctx.save(); ctx.translate(w/2,h*0.62);
+  if(t.indexOf('wheel')>=0||t.indexOf('axle')>=0||t.indexOf('tongue')>=0){
+    drawWagon(ctx,0,-4,1.3,"#8a5a2c",0);
+    ctx.fillStyle="#8a1010"; ctx.font="bold 18px Arial"; ctx.textAlign="center"; ctx.fillText("!",30,-16);
+  } else if(t.indexOf('thie')>=0||t.indexOf('fire')>=0){
+    drawWagon(ctx,0,-4,1.3,"#8a5a2c",0);
+    ctx.fillStyle="rgba(200,80,20,0.6)"; ctx.beginPath(); ctx.arc(0,-14,16,0,Math.PI*2); ctx.fill();
+  } else if(t.indexOf('ox')>=0){
+    drawOx(ctx,0,-6,1.6,0);
+  } else if(t.indexOf('snake')>=0||t.indexOf('ill')>=0||t.indexOf('fell')>=0){
+    ctx.fillStyle="#3a2a5a"; ctx.fillRect(-8,-40,16,40);
+    ctx.fillStyle="#e8c9a0"; ctx.beginPath(); ctx.arc(0,-48,10,0,Math.PI*2); ctx.fill();
+  } else if(t.indexOf('berr')>=0||t.indexOf('wagon found')>=0||t.indexOf('friendly')>=0){
+    drawOxenWagon(ctx,10,-4,1.0,0,0);
+  } else {
+    drawWagon(ctx,0,-4,1.3,"#8a5a2c",0);
+  }
+  ctx.restore();
 }
 
 function drawRiverScene(depth){
-  const c=document.getElementById('riverCanvas');
-  if(!c) return;
-  const ctx=c.getContext('2d');
-  const w=c.width,h=c.height;
-  const sky=ctx.createLinearGradient(0,0,0,h*0.4);
-  sky.addColorStop(0,"#8fc0e6"); sky.addColorStop(1,"#dff0f7");
-  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h*0.4);
-  // far bank
-  ctx.fillStyle="#7a9b57"; ctx.fillRect(0,h*0.3,w,h*0.15);
-  // water
-  const waterDark = Math.min(0.55, 0.15+depth*0.06);
+  const c=document.getElementById('riverCanvas'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  sky(ctx,w,h,"#8fc0e6","#dff0f7",h*0.32);
+  ctx.fillStyle="#6a9b57"; ctx.fillRect(0,h*0.28,w,h*0.16);
+  ctx.fillStyle="#3f6b2a";
+  for(let i=0;i<6;i++){ const tx=60+i*120; ctx.beginPath(); ctx.arc(tx,h*0.3,14,0,Math.PI*2); ctx.fill(); }
+  const waterDark=Math.min(0.55,0.15+depth*0.06);
   const water=ctx.createLinearGradient(0,h*0.4,0,h*0.85);
   water.addColorStop(0,`rgba(60,120,170,${0.55+waterDark*0.3})`);
   water.addColorStop(1,`rgba(30,80,130,${0.7+waterDark*0.3})`);
   ctx.fillStyle=water; ctx.fillRect(0,h*0.4,w,h*0.45);
   ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.lineWidth=2;
-  const waveCount = 4+Math.min(6,depth);
+  const waveCount=4+Math.min(6,depth);
   for(let i=0;i<waveCount;i++){
     const yy=h*0.45+i*(h*0.35/waveCount);
-    ctx.beginPath();
-    for(let x=0;x<=w;x+=20){ ctx.lineTo(x, yy+Math.sin(x*0.05+i)*4); }
-    ctx.stroke();
+    ctx.beginPath(); for(let x=0;x<=w;x+=20){ ctx.lineTo(x, yy+Math.sin(x*0.05+i)*4); } ctx.stroke();
   }
-  // near bank
   ctx.fillStyle="#8fae5a"; ctx.fillRect(0,h*0.82,w,h*0.18);
-  // wagon at edge
-  drawWagon(ctx, w*0.22, h*0.78, 1.4, "#8a5a2c");
-  // depth marker text
-  ctx.fillStyle="#0a246a"; ctx.font="bold 13px Tahoma,sans-serif"; ctx.textAlign="left";
-  ctx.fillText(depth<=2?"Shallow crossing":depth<=4?"Moderate current":"Deep, dangerous current", 14, 20);
+  drawOxenWagon(ctx, w*0.26, h*0.82, 1.2, 0, 0);
+  ctx.fillStyle="#0a246a"; ctx.font="bold 13px Georgia,serif"; ctx.textAlign="left";
+  ctx.fillText(depth<=2?"Shallow crossing":depth<=4?"Moderate current":"Deep, dangerous current", 14, 22);
 }
 
 function drawGraveyard(canvasId, name){
-  const c=document.getElementById(canvasId);
-  if(!c) return;
-  const ctx=c.getContext('2d');
-  const w=c.width,h=c.height;
-  const sky=ctx.createLinearGradient(0,0,0,h*0.55);
-  sky.addColorStop(0,"#8a6a8a"); sky.addColorStop(1,"#e8c9a0");
-  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h);
-  ctx.fillStyle="#c98a4a"; ctx.beginPath(); ctx.arc(w*0.8,h*0.35,26,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle="#5e7d3a";
-  ctx.beginPath(); ctx.moveTo(0,h);
-  for(let x=0;x<=w;x+=40){ ctx.lineTo(x, h*0.62+Math.sin(x*0.02)*10); }
-  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
-  // wooden cross
-  const cx=w/2, cy=h*0.55;
+  const c=document.getElementById(canvasId); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  sky(ctx,w,h,"#8a6a8a","#e8c9a0",h*0.55);
+  ctx.fillStyle="#c98a4a"; ctx.beginPath(); ctx.arc(w*0.8,h*0.32,26,0,Math.PI*2); ctx.fill();
+  rollingHills(ctx,w,h,h*0.62,"#5e7d3a",10,0);
+  const cx=w/2, cy=h*0.56;
   ctx.strokeStyle="#4a2f18"; ctx.lineWidth=10; ctx.lineCap="round";
   ctx.beginPath(); ctx.moveTo(cx,cy-46); ctx.lineTo(cx,cy+40); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(cx-26,cy-26); ctx.lineTo(cx+26,cy-26); ctx.stroke();
-  if(name){
-    ctx.fillStyle="#fff"; ctx.font="bold 12px Tahoma,sans-serif"; ctx.textAlign="center";
-    ctx.fillText(name, cx, cy-32);
-  }
-  // small extra graves in background
+  if(name){ ctx.fillStyle="#fff"; ctx.font="bold 13px Georgia,serif"; ctx.textAlign="center"; ctx.fillText(name, cx, cy-32); }
   ctx.strokeStyle="#3a2410"; ctx.lineWidth=5;
-  [ [cx-140,cy+10,20], [cx+150,cy+16,26] ].forEach(([gx,gy,gh])=>{
+  [[cx-150,cy+10,20],[cx+150,cy+16,26]].forEach(([gx,gy,gh])=>{
     ctx.beginPath(); ctx.moveTo(gx,gy-gh); ctx.lineTo(gx,gy); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(gx-gh*0.5,gy-gh*0.6); ctx.lineTo(gx+gh*0.5,gy-gh*0.6); ctx.stroke();
   });
+  // rain for somber mood
+  ctx.strokeStyle="rgba(210,220,235,0.4)"; ctx.lineWidth=1;
+  for(let i=0;i<40;i++){ const rx=(i*79)%w, ry=(i*53)%h; ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx-3,ry+8); ctx.stroke(); }
 }
 
 function drawWinScene(){
-  const c=document.getElementById('winCanvas');
-  if(!c) return;
-  const ctx=c.getContext('2d');
-  const w=c.width,h=c.height;
-  const sky=ctx.createLinearGradient(0,0,0,h*0.6);
-  sky.addColorStop(0,"#8fd0f0"); sky.addColorStop(1,"#e9f7e0");
-  ctx.fillStyle=sky; ctx.fillRect(0,0,w,h);
+  const c=document.getElementById('winCanvas'); if(!c) return;
+  const ctx=c.getContext('2d'); const w=c.width,h=c.height;
+  sky(ctx,w,h,"#8fd0f0","#e9f7e0",h*0.6);
+  clouds(ctx,w,10);
   ctx.fillStyle="#ffe58a"; ctx.beginPath(); ctx.arc(w-100,50,34,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle="#4f7a3a";
-  ctx.beginPath(); ctx.moveTo(0,h);
-  for(let x=0;x<=w;x+=40){ ctx.lineTo(x, h*0.55+Math.sin(x*0.02)*16); }
-  ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
-  // little cabin
+  rollingHills(ctx,w,h,h*0.55,"#4f7a3a",16,0);
   ctx.fillStyle="#7a5230"; ctx.fillRect(w*0.5-30,h*0.62,60,40);
   ctx.fillStyle="#4a3320"; ctx.beginPath(); ctx.moveTo(w*0.5-38,h*0.62); ctx.lineTo(w*0.5,h*0.5); ctx.lineTo(w*0.5+38,h*0.62); ctx.closePath(); ctx.fill();
-  // wagon parked
-  drawWagon(ctx, w*0.25, h*0.78, 1.3, "#8a5a2c");
-  // trees
-  function tree(x,y,s){
-    ctx.fillStyle="#3f6b2a";
-    ctx.beginPath(); ctx.moveTo(x,y-30*s); ctx.lineTo(x-16*s,y); ctx.lineTo(x+16*s,y); ctx.closePath(); ctx.fill();
-    ctx.fillStyle="#4a3320"; ctx.fillRect(x-3*s,y,6*s,10*s);
-  }
-  tree(w*0.85,h*0.85,1.1); tree(w*0.92,h*0.9,0.8); tree(w*0.1,h*0.9,0.9);
+  drawOxenWagon(ctx, w*0.26, h*0.82, 1.3, 0, 0);
+  function tree(x,y,s){ ctx.fillStyle="#3f6b2a"; ctx.beginPath(); ctx.moveTo(x,y-30*s); ctx.lineTo(x-16*s,y); ctx.lineTo(x+16*s,y); ctx.closePath(); ctx.fill(); ctx.fillStyle="#4a3320"; ctx.fillRect(x-3*s,y,6*s,10*s); }
+  tree(w*0.85,h*0.85,1.1); tree(w*0.92,h*0.9,0.8); tree(w*0.12,h*0.9,0.9);
+  ctx.save(); ctx.textAlign="center"; ctx.font="bold 26px Georgia,serif";
+  ctx.lineWidth=4; ctx.strokeStyle="#3a5a12"; ctx.strokeText("Oregon!", w/2, 40);
+  ctx.fillStyle="#f0d488"; ctx.fillText("Oregon!", w/2, 40); ctx.restore();
 }
 
 /* ---------------------------------------------------------
@@ -1255,6 +1454,18 @@ function showWin(){
 }
 
 /* ---------------------------------------------------------
+   TOOLBAR ACTIONS
+--------------------------------------------------------- */
+function toolbarMap(){
+  if(state && state.party.length){
+    addLog(`Position: ${state.miles} miles from Independence, ${TRAIL_END_MILES-state.miles} to go.`);
+    if(activeScreen()==='screen-travel') renderTravel();
+  }
+}
+function toolbarHunt(){ if(activeScreen()==='screen-travel') goHunting(); }
+function toolbarSupplies(){ if(activeScreen()==='screen-travel') checkSupplies(); }
+
+/* ---------------------------------------------------------
    AUDIO ENGINE (Web Audio API, synthesized — no external files)
 --------------------------------------------------------- */
 const Sound = (function(){
@@ -1266,7 +1477,6 @@ const Sound = (function(){
     G3:196.00, A3:220.00, C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00,
     A4:440.00, B4:493.88, C5:523.25, D5:587.33, E5:659.25, G5:783.99, C6:1046.50,
   };
-  // Original 16-beat folk-style loop (melody + bass) — not the real game's music
   const MELODY=[
     ['G4',1],['B4',1],['D5',1],['B4',1],
     ['C5',1],['B4',1],['A4',1],['G4',1],
@@ -1282,15 +1492,10 @@ const Sound = (function(){
   function init(){
     if(ctx) return;
     ctx = new (window.AudioContext||window.webkitAudioContext)();
-    master = ctx.createGain();
-    master.gain.value = muted ? 0 : 0.55;
-    master.connect(ctx.destination);
-    musicBus = ctx.createGain();
-    musicBus.gain.value = 0.5;
-    musicBus.connect(master);
+    master = ctx.createGain(); master.gain.value = muted ? 0 : 0.55; master.connect(ctx.destination);
+    musicBus = ctx.createGain(); musicBus.gain.value = 0.5; musicBus.connect(master);
   }
   function resume(){ if(ctx && ctx.state==='suspended') ctx.resume(); }
-
   function tone(freq, start, dur, type, gainVal, dest){
     const osc=ctx.createOscillator(), g=ctx.createGain();
     osc.type=type||'square'; osc.frequency.value=freq;
@@ -1300,7 +1505,6 @@ const Sound = (function(){
     osc.connect(g); g.connect(dest||master);
     osc.start(start); osc.stop(start+dur+0.03);
   }
-
   function noiseBurst(dur, gainVal, filterType, filterFreq){
     const n=Math.floor(ctx.sampleRate*dur);
     const buf=ctx.createBuffer(1,n,ctx.sampleRate);
@@ -1314,7 +1518,6 @@ const Sound = (function(){
     src.connect(filt); filt.connect(g); g.connect(master);
     src.start();
   }
-
   function scheduleLoop(start){
     let t=start;
     MELODY.forEach(([n,b])=>{ if(n!=='rest') tone(NOTE[n], t, b*BEAT*0.9, 'triangle', 0.16, musicBus); t+=b*BEAT; });
@@ -1323,58 +1526,37 @@ const Sound = (function(){
     BASS.forEach(([n,b])=>{ if(n!=='rest') tone(NOTE[n], bt, b*BEAT*0.9, 'sine', 0.22, musicBus); bt+=b*BEAT; });
     return loopDur;
   }
-
   return {
     startMusic(){
       init(); resume();
       if(musicPlaying) return;
       musicPlaying=true;
-      const loop=()=>{
-        if(!musicPlaying) return;
-        const dur=scheduleLoop(ctx.currentTime+0.05);
-        musicTimer=setTimeout(loop, dur*1000-80);
-      };
+      const loop=()=>{ if(!musicPlaying) return; const dur=scheduleLoop(ctx.currentTime+0.05); musicTimer=setTimeout(loop, dur*1000-80); };
       loop();
     },
     stopMusic(){ musicPlaying=false; if(musicTimer) clearTimeout(musicTimer); },
-    click(){
-      if(!ctx) return; resume();
-      tone(880, ctx.currentTime, 0.04, 'square', 0.08);
-    },
-    gunshot(){
-      if(!ctx) return; resume();
-      noiseBurst(0.22, 0.7, 'lowpass', 2000);
-      tone(90, ctx.currentTime, 0.12, 'sine', 0.5); // low thump
-    },
-    splash(){
-      if(!ctx) return; resume();
-      noiseBurst(0.35, 0.35, 'bandpass', 900);
-    },
+    click(){ if(!ctx) return; resume(); tone(880, ctx.currentTime, 0.04, 'square', 0.08); },
+    gunshot(){ if(!ctx) return; resume(); noiseBurst(0.22, 0.7, 'lowpass', 2000); tone(90, ctx.currentTime, 0.12, 'sine', 0.5); },
+    splash(){ if(!ctx) return; resume(); noiseBurst(0.35, 0.35, 'bandpass', 900); },
     death(){
       if(!ctx) return; resume();
       const t=ctx.currentTime;
-      // slow, somber descending minor line
-      tone(NOTE.A4, t,      0.5, 'sine', 0.28);
-      tone(NOTE.F4, t+0.45, 0.5, 'sine', 0.28);
-      tone(NOTE.D4, t+0.9,  0.6, 'sine', 0.28);
-      tone(NOTE.A3, t+1.4,  1.0, 'sine', 0.30);
+      tone(NOTE.A4, t,0.5,'sine',0.28); tone(NOTE.F4, t+0.45,0.5,'sine',0.28);
+      tone(NOTE.D4, t+0.9,0.6,'sine',0.28); tone(NOTE.A3, t+1.4,1.0,'sine',0.30);
     },
     fanfare(){
       if(!ctx) return; resume();
       const t=ctx.currentTime;
-      tone(NOTE.G4, t,      0.16, 'square', 0.25);
-      tone(NOTE.C5, t+0.16, 0.16, 'square', 0.25);
-      tone(NOTE.E5, t+0.32, 0.16, 'square', 0.25);
-      tone(NOTE.G5, t+0.48, 0.4,  'square', 0.28);
-      tone(NOTE.C6, t+0.9,  0.6,  'triangle', 0.28);
+      tone(NOTE.G4,t,0.16,'square',0.25); tone(NOTE.C5,t+0.16,0.16,'square',0.25);
+      tone(NOTE.E5,t+0.32,0.16,'square',0.25); tone(NOTE.G5,t+0.48,0.4,'square',0.28);
+      tone(NOTE.C6,t+0.9,0.6,'triangle',0.28);
     },
     startRiver(){
       init(); resume();
       if(riverSrc) return;
       const dur=2, n=ctx.sampleRate*dur;
       const buf=ctx.createBuffer(1,n,ctx.sampleRate);
-      const d=buf.getChannelData(0);
-      for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+      const d=buf.getChannelData(0); for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
       riverSrc=ctx.createBufferSource(); riverSrc.buffer=buf; riverSrc.loop=true;
       const filt=ctx.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=550; filt.Q.value=0.6;
       riverGain=ctx.createGain(); riverGain.gain.value=0.0001;
@@ -1389,17 +1571,11 @@ const Sound = (function(){
       setTimeout(()=>{ try{s.stop();}catch(e){} }, 500);
       riverSrc=null; riverGain=null;
     },
-    toggleMute(){
-      muted=!muted;
-      if(master) master.gain.value = muted ? 0 : 0.55;
-      return !muted;
-    },
+    toggleMute(){ muted=!muted; if(master) master.gain.value = muted ? 0 : 0.55; return !muted; },
   };
 })();
 
-// UI click tick on any button press
 document.addEventListener('click', e=>{ if(e.target && e.target.tagName==='BUTTON') Sound.click(); });
-
 function toggleSound(){
   const on = Sound.toggleMute();
   document.getElementById('sound-toggle').innerHTML = on ? '&#128266; Sound: On' : '&#128263; Sound: Off';
