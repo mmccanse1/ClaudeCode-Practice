@@ -132,7 +132,7 @@
     <div class="tleft"><span class="ticon"></span> The Oregon Trail</div>
     <div class="winbtns"><span>_</span><span>&#9633;</span><span>&times;</span></div>
   </div>
-  <div class="menubar"><span>File</span><span>Trail</span><span>Options</span><span>Help</span></div>
+  <div class="menubar"><span>File</span><span>Trail</span><span>Options</span><span>Help</span><span id="sound-toggle" style="margin-left:auto;cursor:pointer;" onclick="toggleSound()">&#128266; Sound: On</span></div>
 
   <div class="content" id="game">
 
@@ -148,7 +148,7 @@
       Willamette Valley?</p>
       <p class="unlimited">A wealthy relative has left you an unlimited fortune.
       Money will never be a problem &mdash; everything else in the West still can be.</p>
-      <div class="center"><button class="primary" onclick="goTo('occupation')">Begin Journey</button></div>
+      <div class="center"><button class="primary" onclick="Sound.startMusic();goTo('occupation')">Begin Journey</button></div>
     </fieldset>
   </div>
 
@@ -770,6 +770,7 @@ function showDeath(member){
   document.getElementById('death-epitaph').textContent=EPITAPHS[Math.floor(Math.random()*EPITAPHS.length)];
   goTo('death');
   drawGraveyard('graveCanvas', member.name);
+  Sound.death();
 }
 function leaveDeath(){
   if(alivePartyCount()===0){
@@ -802,6 +803,7 @@ function showRiver(lm){
   document.getElementById('river-width').textContent=currentRiver.width;
   goTo('river');
   drawRiverScene(currentRiver.depth);
+  Sound.startRiver();
 }
 
 function crossRiver(method){
@@ -857,6 +859,8 @@ function crossRiver(method){
 
   addLog(msg);
   renderTravel();
+  Sound.stopRiver();
+  if(method==='ford'||method==='float') Sound.splash();
   showEvent(r.name, msg);
 }
 
@@ -1015,6 +1019,7 @@ function handleShot(e, canvas){
   state.ammo--;
   document.getElementById('hunt-ammo').textContent=state.ammo;
   huntState.bang={x,y,t:performance.now()};
+  Sound.gunshot();
   for(const a of huntState.animals){
     if(a.dead) continue;
     if(x>=a.x && x<=a.x+a.w && y>=a.y && y<=a.y+a.h){
@@ -1246,6 +1251,158 @@ function showWin(){
   document.getElementById('win-score').textContent="Final Score: "+finalScore;
   goTo('win');
   drawWinScene();
+  Sound.fanfare();
+}
+
+/* ---------------------------------------------------------
+   AUDIO ENGINE (Web Audio API, synthesized — no external files)
+--------------------------------------------------------- */
+const Sound = (function(){
+  let ctx=null, master=null, musicBus=null;
+  let muted=false, musicPlaying=false, musicTimer=null;
+  let riverSrc=null, riverGain=null;
+
+  const NOTE={
+    G3:196.00, A3:220.00, C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00,
+    A4:440.00, B4:493.88, C5:523.25, D5:587.33, E5:659.25, G5:783.99, C6:1046.50,
+  };
+  // Original 16-beat folk-style loop (melody + bass) — not the real game's music
+  const MELODY=[
+    ['G4',1],['B4',1],['D5',1],['B4',1],
+    ['C5',1],['B4',1],['A4',1],['G4',1],
+    ['A4',1],['B4',1],['A4',1],['G4',1],
+    ['E4',2],['D4',2],
+  ];
+  const BASS=[
+    ['G3',2],['G3',2],['C4',2],['C4',2],
+    ['D4',2],['D4',2],['G3',2],['G3',2],
+  ];
+  const BEAT=0.42;
+
+  function init(){
+    if(ctx) return;
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    master = ctx.createGain();
+    master.gain.value = muted ? 0 : 0.55;
+    master.connect(ctx.destination);
+    musicBus = ctx.createGain();
+    musicBus.gain.value = 0.5;
+    musicBus.connect(master);
+  }
+  function resume(){ if(ctx && ctx.state==='suspended') ctx.resume(); }
+
+  function tone(freq, start, dur, type, gainVal, dest){
+    const osc=ctx.createOscillator(), g=ctx.createGain();
+    osc.type=type||'square'; osc.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001, start);
+    g.gain.exponentialRampToValueAtTime(gainVal||0.25, start+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, start+dur);
+    osc.connect(g); g.connect(dest||master);
+    osc.start(start); osc.stop(start+dur+0.03);
+  }
+
+  function noiseBurst(dur, gainVal, filterType, filterFreq){
+    const n=Math.floor(ctx.sampleRate*dur);
+    const buf=ctx.createBuffer(1,n,ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+    const src=ctx.createBufferSource(); src.buffer=buf;
+    const filt=ctx.createBiquadFilter(); filt.type=filterType||'lowpass'; filt.frequency.value=filterFreq||1200;
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(gainVal||0.4, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur);
+    src.connect(filt); filt.connect(g); g.connect(master);
+    src.start();
+  }
+
+  function scheduleLoop(start){
+    let t=start;
+    MELODY.forEach(([n,b])=>{ if(n!=='rest') tone(NOTE[n], t, b*BEAT*0.9, 'triangle', 0.16, musicBus); t+=b*BEAT; });
+    const loopDur=t-start;
+    let bt=start;
+    BASS.forEach(([n,b])=>{ if(n!=='rest') tone(NOTE[n], bt, b*BEAT*0.9, 'sine', 0.22, musicBus); bt+=b*BEAT; });
+    return loopDur;
+  }
+
+  return {
+    startMusic(){
+      init(); resume();
+      if(musicPlaying) return;
+      musicPlaying=true;
+      const loop=()=>{
+        if(!musicPlaying) return;
+        const dur=scheduleLoop(ctx.currentTime+0.05);
+        musicTimer=setTimeout(loop, dur*1000-80);
+      };
+      loop();
+    },
+    stopMusic(){ musicPlaying=false; if(musicTimer) clearTimeout(musicTimer); },
+    click(){
+      if(!ctx) return; resume();
+      tone(880, ctx.currentTime, 0.04, 'square', 0.08);
+    },
+    gunshot(){
+      if(!ctx) return; resume();
+      noiseBurst(0.22, 0.7, 'lowpass', 2000);
+      tone(90, ctx.currentTime, 0.12, 'sine', 0.5); // low thump
+    },
+    splash(){
+      if(!ctx) return; resume();
+      noiseBurst(0.35, 0.35, 'bandpass', 900);
+    },
+    death(){
+      if(!ctx) return; resume();
+      const t=ctx.currentTime;
+      // slow, somber descending minor line
+      tone(NOTE.A4, t,      0.5, 'sine', 0.28);
+      tone(NOTE.F4, t+0.45, 0.5, 'sine', 0.28);
+      tone(NOTE.D4, t+0.9,  0.6, 'sine', 0.28);
+      tone(NOTE.A3, t+1.4,  1.0, 'sine', 0.30);
+    },
+    fanfare(){
+      if(!ctx) return; resume();
+      const t=ctx.currentTime;
+      tone(NOTE.G4, t,      0.16, 'square', 0.25);
+      tone(NOTE.C5, t+0.16, 0.16, 'square', 0.25);
+      tone(NOTE.E5, t+0.32, 0.16, 'square', 0.25);
+      tone(NOTE.G5, t+0.48, 0.4,  'square', 0.28);
+      tone(NOTE.C6, t+0.9,  0.6,  'triangle', 0.28);
+    },
+    startRiver(){
+      init(); resume();
+      if(riverSrc) return;
+      const dur=2, n=ctx.sampleRate*dur;
+      const buf=ctx.createBuffer(1,n,ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+      riverSrc=ctx.createBufferSource(); riverSrc.buffer=buf; riverSrc.loop=true;
+      const filt=ctx.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=550; filt.Q.value=0.6;
+      riverGain=ctx.createGain(); riverGain.gain.value=0.0001;
+      riverSrc.connect(filt); filt.connect(riverGain); riverGain.connect(master);
+      riverSrc.start();
+      riverGain.gain.linearRampToValueAtTime(0.13, ctx.currentTime+0.5);
+    },
+    stopRiver(){
+      if(!riverSrc) return;
+      const s=riverSrc, g=riverGain;
+      try{ g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime+0.4); }catch(e){}
+      setTimeout(()=>{ try{s.stop();}catch(e){} }, 500);
+      riverSrc=null; riverGain=null;
+    },
+    toggleMute(){
+      muted=!muted;
+      if(master) master.gain.value = muted ? 0 : 0.55;
+      return !muted;
+    },
+  };
+})();
+
+// UI click tick on any button press
+document.addEventListener('click', e=>{ if(e.target && e.target.tagName==='BUTTON') Sound.click(); });
+
+function toggleSound(){
+  const on = Sound.toggleMute();
+  document.getElementById('sound-toggle').innerHTML = on ? '&#128266; Sound: On' : '&#128263; Sound: Off';
 }
 </script>
 </body>
